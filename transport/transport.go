@@ -23,7 +23,7 @@ type Transport interface {
 }
 
 type Receiver interface {
-	Receive(ctx context.Context, msg Message) error
+	Receive(ctx context.Context, msg []byte)
 }
 
 // // Config 定义传输层配置

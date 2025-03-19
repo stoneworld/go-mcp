@@ -11,15 +11,17 @@ const (
 	INTERNAL_ERROR   = -32603 // Internal JSON-RPC error
 )
 
-type RequestId interface{}
+type RequestID interface{} // 字符串/数值
 
-type Method string
+type Params interface{}
+
+type Result interface{}
 
 type JSONRPCRequest struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      RequestId   `json:"id"`
-	Method  Method      `json:"method"`
-	Params  interface{} `json:"params,omitempty"`
+	JSONRPC string    `json:"jsonrpc"`
+	ID      RequestID `json:"id"`
+	Method  Method    `json:"method"`
+	Params  Params    `json:"params,omitempty"`
 }
 
 // IsValid checks if the request is valid according to JSON-RPC 2.0 spec
@@ -27,17 +29,11 @@ func (r *JSONRPCRequest) IsValid() bool {
 	return r.JSONRPC == jsonrpc_version && r.Method != ""
 }
 
-// JSONRPCResponse represents a successful (non-error) response to a request.
+// JSONRPCResponse represents a response to a request.
 type JSONRPCResponse struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      RequestId   `json:"id"`
-	Result  interface{} `json:"result"`
-}
-
-// JSONRPCError represents a non-successful (error) response to a request.
-type JSONRPCError struct {
 	JSONRPC string    `json:"jsonrpc"`
-	ID      RequestId `json:"id"`
+	ID      RequestID `json:"id"`
+	Result  Result    `json:"result"`
 	Error   struct {
 		// The error type that occurred.
 		Code int `json:"code"`
@@ -50,19 +46,17 @@ type JSONRPCError struct {
 	} `json:"error"`
 }
 
+type JSONRPCResponseErr struct {
+}
+
 type JSONRPCNotification struct {
 	JSONRPC string `json:"jsonrpc"`
-	Notification
+	Method  Method `json:"method"`
+	Params  Params `json:"params,omitempty"`
 }
 
-// Notification represents a JSON-RPC notification
-type Notification struct {
-	Method Method      `json:"method"`
-	Params interface{} `json:"params,omitempty"`
-}
-
-// NewJSONRPCRequest NewRequest creates a new JSON-RPC request
-func NewJSONRPCRequest(id RequestId, method Method, params interface{}) *JSONRPCRequest {
+// NewJSONRPCRequest creates a new JSON-RPC request
+func NewJSONRPCRequest(id RequestID, method Method, params Params) *JSONRPCRequest {
 	return &JSONRPCRequest{
 		JSONRPC: jsonrpc_version,
 		ID:      id,
@@ -71,8 +65,8 @@ func NewJSONRPCRequest(id RequestId, method Method, params interface{}) *JSONRPC
 	}
 }
 
-// NewJSONRPCResponse NewResponse creates a new JSON-RPC response
-func NewJSONRPCResponse(id RequestId, result interface{}) *JSONRPCResponse {
+// NewJSONRPCSuccessResponse creates a new JSON-RPC response
+func NewJSONRPCSuccessResponse(id RequestID, result Result) *JSONRPCResponse {
 	return &JSONRPCResponse{
 		JSONRPC: jsonrpc_version,
 		ID:      id,
@@ -80,9 +74,9 @@ func NewJSONRPCResponse(id RequestId, result interface{}) *JSONRPCResponse {
 	}
 }
 
-// NewJSONRPCError NewError creates a new JSON-RPC error response
-func NewJSONRPCError(id RequestId, code int, message string) *JSONRPCError {
-	err := &JSONRPCError{
+// NewJSONRPCErrorResponse NewError creates a new JSON-RPC error response
+func NewJSONRPCErrorResponse(id RequestID, code int, message string) *JSONRPCResponse {
+	err := &JSONRPCResponse{
 		JSONRPC: jsonrpc_version,
 		ID:      id,
 	}
@@ -91,13 +85,11 @@ func NewJSONRPCError(id RequestId, code int, message string) *JSONRPCError {
 	return err
 }
 
-// NewJSONRPCNotification NewNotification creates a new JSON-RPC notification
-func NewJSONRPCNotification(method Method, params interface{}) *JSONRPCNotification {
+// NewJSONRPCNotification creates a new JSON-RPC notification
+func NewJSONRPCNotification(method Method, params Params) *JSONRPCNotification {
 	return &JSONRPCNotification{
 		JSONRPC: jsonrpc_version,
-		Notification: Notification{
-			Method: method,
-			Params: params,
-		},
+		Method:  method,
+		Params:  params,
 	}
 }

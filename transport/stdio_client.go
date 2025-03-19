@@ -73,10 +73,7 @@ func (t *stdioClientTransport) receive() {
 			}
 			return
 		}
-		
-		if err := t.receiver.Receive(context.Background(), line); err != nil {
-			// TODO: 使用logger打印
-			fmt.Errorf("stdioClientTransport receive line=%s err=%+v\n", line, err)
-		}
+
+		t.receiver.Receive(context.Background(), line)
 	}
 }

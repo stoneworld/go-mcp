@@ -63,8 +63,6 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 			}
 			return nil, nil
 		}
-		if err := t.receiver.Receive(ctx, line); err != nil {
-			logs.Errorf("stdioClientTransport receive line=%s err=%+v", line, err)
-		}
+		t.receiver.Receive(ctx, line)
 	}
 }

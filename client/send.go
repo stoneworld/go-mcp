@@ -9,7 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 )
 
-func (client *Client) sendMsgWithRequest(ctx context.Context, requestID protocol.RequestId, method protocol.Method, params interface{}) error {
+func (client *Client) sendMsgWithRequest(ctx context.Context, requestID protocol.RequestID, method protocol.Method, params interface{}) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -27,12 +27,12 @@ func (client *Client) sendMsgWithRequest(ctx context.Context, requestID protocol
 	return nil
 }
 
-func (client *Client) sendMsgWithResponse(ctx context.Context, requestID protocol.RequestId, result interface{}) error {
+func (client *Client) sendMsgWithResponse(ctx context.Context, requestID protocol.RequestID, result interface{}) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
 
-	resp := protocol.NewJSONRPCResponse(requestID, result)
+	resp := protocol.NewJSONRPCSuccessResponse(requestID, result)
 
 	message, err := sonic.Marshal(resp)
 	if err != nil {
@@ -59,12 +59,12 @@ func (client *Client) sendMsgWithNotification(ctx context.Context, method protoc
 	return nil
 }
 
-func (client *Client) sendMsgWithError(ctx context.Context, requestID protocol.RequestId, code int, msg string) error {
+func (client *Client) sendMsgWithError(ctx context.Context, requestID protocol.RequestID, code int, msg string) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
 
-	resp := protocol.NewJSONRPCError(requestID, code, msg)
+	resp := protocol.NewJSONRPCErrorResponse(requestID, code, msg)
 
 	message, err := sonic.Marshal(resp)
 	if err != nil {

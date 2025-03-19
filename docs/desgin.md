@@ -36,12 +36,10 @@ MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为�
 # 项目目录
 
     - transports
-        - see
-            - client.go
-            - server.go
-        - stdio
-            - client.go
-            - server.go
+        - sse_client.go
+        - sse_server.go
+        - stdio_client.go
+        - sdtio_server.go
         - transport.go // transport 接口定义
       - protocol // 放置 mcp 协议相关的全部定义，包括数据结构定义、请求结构构造、响应结构解析；
           - initialize.go
@@ -56,12 +54,15 @@ MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为�
           - completion.go
           - logging.go
           - pagination.go
+          - jsonrpc.go
       - server
+          - server.go
           - send.go // 向客户端发送 message(request、response、notification)
           - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
           - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
           - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
       - client
+          - client.go
           - send.go // 向服务端发送 message(request、response、notification)
           - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
           - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
