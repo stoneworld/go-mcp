@@ -9,7 +9,7 @@ import (
 )
 
 type stdioServerTransport struct {
-	receiver Receiver
+	receiver receiver
 	stdin    io.Reader
 	stdout   io.Writer
 
@@ -33,11 +33,13 @@ func (t *stdioServerTransport) Start() error {
 }
 
 func (t *stdioServerTransport) Send(ctx context.Context, msg Message) error {
-	// TODO implement me
-	panic("implement me")
+	if _, err := t.stdout.Write(msg); err != nil {
+		return fmt.Errorf("failed to write request: %w", err)
+	}
+	return nil
 }
 
-func (t *stdioServerTransport) SetReceiver(receiver Receiver) {
+func (t *stdioServerTransport) SetReceiver(receiver receiver) {
 	t.receiver = receiver
 }
 
@@ -50,18 +52,13 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 	reader := bufio.NewReader(t.stdin)
 
 	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			return
-		}
-		readChan <- line
-
-		line, err := t.stdout.ReadBytes('\n')
+		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			if err != io.EOF {
-				return nil, fmt.Errorf("Error reading response: %v\n", err)
+				// TODO: 记录日志
+				return
 			}
-			return nil, nil
+			return
 		}
 		t.receiver.Receive(ctx, line)
 	}

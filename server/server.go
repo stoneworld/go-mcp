@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"go-mcp/pkg"
 	"go-mcp/protocol"
 	"go-mcp/transport"
 )
@@ -16,11 +17,14 @@ type Server struct {
 	notifyMethod2handler map[protocol.Method]func(notifyParam interface{})
 
 	requestID atomic.Int64
+
+	logger pkg.Logger
 }
 
 func NewServer(t transport.Transport, opts ...Option) (*Server, error) {
 	server := &Server{
 		transport: t,
+		logger:    &pkg.Log{},
 	}
 	t.SetReceiver(server)
 
@@ -40,6 +44,12 @@ type Option func(*Server)
 func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam interface{})) Option {
 	return func(s *Server) {
 		s.notifyMethod2handler = notifyMethod2handler
+	}
+}
+
+func WithLogger(logger pkg.Logger) Option {
+	return func(s *Server) {
+		s.logger = logger
 	}
 }
 

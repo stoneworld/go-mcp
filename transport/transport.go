@@ -16,13 +16,13 @@ type Transport interface {
 	// Send 发送消息
 	Send(ctx context.Context, msg Message) error
 	// SetReceiver 设置对对端消息的处理器
-	SetReceiver(Receiver)
+	SetReceiver(receiver)
 
 	// Close 关闭传输连接
 	Close() error
 }
 
-type Receiver interface {
+type receiver interface {
 	Receive(ctx context.Context, msg []byte)
 }
 

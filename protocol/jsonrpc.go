@@ -11,6 +11,8 @@ const (
 	METHOD_NOT_FOUND = -32601 // The method does not exist / is not available
 	INVALID_PARAMS   = -32602 // Invalid method parameter(s)
 	INTERNAL_ERROR   = -32603 // Internal JSON-RPC error
+
+	// 可以定义自己的错误代码，范围在-32000 以上。
 )
 
 type RequestID interface{} // 字符串/数值
