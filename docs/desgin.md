@@ -3,19 +3,20 @@ MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为�
 # 设计思路
 
 - MCP 协议消息
-
-  | 能力提供方        | 能力         | 协议消息 (客户端发送)                                      | 协议消息 (服务端发送)                                 |
-      |-------------------|-------------|---------------------------------------------------|----------------------------------------------|
-  | Client & Server   | **Ping**    | Ping                                              | Ping                                       |
-  | Client & Server   | **Cancellation** | Cancelled Notifications                           | Cancelled Notifications                      |
-  | Client & Server   | **Progress**     | Progress Notifications                            | Progress Notifications                       |
-  | Client            | **roots**        | Root List Changes                                 | Listing Roots                                |
-  | Client            | **sampling**     |                                                   | Creating Messages                            |
-  | Server            | **prompts**      | Listing Prompts <br/> Getting a Prompt            | List Changed Notification                    |
-  | Server            | **resources**    | Listing Resources <br/> Reading Resources <br/> Resource Templates <br/> Subscriptions: Request | List Changed Notification <br/> Subscriptions: Update Notification |
-  | Server            | **tools**        | Listing Tools <br/> Calling Tools               | List Changed Notification                  |
-  | Server            | **Completion**   | Requesting Completions                            |                                              |
-  | Server            | **logging**      | Setting Log Level                                 | Log Message Notifications                  |
+  
+  | 能力提供方     | 能力             | 协议消息（客户端发送）                                                                                   | 协议消息（服务端发送）                                       |
+  | ------------- | ---------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+  | Client&Server | Initialization   | • Initialize <br>• Initialized notifications                                                            | （无）                                                       |
+  | Client&Server | Ping             | • Ping                                                                                                   | • Ping                                                       |
+  | Client&Server | Cancellation     | • Cancelled Notifications                                                                               | • Cancelled Notifications                                    |
+  | Client&Server | Progress         | • Progress Notifications                                                                                | • Progress Notifications                                     |
+  | Client        | roots            | • Root List Changes                                                                                     | • Listing Roots                                              |
+  | Client        | sampling         | （无）                                                                                                  | • Creating Messages                                          |
+  | Server        | prompts          | • Listing Prompts <br>• Getting a Prompt                                                                | • List Changed Notification                                  |
+  | Server        | resources        | • Listing Resources <br>• Reading Resources <br>• Resource Templates <br>• Subscriptions: Request <br>• UnSubscriptions: Request | • List Changed Notification <br>• Subscriptions: Update Notification |
+  | Server        | tools            | • Listing Tools <br>• Calling Tools                                                                     | • List Changed Notification                                  |
+  | Server        | Completion       | • Requesting Completions                                                                                | （无）                                                       |
+  | Server        | logging          | • Setting Log Level                                                                                     | • Log Message Notifications                                  |
 
 - 交互细节
   ![img_1.png](../images/img_1.png)
@@ -36,33 +37,37 @@ MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为�
 # 项目目录
 
     - transports
-        - see
-            - client.go
-            - server.go
-        - stdio
-            - client.go
-            - server.go
-        - transport.go // transport 接口定义
-      - protocol // 放置 mcp 协议相关的全部定义，包括数据结构定义、请求结构构造、响应结构解析；
-          - initialize.go
-          - ping.go
-          - cancellation.go
-          - progress.go
-          - roots.go
-          - sampling.go
-          - prompts.go
-          - resources.go
-          - tools.go
-          - completion.go
-          - logging.go
-          - pagination.go
-      - server
-          - send.go // 向客户端发送 message(request、response、notification)
-          - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
-          - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
-      - client
-          - send.go // 向服务端发送 message(request、response、notification)
-          - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
-          - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
+      - sse_client.go
+      - sse_server.go
+      - stdio_client.go
+      - sdtio_server.go
+      - transport.go // transport 接口定义
+    - pkg
+      - errors.go // error 定义
+      - log.go // log 接口定义
+    - protocol // 放置 mcp 协议相关的全部定义，包括数据结构定义、请求结构构造、响应结构解析；
+      - initialize.go
+      - ping.go
+      - cancellation.go
+      - progress.go
+      - roots.go
+      - sampling.go
+      - prompts.go
+      - resources.go
+      - tools.go
+      - completion.go
+      - logging.go
+      - pagination.go
+      - jsonrpc.go
+    - server
+      - server.go
+      - call.go // 向客户端发送 message(request、notification)
+      - handle.go // 对来自客户端的 message(request、notification) 进行处理，返回或不返回 response
+      - send.go // 向客户端发送 message(request、response、notification)
+      - receive.go // 对来自客户端的 message(request、response、notification)进行接收
+    - client
+      - client.go
+      - call.go // 向服务端发送 message(request、notification)
+      - handle.go // 对来自服务端的 message(request、notification) 进行处理，返回或不返回 response
+      - send.go // 向服务端发送 message(request、response、notification)
+      - receive.go // 对来自服务端的 message(request、response、notification)进行接收
