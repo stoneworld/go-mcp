@@ -64,11 +64,11 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 
 	switch request.Method {
 	case protocol.Ping:
-		result, err = client.handleRequestWithPing(ctx, request)
+		result, err = client.handleRequestWithPing(ctx, request.RawParams)
 	case protocol.RootsList:
-		result, err = client.handleRequestWithListRoots(ctx, request)
+		result, err = client.handleRequestWithListRoots(ctx, request.RawParams)
 	case protocol.SamplingCreateMessage:
-		result, err = client.handleRequestWithCreateMessagesSampling(ctx, request)
+		result, err = client.handleRequestWithCreateMessagesSampling(ctx, request.RawParams)
 	default:
 		// return protocol.NewJSONRPCErrorResponse(request.ID)
 	}

@@ -55,11 +55,11 @@ func (client *Client) ListTools(ctx context.Context) error {
 	return nil
 }
 
-func (client *Client) CallTools(ctx context.Context) error {
+func (client *Client) CallTool(ctx context.Context) error {
 	return nil
 }
 
-func (client *Client) RequestCompletions(ctx context.Context) error {
+func (client *Client) CompleteRequest(ctx context.Context) error {
 	return nil
 }
 

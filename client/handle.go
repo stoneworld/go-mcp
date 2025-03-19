@@ -2,24 +2,21 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"go-mcp/protocol"
 )
 
-func (client *Client) handleRequestWithInitialize(ctx context.Context, request *protocol.JSONRPCRequest) (protocol.Result, error) {
+func (client *Client) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
 	return nil, nil
 }
 
-func (client *Client) handleRequestWithPing(ctx context.Context, request *protocol.JSONRPCRequest) (protocol.Result, error) {
+func (client *Client) handleRequestWithListRoots(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
 	return nil, nil
 }
 
-func (client *Client) handleRequestWithListRoots(ctx context.Context, request *protocol.JSONRPCRequest) (protocol.Result, error) {
-	return nil, nil
-}
-
-func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, request *protocol.JSONRPCRequest) (protocol.Result, error) {
+func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
 	return nil, nil
 }
 

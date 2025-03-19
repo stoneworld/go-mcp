@@ -1,5 +1,7 @@
 package protocol
 
+import "encoding/json"
+
 const jsonrpc_version = "2.0"
 
 // Standard JSON-RPC error codes
@@ -18,10 +20,35 @@ type Params interface{}
 type Result interface{}
 
 type JSONRPCRequest struct {
-	JSONRPC string    `json:"jsonrpc"`
-	ID      RequestID `json:"id"`
-	Method  Method    `json:"method"`
-	Params  Params    `json:"params,omitempty"`
+	JSONRPC   string          `json:"jsonrpc"`
+	ID        RequestID       `json:"id"`
+	Method    Method          `json:"method"`
+	Params    Params          `json:"params,omitempty"`
+	RawParams json.RawMessage `json:"-"`
+}
+
+func (r *JSONRPCRequest) UnmarshalJSON(data []byte) error {
+	type alias JSONRPCRequest
+	temp := &struct {
+		Params json.RawMessage `json:"params,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(r),
+	}
+
+	if err := json.Unmarshal(data, temp); err != nil {
+		return err
+	}
+
+	r.RawParams = temp.Params
+
+	if len(r.RawParams) != 0 {
+		if err := json.Unmarshal(r.RawParams, &r.Params); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // IsValid checks if the request is valid according to JSON-RPC 2.0 spec
