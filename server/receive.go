@@ -106,4 +106,5 @@ func (server *Server) receiveNotify(ctx context.Context, notify *protocol.JSONRP
 
 func (server *Server) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
 	// 通过 server.reqID2respChan 将 response 传回发送 request 的协程
+	return nil
 }

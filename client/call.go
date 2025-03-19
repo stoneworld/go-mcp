@@ -13,13 +13,13 @@ import (
 // 3. 响应解析
 
 func (client *Client) initialization(ctx context.Context) error {
-	// client.call(ctx)
+	// client.callServer(ctx)
 	// client.SendNotification4Initialized(ctx)
 	return nil
 }
 
 func (client *Client) Ping(ctx context.Context) error {
-	// client.call(ctx)
+	// client.callServer(ctx)
 	return nil
 }
 

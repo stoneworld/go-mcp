@@ -9,21 +9,21 @@ import (
 // 请求
 
 // 1. 请求构造
-// 2. 发送请求 server.callServer(ctx)
+// 2. 发送请求 server.callClient(ctx)
 // 3. 响应解析
 
 func (server *Server) Ping(ctx context.Context) error {
-	// server.call(ctx)
+	// server.callClient(ctx)
 	return nil
 }
 
 func (server *Server) ListRoots(ctx context.Context) error {
-	// server.call(ctx)
+	// server.callClient(ctx)
 	return nil
 }
 
 func (server *Server) CreateMessagesSample(ctx context.Context) error {
-	// server.call(ctx)
+	// server.callClient(ctx)
 	return nil
 }
 
@@ -60,7 +60,7 @@ func (server *Server) SendNotification4LoggingMessage(ctx context.Context) error
 }
 
 // 负责request和response的拼接
-func (server *Server) callServer(ctx context.Context, method protocol.Method, params interface{}) ([]byte, error) {
+func (server *Server) callClient(ctx context.Context, method protocol.Method, params interface{}) ([]byte, error) {
 	requestID := server.requestID.Add(1)
 	// 发送请求
 	if err := server.sendMsgWithRequest(ctx, requestID, method, params); err != nil {

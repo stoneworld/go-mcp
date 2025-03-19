@@ -32,11 +32,14 @@ func NewServer(t transport.Transport, opts ...Option) (*Server, error) {
 		opt(server)
 	}
 
-	if err := server.transport.Start(); err != nil {
-		return nil, fmt.Errorf("init mcp server transpor start fail: %w", err)
-	}
-
 	return server, nil
+}
+
+func (server *Server) Start() error {
+	if err := server.transport.Start(); err != nil {
+		return fmt.Errorf("init mcp server transpor start fail: %w", err)
+	}
+	return nil
 }
 
 type Option func(*Server)
@@ -53,7 +56,7 @@ func WithLogger(logger pkg.Logger) Option {
 	}
 }
 
-func (server *Server) Close() error {
+func (server *Server) Shutdown() error {
 	// TODO 还有一些其他处理操作也可以放在这里
 	// server.transport.Close()
 	return nil
