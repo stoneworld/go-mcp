@@ -60,9 +60,9 @@ MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为�
           - send.go // 向客户端发送 message(request、response、notification)
           - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
           - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handler.go // 对 message(request、notification) 进行处理，返回或不返回 response
+          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
       - client
           - send.go // 向服务端发送 message(request、response、notification)
           - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
           - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handler.go // 对 message(request、notification) 进行处理，返回或不返回 response
+          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
