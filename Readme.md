@@ -1,68 +1,27 @@
-MCP Go SDK是一个功能强大且易于使用的Go语言客户端库，专为与Management Control Panel API进行交互而设计。该SDK提供了完整的API覆盖，包括资源管理、配置、监控和自动化操作等核心功能。
+MCP Go SDK 是一个功能强大且易于使用 Go 语言客户端库 ，专为与 Management Control Panel API 进行交互而设计。该 SDK 提供了完整的 API 覆盖，包括资源管理、配置、监控和自动化操作等核心功能。
 
-# 设计思路
+## 为什么要做 Go-MCP 以及 Go-MCP 的前景与发展方向
 
-- MCP 协议消息
-    
-    | 能力提供方        | 能力         | 协议消息 (客户端发送)                                      | 协议消息 (服务端发送)                                 |
-    |-------------------|-------------|---------------------------------------------------|----------------------------------------------|
-    | Client & Server   | **Ping**    | Ping                                              | Ping                                       |
-    | Client & Server   | **Cancellation** | Cancelled Notifications                           | Cancelled Notifications                      |
-    | Client & Server   | **Progress**     | Progress Notifications                            | Progress Notifications                       |
-    | Client            | **roots**        | Root List Changes                                 | Listing Roots                                |
-    | Client            | **sampling**     |                                                   | Creating Messages                            |
-    | Server            | **prompts**      | Listing Prompts <br/> Getting a Prompt            | List Changed Notification                    |
-    | Server            | **resources**    | Listing Resources <br/> Reading Resources <br/> Resource Templates <br/> Subscriptions: Request | List Changed Notification <br/> Subscriptions: Update Notification |
-    | Server            | **tools**        | Listing Tools <br/> Calling Tools               | List Changed Notification                  |
-    | Server            | **Completion**   | Requesting Completions                            |                                              |
-    | Server            | **logging**      | Setting Log Level                                 | Log Message Notifications                  |
+Go SDK 的 MCP 具有以下几个潜在的增长点和优势：
 
-- 交互细节
-![img_1.png](images/img_1.png)
-  - 客户端和服务端都需要具备收发功能；
-  - 可以将消息类型抽象为 message，具体实现包括 request、response、notification 三种；
-  - 可以将架构抽象为三层传输层、协议层、用户层（server、client）
+1. 终端设备的 AI 集成  
+    随着物联网(IoT)和边缘计算的发展，终端设备对 AI 的需求日益增长。  
+    Go 语言因其高效的性能和并发处理能力，非常适合在资源受限的终端设备上运行 AI 模型。  
+    Go SDK 的 MCP，可以更好地支持终端设备的 AI 集成，提供低延迟、高效率的服务。
+2. 本地应用和服务  
+    对于需要高性能和低延迟的应用，本地部署的解决方案越来越受欢迎。  
+    而 Go 编译成二进制文件，相比 Python 等语言，在本地应用中部署更为简单高效。  
+3. 微服务和 Serverless 架构  
+    微服务和 Serverless 架构的流行，为 MCP 协议提供了新的应用场景。  
+    而 Go 语言在构建微服务和 Serverless 函数方面表现出色，可以轻松处理并发请求。
+4. 社区和生态系统的支持  
+    Go 语言拥有强大的社区支持和丰富的生态系统，这为 MCP 协议的开发和应用提供了坚实的基础。  
+    随着更多的开发者了解和使用 Go SDK 的 MCP，市场应用潜力将进一步扩大。
+5. 数据安全和隐私  
+    在数据安全和隐私日益受到关注的今天，本地化处理和终端设备上的 AI 集成变得尤为重要。  
+    Go SDK 的 MCP 可以在本地设备上处理数据，减少数据传输的需求，从而降低数据泄露的风险。
+6. 跨平台和兼容性
+    Go 语言具有良好的跨平台能力，可以在多种操作系统和硬件平台上运行。  
+    MCP 协议通过 Go SDK 实现，可以确保在不同平台之间的一致性和兼容性。  
 
-
-- 设计思想
-  - 协议层与传输层通过 transport 接口进行解耦；
-  - protocol 层完成 MCP 协议相关的全部定义，包括数据结构定义、请求结构构造、响应结构解析；
-  - server 层与 client 层都具备发送(send)和接收(receive)的能力，发送能力包括发送 message(request、response、notification) 请求和响应的匹配 ，接收能力包括对 message(request、response、notification) 的路由、异步/同步处理；
-  - server 层与 client 层实现对 request 和 response 的组合，用户侧使用时表现为同步请求、同步处理、同步返回。
-
-# 架构设计
-![img.png](images/img.png)
-
-# 项目目录
-
-    - transports
-        - see
-            - client.go
-            - server.go
-        - stdio
-            - client.go
-            - server.go
-        - transport.go // transport 接口定义
-      - protocol // 放置 mcp 协议相关的全部定义，包括数据结构定义、请求结构构造、响应结构解析；
-          - initialize.go
-          - ping.go
-          - cancellation.go
-          - progress.go
-          - roots.go
-          - sampling.go
-          - prompts.go
-          - resources.go
-          - tools.go
-          - completion.go
-          - logging.go
-          - pagination.go
-      - server
-          - send.go // 向客户端发送 message(request、response、notification)
-          - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
-          - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
-      - client
-          - send.go // 向服务端发送 message(request、response、notification)
-          - receive.go // 对来自客户端的 message(request、response、notification)进行接收处理
-          - route.go // 将收到的 message(request、notification) 路由到对应 handler 进行处理
-          - handle.go // 对 message(request、notification) 进行处理，返回或不返回 response
+因此，Go SDK 的 MCP 在市场应用潜力方面具有显著的优势，有望在终端设备的 AI 集成、本地应用和服务、微服务和 Serverless 架构等领域发挥重要作用。
