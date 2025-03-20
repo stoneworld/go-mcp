@@ -8,15 +8,17 @@ import (
 	"os"
 )
 
+const stdioSessionID = "stdio"
+
 type stdioServerTransport struct {
-	receiver receiver
+	receiver serverReceiver
 	stdin    io.Reader
 	stdout   io.Writer
 
 	cancel context.CancelFunc
 }
 
-func NewStdioServerTransport() (Transport, error) {
+func NewStdioServerTransport() (ServerTransport, error) {
 	return &stdioServerTransport{
 		stdin:  os.Stdin,
 		stdout: os.Stdout,
@@ -32,14 +34,14 @@ func (t *stdioServerTransport) Start() error {
 	return nil
 }
 
-func (t *stdioServerTransport) Send(ctx context.Context, msg Message) error {
+func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
 	if _, err := t.stdout.Write(msg); err != nil {
 		return fmt.Errorf("failed to write request: %w", err)
 	}
 	return nil
 }
 
-func (t *stdioServerTransport) SetReceiver(receiver receiver) {
+func (t *stdioServerTransport) SetReceiver(receiver serverReceiver) {
 	t.receiver = receiver
 }
 
@@ -60,6 +62,6 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 			}
 			return
 		}
-		t.receiver.Receive(ctx, line)
+		t.receiver.Receive(ctx, stdioSessionID, line)
 	}
 }

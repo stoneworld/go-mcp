@@ -79,9 +79,34 @@ type JSONRPCResponseErr struct {
 }
 
 type JSONRPCNotification struct {
-	JSONRPC string `json:"jsonrpc"`
-	Method  Method `json:"method"`
-	Params  Params `json:"params,omitempty"`
+	JSONRPC   string          `json:"jsonrpc"`
+	Method    Method          `json:"method"`
+	Params    Params          `json:"params,omitempty"`
+	RawParams json.RawMessage `json:"-"`
+}
+
+func (r *JSONRPCNotification) UnmarshalJSON(data []byte) error {
+	type alias JSONRPCNotification
+	temp := &struct {
+		Params json.RawMessage `json:"params,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(r),
+	}
+
+	if err := json.Unmarshal(data, temp); err != nil {
+		return err
+	}
+
+	r.RawParams = temp.Params
+
+	if len(r.RawParams) != 0 {
+		if err := json.Unmarshal(r.RawParams, &r.Params); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // NewJSONRPCRequest creates a new JSON-RPC request

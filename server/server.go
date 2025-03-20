@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync/atomic"
 
@@ -10,18 +11,24 @@ import (
 )
 
 type Server struct {
-	transport transport.Transport
+	transport transport.ServerTransport
 
-	reqID2respChan map[int]chan *protocol.JSONRPCResponse
+	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
 
-	notifyMethod2handler map[protocol.Method]func(notifyParam interface{})
+	sessionID2session map[string]*session
 
 	requestID atomic.Int64
 
 	logger pkg.Logger
 }
 
-func NewServer(t transport.Transport, opts ...Option) (*Server, error) {
+type session struct {
+	reqID2respChan map[int]chan *protocol.JSONRPCResponse
+	first          bool
+	readyChan      chan struct{}
+}
+
+func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
 		transport: t,
 		logger:    &pkg.Log{},
@@ -44,7 +51,7 @@ func (server *Server) Start() error {
 
 type Option func(*Server)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam interface{})) Option {
+func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)) Option {
 	return func(s *Server) {
 		s.notifyMethod2handler = notifyMethod2handler
 	}

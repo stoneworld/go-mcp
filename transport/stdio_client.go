@@ -13,10 +13,10 @@ type stdioClientTransport struct {
 	stdin  io.WriteCloser
 	stdout *bufio.Reader
 
-	receiver receiver
+	receiver clientReceiver
 }
 
-func NewStdioClientTransport(command string, args ...string) (Transport, error) {
+func NewStdioClientTransport(command string, args ...string) (ClientTransport, error) {
 	cmd := exec.Command(command, args...)
 
 	stdin, err := cmd.StdinPipe()
@@ -52,7 +52,7 @@ func (t *stdioClientTransport) Send(ctx context.Context, msg Message) error {
 	return nil
 }
 
-func (t *stdioClientTransport) SetReceiver(receiver receiver) {
+func (t *stdioClientTransport) SetReceiver(receiver clientReceiver) {
 	t.receiver = receiver
 }
 

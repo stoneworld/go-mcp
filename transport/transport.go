@@ -9,21 +9,38 @@ type Message []byte
 
 // Transport 是对底层传输层的抽象。
 // GO-MCP 需要能够在 server/client 间传递 JSON-RPC 消息。
-type Transport interface {
+type ClientTransport interface {
 	// Start 启动传输连接
 	Start() error
 
 	// Send 发送消息
 	Send(ctx context.Context, msg Message) error
 	// SetReceiver 设置对对端消息的处理器
-	SetReceiver(receiver)
+	SetReceiver(receiver clientReceiver)
 
 	// Close 关闭传输连接
 	Close() error
 }
 
-type receiver interface {
+type clientReceiver interface {
 	Receive(ctx context.Context, msg []byte)
+}
+
+type ServerTransport interface {
+	// Start 启动传输连接
+	Start() error
+
+	// Send 发送消息
+	Send(ctx context.Context, sessionID string, msg Message) error
+	// SetReceiver 设置对对端消息的处理器
+	SetReceiver(serverReceiver)
+
+	// Close 关闭传输连接
+	Close() error
+}
+
+type serverReceiver interface {
+	Receive(ctx context.Context, sessionID string, msg []byte)
 }
 
 // // Config 定义传输层配置

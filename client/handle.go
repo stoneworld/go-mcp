@@ -32,6 +32,6 @@ func (client *Client) handleNotify(ctx context.Context, notify *protocol.JSONRPC
 		// 此处也可以向上抛error，在上层识别error统一打日志
 		return nil
 	}
-	handler(notify.Params)
+	handler(notify.RawParams)
 	return nil
 }

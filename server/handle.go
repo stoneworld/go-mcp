@@ -60,9 +60,15 @@ func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParam
 	return nil, nil
 }
 
-func (server *Server) handleNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
+func (server *Server) handleNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
 	if notify.Method == "" {
-		return errors.New("notify method can't is \"\"")
+		return errors.New(`notify method can't is ""`)
+	}
+
+	if notify.Method == protocol.NotificationInitialized {
+		// TODO: 官方文档约定“服务器在接收到 initialized 通知前，不应发送除 ping 和日志记录之外的其他请求。” 如果这样相当于server层要感知 SessionID。
+		close(server.sessionID2session[sessionID].readyChan)
+		return nil
 	}
 
 	// TODO: 使用server里定义一个 notifyMethod2handler 对通知进行处理
@@ -72,6 +78,6 @@ func (server *Server) handleNotify(ctx context.Context, notify *protocol.JSONRPC
 		// 此处也可以向上抛error，在上层识别error统一打日志
 		return nil
 	}
-	handler(notify.Params)
+	handler(notify.RawParams)
 	return nil
 }

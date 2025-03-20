@@ -9,7 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 )
 
-func (server *Server) sendMsgWithRequest(ctx context.Context, requestID protocol.RequestID, method protocol.Method, params interface{}) error {
+func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, requestID protocol.RequestID, method protocol.Method, params interface{}) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -21,13 +21,13 @@ func (server *Server) sendMsgWithRequest(ctx context.Context, requestID protocol
 		return err
 	}
 
-	if err := server.transport.Send(ctx, message); err != nil {
+	if err := server.transport.Send(ctx, sessionID, message); err != nil {
 		return fmt.Errorf("sendRequest: transport send: %w", err)
 	}
 	return nil
 }
 
-func (server *Server) sendMsgWithResponse(ctx context.Context, requestID protocol.RequestID, result interface{}) error {
+func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string, requestID protocol.RequestID, result interface{}) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -39,13 +39,13 @@ func (server *Server) sendMsgWithResponse(ctx context.Context, requestID protoco
 		return err
 	}
 
-	if err := server.transport.Send(ctx, message); err != nil {
+	if err := server.transport.Send(ctx, sessionID, message); err != nil {
 		return fmt.Errorf("sendResponse: transport send: %w", err)
 	}
 	return nil
 }
 
-func (server *Server) sendMsgWithNotification(ctx context.Context, method protocol.Method, params interface{}) error {
+func (server *Server) sendMsgWithNotification(ctx context.Context, sessionID string, method protocol.Method, params interface{}) error {
 	notify := protocol.NewJSONRPCNotification(method, params)
 
 	message, err := sonic.Marshal(notify)
@@ -53,13 +53,13 @@ func (server *Server) sendMsgWithNotification(ctx context.Context, method protoc
 		return err
 	}
 
-	if err := server.transport.Send(ctx, message); err != nil {
+	if err := server.transport.Send(ctx, sessionID, message); err != nil {
 		return fmt.Errorf("sendNotification: transport send: %w", err)
 	}
 	return nil
 }
 
-func (server *Server) sendMsgWithError(ctx context.Context, requestID protocol.RequestID, code int, msg string) error {
+func (server *Server) sendMsgWithError(ctx context.Context, sessionID string, requestID protocol.RequestID, code int, msg string) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -71,7 +71,7 @@ func (server *Server) sendMsgWithError(ctx context.Context, requestID protocol.R
 		return err
 	}
 
-	if err := server.transport.Send(ctx, message); err != nil {
+	if err := server.transport.Send(ctx, sessionID, message); err != nil {
 		return fmt.Errorf("sendResponse: transport send: %w", err)
 	}
 	return nil

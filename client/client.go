@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync/atomic"
 
@@ -11,18 +12,18 @@ import (
 )
 
 type Client struct {
-	transport transport.Transport
+	transport transport.ClientTransport
 
 	reqID2respChan map[int]chan *protocol.JSONRPCResponse
 
-	notifyMethod2handler map[protocol.Method]func(notifyParam interface{})
+	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
 
 	requestID atomic.Int64
 
 	logger pkg.Logger
 }
 
-func NewClient(t transport.Transport, opts ...Option) (*Client, error) {
+func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport: t,
 		logger:    &pkg.Log{},
@@ -46,7 +47,7 @@ func NewClient(t transport.Transport, opts ...Option) (*Client, error) {
 
 type Option func(*Client)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam interface{})) Option {
+func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)) Option {
 	return func(s *Client) {
 		s.notifyMethod2handler = notifyMethod2handler
 	}

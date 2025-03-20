@@ -60,15 +60,16 @@ func (server *Server) SendNotification4LoggingMessage(ctx context.Context) error
 }
 
 // 负责request和response的拼接
-func (server *Server) callClient(ctx context.Context, method protocol.Method, params interface{}) ([]byte, error) {
+func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params interface{}) ([]byte, error) {
 	requestID := server.requestID.Add(1)
 	// 发送请求
-	if err := server.sendMsgWithRequest(ctx, requestID, method, params); err != nil {
+	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
 		return nil, err
 	}
 
 	// TODO：
 	// 通过chan阻塞等待response
+	// <- server.sessionID2session[sessionID].reqID2respChan
 	// 使用ctx进行超时控制
 	return nil, nil
 }
