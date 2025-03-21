@@ -5,10 +5,10 @@ import (
 )
 
 type sseClientTransport struct {
-	receiver receiver
+	receiver clientReceiver
 }
 
-func NewSSEClientTransport() (Transport, error) {
+func NewSSEClientTransport() (ClientTransport, error) {
 	return &sseClientTransport{}, nil
 }
 
@@ -22,7 +22,7 @@ func (c *sseClientTransport) Send(ctx context.Context, msg Message) error {
 	panic("implement me")
 }
 
-func (c *sseClientTransport) SetReceiver(receiver receiver) {
+func (c *sseClientTransport) SetReceiver(receiver clientReceiver) {
 	c.receiver = receiver
 }
 

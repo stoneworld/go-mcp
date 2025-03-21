@@ -12,14 +12,14 @@ import (
 // 对来自客户端的 message(request、response、notification)进行接收处理
 // 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
-func (server *Server) Receive(ctx context.Context, msg []byte) {
+func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) {
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
 		if err := sonic.Unmarshal(msg, &notify); err != nil {
 			// 打印日志
 			return
 		}
-		if err := server.receiveNotify(ctx, notify); err != nil {
+		if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
 			// TODO: 打印日志
 			return
 		}
@@ -33,7 +33,7 @@ func (server *Server) Receive(ctx context.Context, msg []byte) {
 			// 打印日志
 			return
 		}
-		if err := server.receiveResponse(ctx, resp); err != nil {
+		if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
 			// TODO: 打印日志
 			return
 		}
@@ -45,14 +45,14 @@ func (server *Server) Receive(ctx context.Context, msg []byte) {
 		// 打印日志
 		return
 	}
-	if err := server.receiveRequest(ctx, req); err != nil {
+	if err := server.receiveRequest(ctx, sessionID, req); err != nil {
 		// TODO: 打印日志
 		return
 	}
 	return
 }
 
-func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {
+func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {
 	if !request.IsValid() {
 		// return protocol.NewJSONRPCErrorResponse(request.ID,)
 	}
@@ -100,11 +100,11 @@ func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSON
 	return protocol.NewJSONRPCSuccessResponse(request.ID, result)
 }
 
-func (server *Server) receiveNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
-	return server.handleNotify(ctx, notify)
+func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
+	return server.handleNotify(ctx, sessionID, notify)
 }
 
-func (server *Server) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
+func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
 	// 通过 server.reqID2respChan 将 response 传回发送 request 的协程
 	return nil
 }

@@ -6,19 +6,23 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"go-mcp/pkg"
 )
 
+const stdioSessionID = "stdio"
+
 type stdioServerTransport struct {
-	receiver receiver
-	stdin    io.Reader
+	receiver serverReceiver
+	stdin    *bufio.Reader
 	stdout   io.Writer
 
 	cancel context.CancelFunc
 }
 
-func NewStdioServerTransport() (Transport, error) {
+func NewStdioServerTransport() (ServerTransport, error) {
 	return &stdioServerTransport{
-		stdin:  os.Stdin,
+		stdin:  bufio.NewReader(os.Stdin),
 		stdout: os.Stdout,
 	}, nil
 }
@@ -27,19 +31,23 @@ func (t *stdioServerTransport) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
-	go t.receive(ctx)
+	go func() {
+		for {
+			t.receive(ctx)
+		}
+	}()
 
 	return nil
 }
 
-func (t *stdioServerTransport) Send(ctx context.Context, msg Message) error {
+func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
 	if _, err := t.stdout.Write(msg); err != nil {
 		return fmt.Errorf("failed to write request: %w", err)
 	}
 	return nil
 }
 
-func (t *stdioServerTransport) SetReceiver(receiver receiver) {
+func (t *stdioServerTransport) SetReceiver(receiver serverReceiver) {
 	t.receiver = receiver
 }
 
@@ -49,17 +57,15 @@ func (t *stdioServerTransport) Close() error {
 }
 
 func (t *stdioServerTransport) receive(ctx context.Context) {
-	reader := bufio.NewReader(t.stdin)
+	defer pkg.Recover()
 
-	for {
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if err != io.EOF {
-				// TODO: 记录日志
-				return
-			}
+	line, err := t.stdin.ReadBytes('\n')
+	if err != nil {
+		if err != io.EOF {
+			// TODO: 记录日志
 			return
 		}
-		t.receiver.Receive(ctx, line)
+		return
 	}
+	t.receiver.Receive(ctx, stdioSessionID, line)
 }
