@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+
+	"go-mcp/pkg"
 )
 
 type stdioClientTransport struct {
@@ -41,7 +43,11 @@ func (t *stdioClientTransport) Start() error {
 		return fmt.Errorf("failed to start command: %w", err)
 	}
 
-	go t.receive()
+	go func() {
+		for {
+			t.receive()
+		}
+	}()
 	return nil
 }
 
@@ -64,16 +70,17 @@ func (t *stdioClientTransport) Close() error {
 }
 
 func (t *stdioClientTransport) receive() {
-	for {
-		line, err := t.stdout.ReadBytes('\n')
-		if err != nil {
-			if err != io.EOF {
-				// TODO: 使用logger打印
-				fmt.Errorf("stdioClientTransport receive Error reading response: %v\n", err)
-			}
-			return
-		}
+	defer pkg.Recover()
 
-		t.receiver.Receive(context.Background(), line)
+	line, err := t.stdout.ReadBytes('\n')
+	if err != nil {
+		if err != io.EOF {
+			// TODO: 使用logger打印
+			fmt.Errorf("stdioClientTransport receive Error reading response: %v\n", err)
+		}
+		return
 	}
+
+	t.receiver.Receive(context.Background(), line)
+
 }

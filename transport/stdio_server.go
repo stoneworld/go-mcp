@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"go-mcp/pkg"
 )
 
 const stdioSessionID = "stdio"
 
 type stdioServerTransport struct {
 	receiver serverReceiver
-	stdin    io.Reader
+	stdin    *bufio.Reader
 	stdout   io.Writer
 
 	cancel context.CancelFunc
@@ -20,7 +22,7 @@ type stdioServerTransport struct {
 
 func NewStdioServerTransport() (ServerTransport, error) {
 	return &stdioServerTransport{
-		stdin:  os.Stdin,
+		stdin:  bufio.NewReader(os.Stdin),
 		stdout: os.Stdout,
 	}, nil
 }
@@ -29,7 +31,11 @@ func (t *stdioServerTransport) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
-	go t.receive(ctx)
+	go func() {
+		for {
+			t.receive(ctx)
+		}
+	}()
 
 	return nil
 }
@@ -51,17 +57,15 @@ func (t *stdioServerTransport) Close() error {
 }
 
 func (t *stdioServerTransport) receive(ctx context.Context) {
-	reader := bufio.NewReader(t.stdin)
+	defer pkg.Recover()
 
-	for {
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if err != io.EOF {
-				// TODO: 记录日志
-				return
-			}
+	line, err := t.stdin.ReadBytes('\n')
+	if err != nil {
+		if err != io.EOF {
+			// TODO: 记录日志
 			return
 		}
-		t.receiver.Receive(ctx, stdioSessionID, line)
+		return
 	}
+	t.receiver.Receive(ctx, stdioSessionID, line)
 }
