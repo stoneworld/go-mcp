@@ -76,7 +76,7 @@ func (t *stdioClientTransport) receive() {
 	if err != nil {
 		if err != io.EOF {
 			// TODO: 使用logger打印
-			fmt.Errorf("stdioClientTransport receive Error reading response: %v\n", err)
+			fmt.Errorf("stdioClientTransport serverReceive Error reading response: %v\n", err)
 		}
 		return
 	}
