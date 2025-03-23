@@ -34,7 +34,7 @@ type session struct {
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
 		transport: t,
-		logger:    &pkg.Log{},
+		logger:    pkg.DefaultLogger,
 	}
 	t.SetReceiver(server)
 
@@ -46,7 +46,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 }
 
 func (server *Server) Start() error {
-	if err := server.transport.Start(); err != nil {
+	if err := server.transport.Run(); err != nil {
 		return fmt.Errorf("init mcp server transpor start fail: %w", err)
 	}
 	return nil

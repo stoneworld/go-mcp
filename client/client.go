@@ -29,7 +29,7 @@ type Client struct {
 func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport: t,
-		logger:    &pkg.Log{},
+		logger:    pkg.DefaultLogger,
 	}
 	t.SetReceiver(client)
 

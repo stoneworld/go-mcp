@@ -25,7 +25,7 @@ func NewMockServerTransport(in *bufio.ReadWriter, out *bufio.ReadWriter) *MockSe
 	return &MockServerTransport{}
 }
 
-func (t *MockServerTransport) Start() error {
+func (t *MockServerTransport) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
@@ -52,7 +52,7 @@ func (t *MockServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *MockServerTransport) Close() error {
+func (t *MockServerTransport) Close(ctx context.Context) error {
 	t.cancel()
 	return nil
 }

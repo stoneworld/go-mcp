@@ -19,16 +19,18 @@ func (r clientReceive) Receive(ctx context.Context, msg []byte) {
 }
 
 func testClient2Server(t *testing.T, client ClientTransport, server ServerTransport) {
-	msg := ""
-	expectedMsg := ""
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	msg := "hello"
+	expectedMsg := "hello"
 
 	server.SetReceiver(serverReceive(func(ctx context.Context, sessionID string, msg []byte) {
 		expectedMsg = string(msg)
 	}))
 
-	go server.Start()
+	go server.Run()
 
-	defer server.Close()
+	defer server.Close(ctx)
 
 	client.Start()
 	defer client.Close()
@@ -41,6 +43,8 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 }
 
 func testServer2Client(t *testing.T, client ClientTransport, server ServerTransport) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 	msg := ""
 	expectedMsg := ""
 
@@ -48,8 +52,8 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 		expectedMsg = string(msg)
 	}))
 
-	go server.Start()
-	defer server.Close()
+	go server.Run()
+	defer server.Close(ctx)
 
 	time.Sleep(time.Second) // 这里需要等server start ready，不太优雅，后续需要优化
 
