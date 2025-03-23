@@ -7,12 +7,9 @@ type CancelledNotification struct {
 }
 
 // NewCancelledNotification creates a new cancelled notification
-func NewCancelledNotification(requestID RequestID, reason string) Params {
-	params := map[string]interface{}{
-		"requestId": requestID,
+func NewCancelledNotification(requestID RequestID, reason string) *CancelledNotification {
+	return &CancelledNotification{
+		RequestID: requestID,
+		Reason:    reason,
 	}
-	if reason != "" {
-		params["reason"] = reason
-	}
-	return params
 }

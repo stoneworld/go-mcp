@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 
 	"go-mcp/protocol"
 )
@@ -60,7 +61,7 @@ func (server *Server) SendNotification4LoggingMessage(ctx context.Context) error
 }
 
 // 负责request和response的拼接
-func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params interface{}) ([]byte, error) {
+func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
 	requestID := server.requestID.Add(1)
 	// 发送请求
 	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {

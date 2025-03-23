@@ -47,16 +47,12 @@ type PromptListChangedNotification struct {
 }
 
 // NewListPromptsRequest creates a new list prompts request
-func NewListPromptsRequest(cursor string) Params {
-	params := make(map[string]interface{})
-	if cursor != "" {
-		params["cursor"] = cursor
-	}
-	return params
+func NewListPromptsRequest(cursor string) *ListPromptsRequest {
+	return &ListPromptsRequest{Cursor: cursor}
 }
 
 // NewListPromptsResponse creates a new list prompts response
-func NewListPromptsResponse(id RequestID, prompts []Prompt, nextCursor string) Result {
+func NewListPromptsResponse(id RequestID, prompts []Prompt, nextCursor string) *ListPromptsResult {
 	return &ListPromptsResult{
 		Prompts:    prompts,
 		NextCursor: nextCursor,
@@ -64,18 +60,15 @@ func NewListPromptsResponse(id RequestID, prompts []Prompt, nextCursor string) R
 }
 
 // NewGetPromptRequest creates a new get prompt request
-func NewGetPromptRequest(name string, arguments map[string]string) Params {
-	params := map[string]interface{}{
-		"name": name,
+func NewGetPromptRequest(name string, arguments map[string]string) *GetPromptRequest {
+	return &GetPromptRequest{
+		Name:      name,
+		Arguments: arguments,
 	}
-	if arguments != nil {
-		params["arguments"] = arguments
-	}
-	return params
 }
 
 // NewGetPromptResponse creates a new get prompt response
-func NewGetPromptResponse(id RequestID, messages []PromptMessage, description string) Result {
+func NewGetPromptResponse(id RequestID, messages []PromptMessage, description string) *GetPromptResult {
 	return &GetPromptResult{
 		Messages:    messages,
 		Description: description,
@@ -83,6 +76,6 @@ func NewGetPromptResponse(id RequestID, messages []PromptMessage, description st
 }
 
 // NewPromptListChangedNotification creates a new prompt list changed notification
-func NewPromptListChangedNotification() Params {
-	return nil
+func NewPromptListChangedNotification() *PromptListChangedNotification {
+	return &PromptListChangedNotification{}
 }

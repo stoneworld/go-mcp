@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync/atomic"
@@ -13,8 +14,9 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
+	notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)
 
+	// TODO：需要定期清理无效session
 	sessionID2session map[string]*session
 
 	requestID atomic.Int64
@@ -51,7 +53,7 @@ func (server *Server) Start() error {
 
 type Option func(*Server)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)) Option {
+func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)) Option {
 	return func(s *Server) {
 		s.notifyMethod2handler = notifyMethod2handler
 	}

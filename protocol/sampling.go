@@ -26,7 +26,7 @@ type CreateMessageResult struct {
 }
 
 // NewCreateMessageRequest creates a new create message request
-func NewCreateMessageRequest(messages []SamplingMessage, maxTokens int, opts ...CreateMessageOption) Params {
+func NewCreateMessageRequest(messages []SamplingMessage, maxTokens int, opts ...CreateMessageOption) *CreateMessageRequest {
 	req := &CreateMessageRequest{
 		Messages:  messages,
 		MaxTokens: maxTokens,
@@ -36,42 +36,17 @@ func NewCreateMessageRequest(messages []SamplingMessage, maxTokens int, opts ...
 		opt(req)
 	}
 
-	params := make(map[string]interface{})
-	if req.Messages != nil {
-		params["messages"] = req.Messages
-	}
-	params["maxTokens"] = req.MaxTokens
-	if req.Temperature != 0 {
-		params["temperature"] = req.Temperature
-	}
-	if req.StopSequences != nil {
-		params["stopSequences"] = req.StopSequences
-	}
-	if req.SystemPrompt != "" {
-		params["systemPrompt"] = req.SystemPrompt
-	}
-	if req.ModelPreferences != nil {
-		params["modelPreferences"] = req.ModelPreferences
-	}
-	if req.IncludeContext != "" {
-		params["includeContext"] = req.IncludeContext
-	}
-	if req.Metadata != nil {
-		params["metadata"] = req.Metadata
-	}
-
-	return params
+	return req
 }
 
 // NewCreateMessageResponse creates a new create message response
-func NewCreateMessageResponse(content Content, role Role, model string, stopReason string) Result {
-	result := CreateMessageResult{
+func NewCreateMessageResponse(content Content, role Role, model string, stopReason string) *CreateMessageResult {
+	return &CreateMessageResult{
 		Content:    content,
 		Role:       role,
 		Model:      model,
 		StopReason: stopReason,
 	}
-	return result
 }
 
 // CreateMessageOption represents an option for creating a message

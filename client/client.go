@@ -16,7 +16,9 @@ type Client struct {
 
 	reqID2respChan map[int]chan *protocol.JSONRPCResponse
 
-	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
+	notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)
+
+	// notifyMethodHandlerWithCancelled func(notifyParam protocol.CancelledNotification)
 
 	requestID atomic.Int64
 
@@ -47,7 +49,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 
 type Option func(*Client)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)) Option {
+func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)) Option {
 	return func(s *Client) {
 		s.notifyMethod2handler = notifyMethod2handler
 	}
