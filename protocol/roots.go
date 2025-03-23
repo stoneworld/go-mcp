@@ -2,7 +2,7 @@ package protocol
 
 // ListRootsRequest represents a request to list root directories
 type ListRootsRequest struct {
-	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Cursor string `json:"cursor,omitempty"`
 }
 
 // ListRootsResult represents the response to a list roots request
@@ -22,18 +22,18 @@ type RootsListChangedNotification struct {
 }
 
 // NewListRootsRequest creates a new list roots request
-func NewListRootsRequest() Params {
-	return nil
+func NewListRootsRequest() *ListRootsRequest {
+	return &ListRootsRequest{}
 }
 
 // NewListRootsResponse creates a new list roots response
-func NewListRootsResponse(id RequestID, roots []Root) Result {
+func NewListRootsResponse(id RequestID, roots []Root) *ListRootsResult {
 	return &ListRootsResult{
 		Roots: roots,
 	}
 }
 
 // NewRootsListChangedNotification creates a new roots list changed notification
-func NewRootsListChangedNotification() Params {
-	return nil
+func NewRootsListChangedNotification() *RootsListChangedNotification {
+	return &RootsListChangedNotification{}
 }

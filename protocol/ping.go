@@ -1,11 +1,15 @@
 package protocol
 
+type PingRequest struct{}
+
+type PingResult struct{}
+
 // NewPingRequest creates a new ping request
-func NewPingRequest() Params {
-	return nil
+func NewPingRequest() *PingRequest {
+	return &PingRequest{}
 }
 
 // NewPingResponse creates a new ping response
-func NewPingResponse() Result {
-	return struct{}{}
+func NewPingResponse() *PingResult {
+	return &PingResult{}
 }

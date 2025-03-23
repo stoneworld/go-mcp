@@ -36,8 +36,8 @@ const (
 	SamplingCreateMessage Method = "sampling/createMessage"
 
 	// Logging related methods
-	LoggingSetLevel Method = "logging/setLevel"
-	LogMessage      Method = "notifications/message"
+	LoggingSetLevel        Method = "logging/setLevel"
+	NotificationLogMessage Method = "notifications/message"
 
 	// Completion related methods
 	CompletionComplete Method = "completion/complete"
@@ -53,4 +53,77 @@ type Role string
 const (
 	RoleUser      Role = "user"
 	RoleAssistant Role = "assistant"
+)
+
+type ClientRequest interface{}
+
+var (
+	_ ClientRequest = &InitializeRequest{}
+	_ ClientRequest = &PingRequest{}
+	_ ClientRequest = &ListPromptsRequest{}
+	_ ClientRequest = &GetPromptRequest{}
+	_ ClientRequest = &ListResourcesRequest{}
+	_ ClientRequest = &ReadResourceRequest{}
+	_ ClientRequest = &ListResourceTemplatesRequest{}
+	_ ClientRequest = &SubscribeRequest{}
+	_ ClientRequest = &UnsubscribeRequest{}
+	_ ClientRequest = &ListToolsRequest{}
+	_ ClientRequest = &CallToolRequest{}
+	_ ClientRequest = &CompleteRequest{}
+	_ ClientRequest = &SetLoggingLevelRequest{}
+)
+
+type ClientResponse interface{}
+
+var (
+	_ ClientResponse = &PingResult{}
+	_ ClientResponse = &ListToolsResult{}
+	_ ClientResponse = &CreateMessageResult{}
+)
+
+type ClientNotify interface{}
+
+var (
+	_ ClientNotify = &InitializedNotification{}
+	_ ClientNotify = &CancelledNotification{}
+	_ ClientNotify = &ProgressNotification{}
+	_ ClientNotify = &RootsListChangedNotification{}
+)
+
+type ServerRequest interface{}
+
+var (
+	_ ServerRequest = &PingRequest{}
+	_ ServerRequest = &ListRootsRequest{}
+	_ ServerRequest = &CreateMessageRequest{}
+)
+
+type ServerResponse interface{}
+
+var (
+	_ ServerResponse = &InitializeResult{}
+	_ ServerResponse = &PingResult{}
+	_ ServerResponse = &ListPromptsResult{}
+	_ ServerResponse = &GetPromptResult{}
+	_ ServerResponse = &ListResourcesResult{}
+	_ ServerResponse = &ReadResourceResult{}
+	_ ServerResponse = &ListResourceTemplatesResult{}
+	_ ServerResponse = &SubscribeResult{}
+	_ ServerResponse = &UnsubscribeResult{}
+	_ ServerResponse = &ListToolsResult{}
+	_ ServerResponse = &CallToolResult{}
+	_ ServerResponse = &CompleteResult{}
+	_ ServerResponse = &SetLoggingLevelResult{}
+)
+
+type ServerNotify interface{}
+
+var (
+	_ ServerNotify = &CancelledNotification{}
+	_ ServerNotify = &ProgressNotification{}
+	_ ServerNotify = &ToolListChangedNotification{}
+	_ ServerNotify = &PromptListChangedNotification{}
+	_ ServerNotify = &ResourceListChangedNotification{}
+	_ ServerNotify = &ResourceUpdatedNotification{}
+	_ ServerNotify = &LogMessageNotification{}
 )

@@ -143,6 +143,10 @@ type UnsubscribeRequest struct {
 	URI string `json:"uri"`
 }
 
+type SubscribeResult struct{}
+
+type UnsubscribeResult struct{}
+
 // ResourceListChangedNotification represents a notification that the resource list has changed
 type ResourceListChangedNotification struct {
 	Meta map[string]interface{} `json:"_meta,omitempty"`
@@ -154,16 +158,12 @@ type ResourceUpdatedNotification struct {
 }
 
 // NewListResourcesRequest creates a new list resources request
-func NewListResourcesRequest(cursor string) Params {
-	params := make(map[string]interface{})
-	if cursor != "" {
-		params["cursor"] = cursor
-	}
-	return params
+func NewListResourcesRequest(cursor string) *ListResourcesRequest {
+	return &ListResourcesRequest{Cursor: cursor}
 }
 
 // NewListResourcesResponse creates a new list resources response
-func NewListResourcesResponse(id RequestID, resources []Resource, nextCursor string) Result {
+func NewListResourcesResponse(id RequestID, resources []Resource, nextCursor string) *ListResourcesResult {
 	return &ListResourcesResult{
 		Resources:  resources,
 		NextCursor: nextCursor,
@@ -171,16 +171,12 @@ func NewListResourcesResponse(id RequestID, resources []Resource, nextCursor str
 }
 
 // NewListResourceTemplatesRequest creates a new list resource templates request
-func NewListResourceTemplatesRequest(cursor string) Params {
-	params := make(map[string]interface{})
-	if cursor != "" {
-		params["cursor"] = cursor
-	}
-	return params
+func NewListResourceTemplatesRequest(cursor string) *ListResourceTemplatesRequest {
+	return &ListResourceTemplatesRequest{Cursor: cursor}
 }
 
 // NewListResourceTemplatesResponse creates a new list resource templates response
-func NewListResourceTemplatesResponse(id RequestID, templates []ResourceTemplate, nextCursor string) Result {
+func NewListResourceTemplatesResponse(id RequestID, templates []ResourceTemplate, nextCursor string) *ListResourceTemplatesResult {
 	return &ListResourceTemplatesResult{
 		ResourceTemplates: templates,
 		NextCursor:        nextCursor,
@@ -188,41 +184,33 @@ func NewListResourceTemplatesResponse(id RequestID, templates []ResourceTemplate
 }
 
 // NewReadResourceRequest creates a new read resource request
-func NewReadResourceRequest(uri string) Params {
-	return map[string]interface{}{
-		"uri": uri,
-	}
+func NewReadResourceRequest(uri string) *ReadResourceRequest {
+	return &ReadResourceRequest{URI: uri}
 }
 
 // NewReadResourceResponse creates a new read resource response
-func NewReadResourceResponse(id RequestID, contents []ResourceContents) Params {
+func NewReadResourceResponse(id RequestID, contents []ResourceContents) *ReadResourceResult {
 	return &ReadResourceResult{
 		Contents: contents,
 	}
 }
 
 // NewSubscribeRequest creates a new subscribe request
-func NewSubscribeRequest(uri string) Params {
-	return map[string]interface{}{
-		"uri": uri,
-	}
+func NewSubscribeRequest(uri string) *SubscribeRequest {
+	return &SubscribeRequest{URI: uri}
 }
 
 // NewUnsubscribeRequest creates a new unsubscribe request
-func NewUnsubscribeRequest(uri string) Params {
-	return map[string]interface{}{
-		"uri": uri,
-	}
+func NewUnsubscribeRequest(uri string) *UnsubscribeRequest {
+	return &UnsubscribeRequest{URI: uri}
 }
 
 // NewResourceListChangedNotification creates a new resource list changed notification
-func NewResourceListChangedNotification() Params {
-	return nil
+func NewResourceListChangedNotification() *ResourceListChangedNotification {
+	return &ResourceListChangedNotification{}
 }
 
 // NewResourceUpdatedNotification creates a new resource updated notification
-func NewResourceUpdatedNotification(uri string) Params {
-	return map[string]interface{}{
-		"uri": uri,
-	}
+func NewResourceUpdatedNotification(uri string) *ResourceUpdatedNotification {
+	return &ResourceUpdatedNotification{URI: uri}
 }

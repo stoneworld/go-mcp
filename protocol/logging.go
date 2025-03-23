@@ -32,27 +32,24 @@ type LogMessageNotification struct {
 }
 
 // NewSetLoggingLevelRequest creates a new set logging level request
-func NewSetLoggingLevelRequest(level LoggingLevel) Params {
-	return SetLoggingLevelRequest{
+func NewSetLoggingLevelRequest(level LoggingLevel) *SetLoggingLevelRequest {
+	return &SetLoggingLevelRequest{
 		Level: level,
 	}
 }
 
 // NewSetLoggingLevelResponse creates a new set logging level response
-func NewSetLoggingLevelResponse(success bool) Result {
-	return SetLoggingLevelResult{
+func NewSetLoggingLevelResponse(success bool) *SetLoggingLevelResult {
+	return &SetLoggingLevelResult{
 		Success: success,
 	}
 }
 
 // NewLogMessageNotification creates a new log message notification
-func NewLogMessageNotification(level LoggingLevel, message string, meta map[string]interface{}) Params {
-	params := map[string]interface{}{
-		"level":   level,
-		"message": message,
+func NewLogMessageNotification(level LoggingLevel, message string, meta map[string]interface{}) *LogMessageNotification {
+	return &LogMessageNotification{
+		Level:   level,
+		Message: message,
+		Meta:    meta,
 	}
-	if meta != nil {
-		params["meta"] = meta
-	}
-	return params
 }

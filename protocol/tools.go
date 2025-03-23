@@ -36,16 +36,14 @@ type ToolListChangedNotification struct {
 }
 
 // NewListToolsRequest creates a new list tools request
-func NewListToolsRequest(cursor string) Params {
-	params := make(map[string]interface{})
-	if cursor != "" {
-		params["cursor"] = cursor
+func NewListToolsRequest(cursor string) *ListToolsRequest {
+	return &ListToolsRequest{
+		Cursor: cursor,
 	}
-	return params
 }
 
 // NewListToolsResponse creates a new list tools response
-func NewListToolsResponse(id RequestID, tools []Tool, nextCursor string) Result {
+func NewListToolsResponse(id RequestID, tools []Tool, nextCursor string) *ListToolsResult {
 	return &ListToolsResult{
 		Tools:      tools,
 		NextCursor: nextCursor,
@@ -53,7 +51,7 @@ func NewListToolsResponse(id RequestID, tools []Tool, nextCursor string) Result 
 }
 
 // NewCallToolRequest creates a new call tool request
-func NewCallToolRequest(name string, arguments map[string]interface{}) Params {
+func NewCallToolRequest(name string, arguments map[string]interface{}) *CallToolRequest {
 	return &CallToolRequest{
 		Name:      name,
 		Arguments: arguments,
@@ -61,7 +59,7 @@ func NewCallToolRequest(name string, arguments map[string]interface{}) Params {
 }
 
 // NewCallToolResponse creates a new call tool response
-func NewCallToolResponse(id RequestID, content []Content, isError bool) Result {
+func NewCallToolResponse(id RequestID, content []Content, isError bool) *CallToolResult {
 	return &CallToolResult{
 		Content: content,
 		IsError: isError,
@@ -69,6 +67,6 @@ func NewCallToolResponse(id RequestID, content []Content, isError bool) Result {
 }
 
 // NewToolListChangedNotification creates a new tool list changed notification
-func NewToolListChangedNotification() Params {
-	return nil
+func NewToolListChangedNotification() *ToolListChangedNotification {
+	return &ToolListChangedNotification{}
 }

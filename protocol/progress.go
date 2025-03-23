@@ -11,13 +11,10 @@ type ProgressNotification struct {
 type ProgressToken interface{} // can be string or integer
 
 // NewProgressNotification creates a new progress notification
-func NewProgressNotification(token ProgressToken, progress float64, total float64) Params {
-	params := map[string]interface{}{
-		"progressToken": token,
-		"progress":      progress,
+func NewProgressNotification(token ProgressToken, progress float64, total float64) *ProgressNotification {
+	return &ProgressNotification{
+		ProgressToken: token,
+		Progress:      progress,
+		Total:         total,
 	}
-	if total != 0 {
-		params["total"] = total
-	}
-	return params
 }

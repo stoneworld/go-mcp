@@ -9,7 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 )
 
-func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, requestID protocol.RequestID, method protocol.Method, params interface{}) error {
+func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, requestID protocol.RequestID, method protocol.Method, params protocol.ServerRequest) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -27,7 +27,7 @@ func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, 
 	return nil
 }
 
-func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string, requestID protocol.RequestID, result interface{}) error {
+func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string, requestID protocol.RequestID, result protocol.ServerResponse) error {
 	if requestID == nil {
 		return fmt.Errorf("requestID can't is nil")
 	}
@@ -45,7 +45,7 @@ func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string,
 	return nil
 }
 
-func (server *Server) sendMsgWithNotification(ctx context.Context, sessionID string, method protocol.Method, params interface{}) error {
+func (server *Server) sendMsgWithNotification(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerNotify) error {
 	notify := protocol.NewJSONRPCNotification(method, params)
 
 	message, err := sonic.Marshal(notify)
