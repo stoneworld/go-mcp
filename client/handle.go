@@ -8,15 +8,15 @@ import (
 	"go-mcp/protocol"
 )
 
-func (client *Client) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (client *Client) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (protocol.ClientResponse, error) {
 	return nil, nil
 }
 
-func (client *Client) handleRequestWithListRoots(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (client *Client) handleRequestWithListRoots(ctx context.Context, rawParams json.RawMessage) (protocol.ClientResponse, error) {
 	return nil, nil
 }
 
-func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, rawParams json.RawMessage) (protocol.ClientResponse, error) {
 	return nil, nil
 }
 
@@ -32,6 +32,6 @@ func (client *Client) handleNotify(ctx context.Context, notify *protocol.JSONRPC
 		// 此处也可以向上抛error，在上层识别error统一打日志
 		return nil
 	}
-	handler(notify.RawParams)
+	handler(ctx, notify.RawParams)
 	return nil
 }

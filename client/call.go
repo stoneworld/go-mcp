@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 
 	"go-mcp/protocol"
 )
@@ -71,7 +72,7 @@ func (client *Client) SetLogLevel(ctx context.Context) error {
 // 1. 构造通知结构体
 // 2. 发送通知 client.sendMsgWithNotification(ctx)
 
-func (client *Client) SendNotification4Initialized(ctx context.Context) error {
+func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 	return nil
 }
 
@@ -88,7 +89,7 @@ func (client *Client) SendNotification4RootListChanges(ctx context.Context) erro
 }
 
 // 负责request和response的拼接
-func (client *Client) callServer(ctx context.Context, method protocol.Method, params interface{}) ([]byte, error) {
+func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
 	requestID := client.requestID.Add(1)
 	// 发送请求
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {

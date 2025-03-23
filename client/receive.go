@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 
+	"go-mcp/pkg"
 	"go-mcp/protocol"
 
-	"github.com/bytedance/sonic"
 	"github.com/tidwall/gjson"
 )
 
@@ -15,7 +15,7 @@ import (
 func (client *Client) Receive(ctx context.Context, msg []byte) {
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
-		if err := sonic.Unmarshal(msg, &notify); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
 			// 打印日志
 			return
 		}
@@ -29,7 +29,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 	// 判断 request和response
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
-		if err := sonic.Unmarshal(msg, &resp); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
 			// 打印日志
 			return
 		}
@@ -41,7 +41,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 	}
 
 	req := &protocol.JSONRPCRequest{}
-	if err := sonic.Unmarshal(msg, &req); err != nil {
+	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		// 打印日志
 		return
 	}
@@ -58,7 +58,7 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 	}
 
 	var (
-		result protocol.Result
+		result protocol.ClientResponse
 		err    error
 	)
 
@@ -85,6 +85,6 @@ func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRP
 }
 
 func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
-	// 通过 client.reqID2respChan 将 response 传回发送 request 的协程
+	// 通过 client.reqID2respChan[response.ID] 将 response 传回发送 request 的协程
 	return nil
 }
