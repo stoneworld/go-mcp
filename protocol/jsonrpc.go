@@ -1,6 +1,10 @@
 package protocol
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"go-mcp/pkg"
+)
 
 const jsonrpc_version = "2.0"
 
@@ -17,15 +21,11 @@ const (
 
 type RequestID interface{} // 字符串/数值
 
-type Params interface{}
-
-type Result interface{}
-
 type JSONRPCRequest struct {
 	JSONRPC   string          `json:"jsonrpc"`
 	ID        RequestID       `json:"id"`
 	Method    Method          `json:"method"`
-	Params    Params          `json:"params,omitempty"`
+	Params    interface{}     `json:"params,omitempty"`
 	RawParams json.RawMessage `json:"-"`
 }
 
@@ -38,14 +38,14 @@ func (r *JSONRPCRequest) UnmarshalJSON(data []byte) error {
 		alias: (*alias)(r),
 	}
 
-	if err := json.Unmarshal(data, temp); err != nil {
+	if err := pkg.JsonUnmarshal(data, temp); err != nil {
 		return err
 	}
 
 	r.RawParams = temp.Params
 
 	if len(r.RawParams) != 0 {
-		if err := json.Unmarshal(r.RawParams, &r.Params); err != nil {
+		if err := pkg.JsonUnmarshal(r.RawParams, &r.Params); err != nil {
 			return err
 		}
 	}
@@ -60,10 +60,11 @@ func (r *JSONRPCRequest) IsValid() bool {
 
 // JSONRPCResponse represents a response to a request.
 type JSONRPCResponse struct {
-	JSONRPC string    `json:"jsonrpc"`
-	ID      RequestID `json:"id"`
-	Result  Result    `json:"result"`
-	Error   struct {
+	JSONRPC   string          `json:"jsonrpc"`
+	ID        RequestID       `json:"id"`
+	Result    interface{}     `json:"result"`
+	RawResult json.RawMessage `json:"-"`
+	Error     struct {
 		// The error type that occurred.
 		Code int `json:"code"`
 		// A short description of the error. The message SHOULD be limited
@@ -75,13 +76,34 @@ type JSONRPCResponse struct {
 	} `json:"error"`
 }
 
-type JSONRPCResponseErr struct {
+func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
+	type alias JSONRPCResponse
+	temp := &struct {
+		Result json.RawMessage `json:"result,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(r),
+	}
+
+	if err := pkg.JsonUnmarshal(data, temp); err != nil {
+		return err
+	}
+
+	r.RawResult = temp.Result
+
+	if len(r.RawResult) != 0 {
+		if err := pkg.JsonUnmarshal(r.RawResult, &r.Result); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type JSONRPCNotification struct {
 	JSONRPC   string          `json:"jsonrpc"`
 	Method    Method          `json:"method"`
-	Params    Params          `json:"params,omitempty"`
+	Params    interface{}     `json:"params,omitempty"`
 	RawParams json.RawMessage `json:"-"`
 }
 
@@ -94,14 +116,14 @@ func (r *JSONRPCNotification) UnmarshalJSON(data []byte) error {
 		alias: (*alias)(r),
 	}
 
-	if err := json.Unmarshal(data, temp); err != nil {
+	if err := pkg.JsonUnmarshal(data, temp); err != nil {
 		return err
 	}
 
 	r.RawParams = temp.Params
 
 	if len(r.RawParams) != 0 {
-		if err := json.Unmarshal(r.RawParams, &r.Params); err != nil {
+		if err := pkg.JsonUnmarshal(r.RawParams, &r.Params); err != nil {
 			return err
 		}
 	}
@@ -110,7 +132,7 @@ func (r *JSONRPCNotification) UnmarshalJSON(data []byte) error {
 }
 
 // NewJSONRPCRequest creates a new JSON-RPC request
-func NewJSONRPCRequest(id RequestID, method Method, params Params) *JSONRPCRequest {
+func NewJSONRPCRequest(id RequestID, method Method, params interface{}) *JSONRPCRequest {
 	return &JSONRPCRequest{
 		JSONRPC: jsonrpc_version,
 		ID:      id,
@@ -120,7 +142,7 @@ func NewJSONRPCRequest(id RequestID, method Method, params Params) *JSONRPCReque
 }
 
 // NewJSONRPCSuccessResponse creates a new JSON-RPC response
-func NewJSONRPCSuccessResponse(id RequestID, result Result) *JSONRPCResponse {
+func NewJSONRPCSuccessResponse(id RequestID, result interface{}) *JSONRPCResponse {
 	return &JSONRPCResponse{
 		JSONRPC: jsonrpc_version,
 		ID:      id,
@@ -140,7 +162,7 @@ func NewJSONRPCErrorResponse(id RequestID, code int, message string) *JSONRPCRes
 }
 
 // NewJSONRPCNotification creates a new JSON-RPC notification
-func NewJSONRPCNotification(method Method, params Params) *JSONRPCNotification {
+func NewJSONRPCNotification(method Method, params interface{}) *JSONRPCNotification {
 	return &JSONRPCNotification{
 		JSONRPC: jsonrpc_version,
 		Method:  method,

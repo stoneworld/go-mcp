@@ -3,9 +3,9 @@ package client
 import (
 	"context"
 
+	"go-mcp/pkg"
 	"go-mcp/protocol"
 
-	"github.com/bytedance/sonic"
 	"github.com/tidwall/gjson"
 )
 
@@ -15,7 +15,7 @@ import (
 func (client *Client) Receive(ctx context.Context, msg []byte) {
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
-		if err := sonic.Unmarshal(msg, &notify); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
 			// 打印日志
 			return
 		}
@@ -29,7 +29,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 	// 判断 request和response
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
-		if err := sonic.Unmarshal(msg, &resp); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
 			// 打印日志
 			return
 		}
@@ -41,7 +41,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 	}
 
 	req := &protocol.JSONRPCRequest{}
-	if err := sonic.Unmarshal(msg, &req); err != nil {
+	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		// 打印日志
 		return
 	}
@@ -57,14 +57,16 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 		// return protocol.NewJSONRPCErrorResponse(request.ID,)
 	}
 
+	// TODO：此处需要根据 request.Method 判断客户端是否声明此能力，如果未声明则报错返回。
+
 	var (
-		result protocol.Result
+		result protocol.ClientResponse
 		err    error
 	)
 
 	switch request.Method {
 	case protocol.Ping:
-		result, err = client.handleRequestWithPing(ctx, request.RawParams)
+		result, err = client.handleRequestWithPing()
 	case protocol.RootsList:
 		result, err = client.handleRequestWithListRoots(ctx, request.RawParams)
 	case protocol.SamplingCreateMessage:
@@ -81,10 +83,29 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 }
 
 func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
-	return client.handleNotify(ctx, notify)
+	switch notify.Method {
+	case protocol.NotificationCancelled:
+		return client.handleNotifyWithCancelled(ctx, notify.RawParams)
+	case protocol.NotificationProgress:
+		// TODO
+	case protocol.NotificationToolsListChanged:
+		// TODO
+	case protocol.NotificationPromptsListChanged:
+		// TODO
+	case protocol.NotificationResourcesListChanged:
+		// TODO
+	case protocol.NotificationResourcesUpdated:
+	// TODO
+	case protocol.NotificationLogMessage:
+		// TODO
+	default:
+		// TODO: return pkg.errors
+		return nil
+	}
+	return nil
 }
 
 func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
-	// 通过 client.reqID2respChan 将 response 传回发送 request 的协程
+	// 通过 client.reqID2respChan[response.ID] 将 response 传回发送 request 的协程
 	return nil
 }

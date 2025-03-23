@@ -2,7 +2,10 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
+	"go-mcp/pkg"
 	"go-mcp/protocol"
 )
 
@@ -55,8 +58,13 @@ func (client *Client) ListTools(ctx context.Context) error {
 	return nil
 }
 
-func (client *Client) CallTool(ctx context.Context) error {
-	return nil
+func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+	result := &protocol.CallToolResult{}
+
+	if err := client.callAndParse(ctx, protocol.ToolsCall, &request, &result); err != nil {
+		return nil, fmt.Errorf("CallTool: %w", err)
+	}
+	return result, nil
 }
 
 func (client *Client) CompleteRequest(ctx context.Context) error {
@@ -71,28 +79,40 @@ func (client *Client) SetLogLevel(ctx context.Context) error {
 // 1. 构造通知结构体
 // 2. 发送通知 client.sendMsgWithNotification(ctx)
 
-func (client *Client) SendNotification4Initialized(ctx context.Context) error {
-	return nil
+func (client *Client) sendNotification4Initialized(ctx context.Context, notify *protocol.InitializedNotification) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, notify)
 }
 
-func (client *Client) SendNotification4Cancelled(ctx context.Context) error {
-	return nil
+func (client *Client) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationCancelled, notify)
 }
 
-func (client *Client) SendNotification4Progress(ctx context.Context) error {
-	return nil
+func (client *Client) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationProgress, notify)
 }
 
-func (client *Client) SendNotification4RootListChanges(ctx context.Context) error {
+func (client *Client) SendNotification4RootListChanges(ctx context.Context, notify *protocol.RootsListChangedNotification) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, notify)
+}
+
+func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request protocol.ClientRequest, result protocol.ServerResponse) error {
+	rawResult, err := client.callServer(ctx, method, request)
+	if err != nil {
+		return err
+	}
+
+	if err := pkg.JsonUnmarshal(rawResult, &result); err != nil {
+		return fmt.Errorf("JsonUnmarshal: rawResult=%s, err=%w", rawResult, err)
+	}
 	return nil
 }
 
 // 负责request和response的拼接
-func (client *Client) callServer(ctx context.Context, method protocol.Method, params interface{}) ([]byte, error) {
+func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
 	requestID := client.requestID.Add(1)
 	// 发送请求
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("callServer: %w", err)
 	}
 
 	// TODO：

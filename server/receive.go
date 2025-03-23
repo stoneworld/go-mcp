@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 
+	"go-mcp/pkg"
 	"go-mcp/protocol"
 
-	"github.com/bytedance/sonic"
 	"github.com/tidwall/gjson"
 )
 
@@ -13,9 +13,11 @@ import (
 // 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
 func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) {
+	ctx = setSessionIDToCtx(ctx, sessionID)
+
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
-		if err := sonic.Unmarshal(msg, &notify); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
 			// 打印日志
 			return
 		}
@@ -29,7 +31,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	// 判断 request和response
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
-		if err := sonic.Unmarshal(msg, &resp); err != nil {
+		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
 			// 打印日志
 			return
 		}
@@ -41,7 +43,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	}
 
 	req := &protocol.JSONRPCRequest{}
-	if err := sonic.Unmarshal(msg, &req); err != nil {
+	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		// 打印日志
 		return
 	}
@@ -58,9 +60,11 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 	}
 
 	var (
-		result protocol.Result
+		result protocol.ServerResponse
 		err    error
 	)
+
+	// TODO：此处需要根据 request.Method 判断服务端是否声明此能力，如果未声明则报错返回。
 
 	switch request.Method {
 	case protocol.Ping:
@@ -101,7 +105,20 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 }
 
 func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
-	return server.handleNotify(ctx, sessionID, notify)
+	switch notify.Method {
+	case protocol.NotificationInitialized:
+		// TODO
+	case protocol.NotificationCancelled:
+		return server.handleNotifyWithCancelled(ctx, notify.RawParams)
+	case protocol.NotificationProgress:
+		// TODO
+	case protocol.NotificationRootsListChanged:
+		// TODO
+	default:
+		// TODO: return pkg.errors
+		return nil
+	}
+	return nil
 }
 
 func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
