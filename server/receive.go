@@ -77,10 +77,10 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 		result, err = server.handleRequestWithGetPrompt(ctx, request.RawParams)
 	case protocol.ResourcesList:
 		result, err = server.handleRequestWithListResources(ctx, request.RawParams)
+	case protocol.ResourceListTemplates:
+		result, err = server.handleRequestWitListResourceTemplates(ctx, request.RawParams)
 	case protocol.ResourcesRead:
 		result, err = server.handleRequestWithReadResource(ctx, request.RawParams)
-	case protocol.ResourceListTemplates:
-		result, err = server.handleRequestWithListPrompts(ctx, request.RawParams)
 	case protocol.ResourcesSubscribe:
 		result, err = server.handleRequestWithSubscribeResourceChange(ctx, request.RawParams)
 	case protocol.ResourcesUnsubscribe:

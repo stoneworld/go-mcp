@@ -18,7 +18,10 @@ func (client *Client) handleRequestWithListRoots(ctx context.Context, rawParams 
 	if err := parse(rawParams, request); err != nil {
 		return nil, err
 	}
-	return client.listRootsHandler(ctx, request)
+	// TODO: 需要处理request.Cursor的翻页操作
+	return &protocol.ListRootsResult{
+		Roots: client.roots,
+	}, nil
 }
 
 func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, rawParams json.RawMessage) (*protocol.CreateMessageResult, error) {
