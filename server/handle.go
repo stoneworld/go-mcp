@@ -8,55 +8,55 @@ import (
 	"go-mcp/protocol"
 )
 
-func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithListPrompts(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithListPrompts(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithListResources(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithListResources(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithReadResource(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithReadResource(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithReadResourceTemplates(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithReadResourceTemplates(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithListTools(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithListTools(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithCallTool(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithCallTool(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithCompleteRequest(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithCompleteRequest(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 
-func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParams json.RawMessage) (protocol.Result, error) {
+func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParams json.RawMessage) (protocol.ServerResponse, error) {
 	return nil, nil
 }
 

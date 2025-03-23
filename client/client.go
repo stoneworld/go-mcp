@@ -18,6 +18,8 @@ type Client struct {
 
 	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
 
+	// notifyMethodHandlerWithCancelled func(notifyParam protocol.CancelledNotification)
+
 	requestID atomic.Int64
 
 	logger pkg.Logger

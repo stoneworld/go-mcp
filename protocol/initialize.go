@@ -59,8 +59,8 @@ type InitializedNotification struct {
 }
 
 // NewInitializeRequest creates a new initialize request
-func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabilities, protocolVersion string) Params {
-	return InitializeRequest{
+func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabilities, protocolVersion string) *InitializeRequest {
+	return &InitializeRequest{
 		ClientInfo:      clientInfo,
 		Capabilities:    capabilities,
 		ProtocolVersion: protocolVersion,
@@ -68,8 +68,8 @@ func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabili
 }
 
 // NewInitializeResponse creates a new initialize response
-func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabilities, protocolVersion string, instructions string) Result {
-	return InitializeResult{
+func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabilities, protocolVersion string, instructions string) *InitializeResult {
+	return &InitializeResult{
 		ServerInfo:      serverInfo,
 		Capabilities:    capabilities,
 		ProtocolVersion: protocolVersion,
@@ -78,6 +78,6 @@ func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabil
 }
 
 // NewInitializedNotification creates a new initialized notification
-func NewInitializedNotification() Params {
-	return nil
+func NewInitializedNotification() *InitializedNotification {
+	return &InitializedNotification{}
 }

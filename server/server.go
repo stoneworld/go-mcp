@@ -15,6 +15,7 @@ type Server struct {
 
 	notifyMethod2handler map[protocol.Method]func(notifyParam json.RawMessage)
 
+	// TODO：需要定期清理无效session
 	sessionID2session map[string]*session
 
 	requestID atomic.Int64
