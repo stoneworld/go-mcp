@@ -13,7 +13,7 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	tools []protocol.Tool
+	tools []*protocol.Tool
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
@@ -64,6 +64,10 @@ func WithLogger(logger pkg.Logger) Option {
 	return func(s *Server) {
 		s.logger = logger
 	}
+}
+
+func (server *Server) AddTool(tool *protocol.Tool) {
+	server.tools = append(server.tools, tool)
 }
 
 func (server *Server) Shutdown() error {

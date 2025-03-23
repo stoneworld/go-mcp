@@ -16,13 +16,13 @@ type ClientTransport interface {
 	// Send 发送消息
 	Send(ctx context.Context, msg Message) error
 	// SetReceiver 设置对对端消息的处理器
-	SetReceiver(receiver clientReceiver)
+	SetReceiver(receiver ClientReceiver)
 
 	// Close 关闭传输连接
 	Close() error
 }
 
-type clientReceiver interface {
+type ClientReceiver interface {
 	Receive(ctx context.Context, msg []byte)
 }
 
@@ -33,12 +33,12 @@ type ServerTransport interface {
 	// Send 发送消息
 	Send(ctx context.Context, sessionID string, msg Message) error
 	// SetReceiver 设置对对端消息的处理器
-	SetReceiver(serverReceiver)
+	SetReceiver(ServerReceiver)
 
 	// Close 关闭监听
 	Close() error
 }
 
-type serverReceiver interface {
+type ServerReceiver interface {
 	Receive(ctx context.Context, sessionID string, msg []byte)
 }

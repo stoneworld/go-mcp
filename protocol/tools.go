@@ -7,8 +7,8 @@ type ListToolsRequest struct {
 
 // ListToolsResult represents the response to a list tools request
 type ListToolsResult struct {
-	Tools      []Tool `json:"tools"`
-	NextCursor string `json:"nextCursor,omitempty"`
+	Tools      []*Tool `json:"tools"`
+	NextCursor string  `json:"nextCursor,omitempty"`
 }
 
 // Tool represents a tool definition that the client can call
@@ -43,7 +43,7 @@ func NewListToolsRequest(cursor string) *ListToolsRequest {
 }
 
 // NewListToolsResponse creates a new list tools response
-func NewListToolsResponse(id RequestID, tools []Tool, nextCursor string) *ListToolsResult {
+func NewListToolsResponse(id RequestID, tools []*Tool, nextCursor string) *ListToolsResult {
 	return &ListToolsResult{
 		Tools:      tools,
 		NextCursor: nextCursor,
