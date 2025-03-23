@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync/atomic"
 
@@ -14,7 +13,9 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)
+	listToolsHandler func(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error)
+
+	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
 	// TODO：需要定期清理无效session
 	sessionID2session map[string]*session
@@ -53,9 +54,15 @@ func (server *Server) Start() error {
 
 type Option func(*Server)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)) Option {
+func WithListRootsHandlerHandler(handler func(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error)) Option {
 	return func(s *Server) {
-		s.notifyMethod2handler = notifyMethod2handler
+		s.listToolsHandler = handler
+	}
+}
+
+func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
+	return func(s *Server) {
+		s.cancelledNotifyHandler = handler
 	}
 }
 

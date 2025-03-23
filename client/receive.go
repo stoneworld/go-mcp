@@ -57,6 +57,8 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 		// return protocol.NewJSONRPCErrorResponse(request.ID,)
 	}
 
+	// TODO：此处需要根据 request.Method 判断客户端是否声明此能力，如果未声明则报错返回。
+
 	var (
 		result protocol.ClientResponse
 		err    error
@@ -64,7 +66,7 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 
 	switch request.Method {
 	case protocol.Ping:
-		result, err = client.handleRequestWithPing(ctx, request.RawParams)
+		result, err = client.handleRequestWithPing()
 	case protocol.RootsList:
 		result, err = client.handleRequestWithListRoots(ctx, request.RawParams)
 	case protocol.SamplingCreateMessage:
@@ -81,7 +83,26 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 }
 
 func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
-	return client.handleNotify(ctx, notify)
+	switch notify.Method {
+	case protocol.NotificationCancelled:
+		return client.handleNotifyWithCancelled(ctx, notify.RawParams)
+	case protocol.NotificationProgress:
+		// TODO
+	case protocol.NotificationToolsListChanged:
+		// TODO
+	case protocol.NotificationPromptsListChanged:
+		// TODO
+	case protocol.NotificationResourcesListChanged:
+		// TODO
+	case protocol.NotificationResourcesUpdated:
+	// TODO
+	case protocol.NotificationLogMessage:
+		// TODO
+	default:
+		// TODO: return pkg.errors
+		return nil
+	}
+	return nil
 }
 
 func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {

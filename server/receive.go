@@ -64,6 +64,8 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 		err    error
 	)
 
+	// TODO：此处需要根据 request.Method 判断服务端是否声明此能力，如果未声明则报错返回。
+
 	switch request.Method {
 	case protocol.Ping:
 		result, err = server.handleRequestWithPing(ctx, request.RawParams)
@@ -103,7 +105,20 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 }
 
 func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
-	return server.handleNotify(ctx, sessionID, notify)
+	switch notify.Method {
+	case protocol.NotificationInitialized:
+		// TODO
+	case protocol.NotificationCancelled:
+		return server.handleNotifyWithCancelled(ctx, notify.RawParams)
+	case protocol.NotificationProgress:
+		// TODO
+	case protocol.NotificationRootsListChanged:
+		// TODO
+	default:
+		// TODO: return pkg.errors
+		return nil
+	}
+	return nil
 }
 
 func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {

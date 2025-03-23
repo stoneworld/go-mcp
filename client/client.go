@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync/atomic"
 
@@ -16,9 +15,10 @@ type Client struct {
 
 	reqID2respChan map[int]chan *protocol.JSONRPCResponse
 
-	notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)
+	listRootsHandler            func(ctx context.Context, request *protocol.ListRootsRequest) (*protocol.ListRootsResult, error)
+	createMessagesSampleHandler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)
 
-	// notifyMethodHandlerWithCancelled func(notifyParam protocol.CancelledNotification)
+	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
 	requestID atomic.Int64
 
@@ -49,9 +49,21 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 
 type Option func(*Client)
 
-func WithNotifyHandler(notifyMethod2handler map[protocol.Method]func(ctx context.Context, notifyParam json.RawMessage)) Option {
+func WithListRootsHandlerHandler(handler func(ctx context.Context, request *protocol.ListRootsRequest) (*protocol.ListRootsResult, error)) Option {
 	return func(s *Client) {
-		s.notifyMethod2handler = notifyMethod2handler
+		s.listRootsHandler = handler
+	}
+}
+
+func WithCreateMessagesSampleHandler(handler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)) Option {
+	return func(s *Client) {
+		s.createMessagesSampleHandler = handler
+	}
+}
+
+func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
+	return func(s *Client) {
+		s.cancelledNotifyHandler = handler
 	}
 }
 

@@ -36,8 +36,8 @@ const (
 	SamplingCreateMessage Method = "sampling/createMessage"
 
 	// Logging related methods
-	LoggingSetLevel Method = "logging/setLevel"
-	LogMessage      Method = "notifications/message"
+	LoggingSetLevel        Method = "logging/setLevel"
+	NotificationLogMessage Method = "notifications/message"
 
 	// Completion related methods
 	CompletionComplete Method = "completion/complete"
