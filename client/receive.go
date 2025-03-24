@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -106,6 +107,10 @@ func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRP
 }
 
 func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
-	// 通过 client.reqID2respChan[response.ID] 将 response 传回发送 request 的协程
+	respChan, ok := client.reqID2respChan.Get(fmt.Sprint(response.ID))
+	if !ok {
+		return fmt.Errorf("%w: requestID=%+v", pkg.ErrLackResponseChan, response.ID)
+	}
+	respChan <- response
 	return nil
 }

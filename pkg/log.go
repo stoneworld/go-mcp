@@ -8,16 +8,16 @@ type Logger interface {
 	Errorf(format string, a ...any)
 }
 
-type Log struct{}
+type DefaultLogger struct{}
 
-func (l Log) Infof(format string, a ...any) {
+func (l DefaultLogger) Infof(format string, a ...any) {
 	log.Printf(format+"\n", a...)
 }
 
-func (l Log) Warnf(format string, a ...any) {
+func (l DefaultLogger) Warnf(format string, a ...any) {
 	log.Printf(format+"\n", a...)
 }
 
-func (l Log) Errorf(format string, a ...any) {
+func (l DefaultLogger) Errorf(format string, a ...any) {
 	log.Printf(format+"\n", a...)
 }

@@ -34,7 +34,7 @@ type session struct {
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
 		transport: t,
-		logger:    &pkg.Log{},
+		logger:    &pkg.DefaultLogger{},
 	}
 	t.SetReceiver(server)
 

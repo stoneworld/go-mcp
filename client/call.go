@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -109,14 +110,24 @@ func (client *Client) callAndParse(ctx context.Context, method protocol.Method, 
 
 // 负责request和response的拼接
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
-	requestID := client.requestID.Add(1)
+	requestID := strconv.FormatInt(client.requestID.Add(1), 10)
 	// 发送请求
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {
 		return nil, fmt.Errorf("callServer: %w", err)
 	}
 
-	// TODO：
-	// 通过chan阻塞等待response
-	// 使用ctx进行超时控制
-	return nil, nil
+	var respChan chan *protocol.JSONRPCResponse
+	client.reqID2respChan.Set(requestID, respChan)
+
+	select {
+	case <-ctx.Done():
+		client.reqID2respChan.Remove(requestID)
+		return nil, ctx.Err()
+	case response := <-respChan:
+		if err := response.Error; err != nil {
+			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
+		}
+		return response.RawResult, nil
+	}
+
 }
