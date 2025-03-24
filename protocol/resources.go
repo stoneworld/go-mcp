@@ -163,7 +163,7 @@ func NewListResourcesRequest(cursor string) *ListResourcesRequest {
 }
 
 // NewListResourcesResponse creates a new list resources response
-func NewListResourcesResponse(id RequestID, resources []Resource, nextCursor string) *ListResourcesResult {
+func NewListResourcesResponse(resources []Resource, nextCursor string) *ListResourcesResult {
 	return &ListResourcesResult{
 		Resources:  resources,
 		NextCursor: nextCursor,
@@ -176,7 +176,7 @@ func NewListResourceTemplatesRequest(cursor string) *ListResourceTemplatesReques
 }
 
 // NewListResourceTemplatesResponse creates a new list resource templates response
-func NewListResourceTemplatesResponse(id RequestID, templates []ResourceTemplate, nextCursor string) *ListResourceTemplatesResult {
+func NewListResourceTemplatesResponse(templates []ResourceTemplate, nextCursor string) *ListResourceTemplatesResult {
 	return &ListResourceTemplatesResult{
 		ResourceTemplates: templates,
 		NextCursor:        nextCursor,
@@ -189,7 +189,7 @@ func NewReadResourceRequest(uri string) *ReadResourceRequest {
 }
 
 // NewReadResourceResponse creates a new read resource response
-func NewReadResourceResponse(id RequestID, contents []ResourceContents) *ReadResourceResult {
+func NewReadResourceResponse(contents []ResourceContents) *ReadResourceResult {
 	return &ReadResourceResult{
 		Contents: contents,
 	}

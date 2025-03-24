@@ -13,7 +13,7 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	listToolsHandler func(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error)
+	tools []*protocol.Tool
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
@@ -54,12 +54,6 @@ func (server *Server) Start() error {
 
 type Option func(*Server)
 
-func WithListRootsHandlerHandler(handler func(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error)) Option {
-	return func(s *Server) {
-		s.listToolsHandler = handler
-	}
-}
-
 func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
 	return func(s *Server) {
 		s.cancelledNotifyHandler = handler
@@ -70,6 +64,10 @@ func WithLogger(logger pkg.Logger) Option {
 	return func(s *Server) {
 		s.logger = logger
 	}
+}
+
+func (server *Server) AddTool(tool *protocol.Tool) {
+	server.tools = append(server.tools, tool)
 }
 
 func (server *Server) Shutdown() error {

@@ -15,7 +15,8 @@ type Client struct {
 
 	reqID2respChan map[int]chan *protocol.JSONRPCResponse
 
-	listRootsHandler            func(ctx context.Context, request *protocol.ListRootsRequest) (*protocol.ListRootsResult, error)
+	roots []protocol.Root
+
 	createMessagesSampleHandler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
@@ -48,12 +49,6 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 }
 
 type Option func(*Client)
-
-func WithListRootsHandlerHandler(handler func(ctx context.Context, request *protocol.ListRootsRequest) (*protocol.ListRootsResult, error)) Option {
-	return func(s *Client) {
-		s.listRootsHandler = handler
-	}
-}
 
 func WithCreateMessagesSampleHandler(handler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)) Option {
 	return func(s *Client) {

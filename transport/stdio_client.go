@@ -15,7 +15,7 @@ type stdioClientTransport struct {
 	stdin  io.WriteCloser
 	stdout *bufio.Reader
 
-	receiver clientReceiver
+	receiver ClientReceiver
 }
 
 func NewStdioClientTransport(command string, args ...string) (ClientTransport, error) {
@@ -58,7 +58,7 @@ func (t *stdioClientTransport) Send(ctx context.Context, msg Message) error {
 	return nil
 }
 
-func (t *stdioClientTransport) SetReceiver(receiver clientReceiver) {
+func (t *stdioClientTransport) SetReceiver(receiver ClientReceiver) {
 	t.receiver = receiver
 }
 
@@ -76,7 +76,7 @@ func (t *stdioClientTransport) receive() {
 	if err != nil {
 		if err != io.EOF {
 			// TODO: 使用logger打印
-			fmt.Errorf("stdioClientTransport receive Error reading response: %v\n", err)
+			fmt.Errorf("stdioClientTransport serverReceive Error reading response: %v\n", err)
 		}
 		return
 	}

@@ -13,7 +13,7 @@ import (
 const stdioSessionID = "stdio"
 
 type stdioServerTransport struct {
-	receiver serverReceiver
+	receiver ServerReceiver
 	stdin    *bufio.Reader
 	stdout   io.Writer
 
@@ -47,7 +47,7 @@ func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg M
 	return nil
 }
 
-func (t *stdioServerTransport) SetReceiver(receiver serverReceiver) {
+func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 

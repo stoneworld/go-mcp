@@ -3,7 +3,7 @@ package transport
 import "context"
 
 type sseServerTransport struct {
-	receiver serverReceiver
+	receiver ServerReceiver
 }
 
 func NewSSEServerTransport() (ServerTransport, error) {
@@ -20,7 +20,7 @@ func (c *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 	panic("implement me")
 }
 
-func (c *sseServerTransport) SetReceiver(receiver serverReceiver) {
+func (c *sseServerTransport) SetReceiver(receiver ServerReceiver) {
 	c.receiver = receiver
 }
 
