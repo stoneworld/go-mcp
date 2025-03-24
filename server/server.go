@@ -3,11 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
 	"go-mcp/transport"
+
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Server struct {
@@ -18,23 +21,25 @@ type Server struct {
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
 	// TODO：需要定期清理无效session
-	sessionID2session map[string]*session
-
-	requestID atomic.Int64
+	sessionID2session sync.Map
 
 	logger pkg.Logger
 }
 
 type session struct {
-	reqID2respChan map[int]chan *protocol.JSONRPCResponse
-	first          bool
-	readyChan      chan struct{}
+	requestID atomic.Int64
+
+	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
+
+	first     bool
+	readyChan chan struct{}
 }
 
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
-		transport: t,
-		logger:    &pkg.DefaultLogger{},
+		transport:         t,
+		logger:            &pkg.DefaultLogger{},
+		sessionID2session: sync.Map{},
 	}
 	t.SetReceiver(server)
 

@@ -116,7 +116,8 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 		return nil, fmt.Errorf("callServer: %w", err)
 	}
 
-	var respChan chan *protocol.JSONRPCResponse
+	respChan := make(chan *protocol.JSONRPCResponse)
+
 	client.reqID2respChan.Set(requestID, respChan)
 
 	select {
@@ -129,5 +130,4 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 		}
 		return response.RawResult, nil
 	}
-
 }
