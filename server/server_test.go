@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"reflect"
 	"testing"
 
@@ -15,12 +16,21 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	readerIn, writerIn := io.Pipe()
+	readerOut, writerOut := io.Pipe()
+
 	var (
-		in  *bufio.ReadWriter
-		out *bufio.ReadWriter
+		in = bufio.NewReadWriter(
+			bufio.NewReader(readerIn),
+			bufio.NewWriter(writerIn),
+		)
+		out = bufio.NewReadWriter(
+			bufio.NewReader(readerOut),
+			bufio.NewWriter(writerOut),
+		)
 	)
 
-	server, err := NewServer(transport.NewTestTransport(in, out))
+	server, err := NewServer(transport.NewMockServerTransport(in, out))
 	if err != nil {
 		t.Errorf("NewServer: %+v", err)
 	}

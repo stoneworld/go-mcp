@@ -27,7 +27,7 @@ func NewListRootsRequest() *ListRootsRequest {
 }
 
 // NewListRootsResponse creates a new list roots response
-func NewListRootsResponse(id RequestID, roots []Root) *ListRootsResult {
+func NewListRootsResponse(roots []Root) *ListRootsResult {
 	return &ListRootsResult{
 		Roots: roots,
 	}

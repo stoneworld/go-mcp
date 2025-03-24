@@ -52,7 +52,7 @@ func NewListPromptsRequest(cursor string) *ListPromptsRequest {
 }
 
 // NewListPromptsResponse creates a new list prompts response
-func NewListPromptsResponse(id RequestID, prompts []Prompt, nextCursor string) *ListPromptsResult {
+func NewListPromptsResponse(prompts []Prompt, nextCursor string) *ListPromptsResult {
 	return &ListPromptsResult{
 		Prompts:    prompts,
 		NextCursor: nextCursor,
@@ -68,7 +68,7 @@ func NewGetPromptRequest(name string, arguments map[string]string) *GetPromptReq
 }
 
 // NewGetPromptResponse creates a new get prompt response
-func NewGetPromptResponse(id RequestID, messages []PromptMessage, description string) *GetPromptResult {
+func NewGetPromptResponse(messages []PromptMessage, description string) *GetPromptResult {
 	return &GetPromptResult{
 		Messages:    messages,
 		Description: description,

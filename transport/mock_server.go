@@ -12,7 +12,7 @@ import (
 
 const mockSessionID = "mock"
 
-type TestTransport struct {
+type MockServerTransport struct {
 	receiver ServerReceiver
 
 	in  *bufio.ReadWriter
@@ -21,11 +21,11 @@ type TestTransport struct {
 	cancel context.CancelFunc
 }
 
-func NewTestTransport(in *bufio.ReadWriter, out *bufio.ReadWriter) *TestTransport {
-	return &TestTransport{}
+func NewMockServerTransport(in *bufio.ReadWriter, out *bufio.ReadWriter) *MockServerTransport {
+	return &MockServerTransport{}
 }
 
-func (t *TestTransport) Start() error {
+func (t *MockServerTransport) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
@@ -38,7 +38,7 @@ func (t *TestTransport) Start() error {
 	return nil
 }
 
-func (t *TestTransport) Send(ctx context.Context, sessionID string, msg Message) error {
+func (t *MockServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
 	if _, err := t.out.Write(append(msg, "\n"...)); err != nil {
 		return fmt.Errorf("failed to write: %w", err)
 	}
@@ -48,16 +48,16 @@ func (t *TestTransport) Send(ctx context.Context, sessionID string, msg Message)
 	return nil
 }
 
-func (t *TestTransport) SetReceiver(receiver ServerReceiver) {
+func (t *MockServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *TestTransport) Close() error {
+func (t *MockServerTransport) Close() error {
 	t.cancel()
 	return nil
 }
 
-func (t *TestTransport) receive(ctx context.Context) {
+func (t *MockServerTransport) receive(ctx context.Context) {
 	defer pkg.Recover()
 	line, err := t.in.ReadBytes('\n')
 	if err != nil {
