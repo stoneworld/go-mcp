@@ -76,11 +76,10 @@ func (t *stdioClientTransport) receive() {
 	if err != nil {
 		if err != io.EOF {
 			// TODO: 使用logger打印
-			fmt.Errorf("stdioClientTransport serverReceive Error reading response: %v\n", err)
+			_ = fmt.Errorf("stdioClientTransport serverReceive Error reading response: %v\n", err)
 		}
 		return
 	}
 
 	t.receiver.Receive(context.Background(), line)
-
 }

@@ -27,7 +27,7 @@ func NewStdioServerTransport() (ServerTransport, error) {
 	}, nil
 }
 
-func (t *stdioServerTransport) Start() error {
+func (t *stdioServerTransport) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
@@ -51,7 +51,7 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *stdioServerTransport) Close() error {
+func (t *stdioServerTransport) Close(ctx context.Context) error {
 	// t. cancel()
 	return nil
 }
