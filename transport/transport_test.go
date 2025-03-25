@@ -28,7 +28,21 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 		expectedMsg = string(msg)
 	}))
 
-	go server.Run()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Run()
+	}()
+
+	// 使用 select 来处理可能的错误
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("server.Run() failed: %v", err)
+		}
+	case <-time.After(time.Second):
+		close(errCh)
+		// 服务器正常启动
+	}
 
 	defer server.Shutdown(ctx)
 
@@ -52,10 +66,22 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 		expectedMsg = string(msg)
 	}))
 
-	go server.Run()
-	defer server.Shutdown(ctx)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Run()
+	}()
 
-	time.Sleep(time.Second) // 这里需要等server start ready，不太优雅，后续需要优化
+	// 使用 select 来处理可能的错误
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("server.Run() failed: %v", err)
+		}
+	case <-time.After(time.Second):
+		// 服务器正常启动
+	}
+
+	defer server.Shutdown(ctx)
 
 	client.Start()
 	defer client.Close()
