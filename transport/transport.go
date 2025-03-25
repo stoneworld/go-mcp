@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"go-mcp/pkg"
 )
 
 /*
@@ -12,12 +13,17 @@ import (
 // Message 定义基础消息接口
 type Message []byte
 
+func (msg Message) String() string {
+	return pkg.B2S(msg)
+}
+
 type ClientTransport interface {
 	// Start 启动传输连接
 	Start() error
 
 	// Send 发送消息
 	Send(ctx context.Context, msg Message) error
+
 	// SetReceiver 设置对对端消息的处理器
 	SetReceiver(receiver ClientReceiver)
 
@@ -35,6 +41,7 @@ type ServerTransport interface {
 
 	// Send 发送消息
 	Send(ctx context.Context, sessionID string, msg Message) error
+
 	// SetReceiver 设置对对端消息的处理器
 	SetReceiver(ServerReceiver)
 

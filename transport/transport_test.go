@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -55,16 +56,17 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 		t.Fatalf("client.Send() failed: %v", err)
 	}
 
-	if msg != expectedMsg {
-		t.Errorf("testClient2Server msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
-	}
+	assert.Equal(t, expectedMsg, msg)
 }
 
 func testServer2Client(t *testing.T, client ClientTransport, server ServerTransport) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	msg := ""
-	expectedMsg := ""
+
+	var (
+		msg         = ""
+		expectedMsg = ""
+	)
 
 	client.SetReceiver(clientReceive(func(ctx context.Context, msg []byte) {
 		expectedMsg = string(msg)
@@ -97,7 +99,5 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 		t.Fatalf("server.Send() failed: %v", err)
 	}
 
-	if msg != expectedMsg {
-		t.Errorf("testServer2Client msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
-	}
+	assert.Equal(t, expectedMsg, msg)
 }
