@@ -292,7 +292,7 @@ func (x *sseServerTransport) writeJSONRPCError(
 	json.NewEncoder(w).Encode(response)
 }
 
-func (x *sseServerTransport) Close(ctx context.Context) error {
+func (x *sseServerTransport) Shutdown(ctx context.Context) error {
 	x.cancel()
 	if x.httpSvr != nil {
 		if err := x.httpSvr.Shutdown(ctx); err != nil {

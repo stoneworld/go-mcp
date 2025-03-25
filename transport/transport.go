@@ -27,7 +27,7 @@ type ClientReceiver interface {
 }
 
 type ServerTransport interface {
-	// Run 开始监听, 这是同步的, 在 close 之前, 不能返回
+	// Run 开始监听, 这是同步的, 在 Shutdown 之前, 不能返回
 	Run() error
 
 	// Send 发送消息
@@ -35,8 +35,8 @@ type ServerTransport interface {
 	// SetReceiver 设置对对端消息的处理器
 	SetReceiver(ServerReceiver)
 
-	// Close 关闭监听
-	Close(ctx context.Context) error
+	// Shutdown 关闭监听, 内部实现时需要使用 ctx 控制超时
+	Shutdown(ctx context.Context) error
 }
 
 type ServerReceiver interface {

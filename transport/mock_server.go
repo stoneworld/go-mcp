@@ -52,7 +52,7 @@ func (t *MockServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *MockServerTransport) Close(ctx context.Context) error {
+func (t *MockServerTransport) Shutdown(ctx context.Context) error {
 	t.cancel()
 	return nil
 }

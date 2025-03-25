@@ -37,9 +37,8 @@ type session struct {
 
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
-		transport:         t,
-		logger:            pkg.DefaultLogger,
-		sessionID2session: sync.Map{},
+		transport: t,
+		logger:    pkg.DefaultLogger,
 	}
 	t.SetReceiver(server)
 
@@ -75,8 +74,7 @@ func (server *Server) AddTool(tool *protocol.Tool) {
 	server.tools = append(server.tools, tool)
 }
 
-func (server *Server) Shutdown() error {
-	// TODO 还有一些其他处理操作也可以放在这里
-	// server.transport.Close()
-	return nil
+func (server *Server) Shutdown(ctx context.Context) error {
+	// TODO: 还有一些其他处理操作也可以放在这里
+	return server.transport.Shutdown(ctx)
 }
