@@ -283,6 +283,7 @@ func (x *sseServerTransport) Shutdown(ctx context.Context) error {
 	x.cancel()
 
 	if x.httpSvr == nil {
+		x.logger.Warnf("shutdown sse server without httpSvr")
 		return nil
 	}
 

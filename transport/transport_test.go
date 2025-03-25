@@ -46,10 +46,14 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 
 	defer server.Shutdown(ctx)
 
-	client.Start()
+	if err := client.Start(); err != nil {
+		t.Fatalf("client.Start() failed: %v", err)
+	}
 	defer client.Close()
 
-	client.Send(context.Background(), Message(msg))
+	if err := client.Send(context.Background(), Message(msg)); err != nil {
+		t.Fatalf("client.Send() failed: %v", err)
+	}
 
 	if msg != expectedMsg {
 		t.Errorf("testClient2Server msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
@@ -83,10 +87,15 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 
 	defer server.Shutdown(ctx)
 
-	client.Start()
+	if err := client.Start(); err != nil {
+		t.Fatalf("client.Start() failed: %v", err)
+	}
 	defer client.Close()
 
-	server.Send(context.Background(), "$test$", Message(msg)) // TODO： 这里需要解决获取不到sessionID的问题
+	// TODO： 这里需要解决获取不到sessionID的问题
+	if err := server.Send(context.Background(), "$test$", Message(msg)); err != nil {
+		t.Fatalf("server.Send() failed: %v", err)
+	}
 
 	if msg != expectedMsg {
 		t.Errorf("testServer2Client msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
