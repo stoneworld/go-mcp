@@ -31,7 +31,7 @@ type Client struct {
 func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport:      t,
-		logger:         &pkg.DefaultLogger{},
+		logger:         pkg.DefaultLogger,
 		reqID2respChan: cmap.New[chan *protocol.JSONRPCResponse](),
 	}
 	t.SetReceiver(client)

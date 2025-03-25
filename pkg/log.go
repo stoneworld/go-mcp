@@ -3,21 +3,52 @@ package pkg
 import "log"
 
 type Logger interface {
+	Debugf(format string, a ...any)
 	Infof(format string, a ...any)
 	Warnf(format string, a ...any)
 	Errorf(format string, a ...any)
 }
+type LogLevel uint32
 
-type DefaultLogger struct{}
+const (
+	LogLevelDebug = LogLevel(0)
+	LogLevelInfo  = LogLevel(1)
+	LogLevelWarn  = LogLevel(2)
+	LogLevelError = LogLevel(3)
+)
 
-func (l DefaultLogger) Infof(format string, a ...any) {
-	log.Printf(format+"\n", a...)
+var DefaultLogger Logger = &defaultLogger{
+	logLevel: LogLevelInfo,
 }
 
-func (l DefaultLogger) Warnf(format string, a ...any) {
-	log.Printf(format+"\n", a...)
+type defaultLogger struct {
+	logLevel LogLevel
 }
 
-func (l DefaultLogger) Errorf(format string, a ...any) {
-	log.Printf(format+"\n", a...)
+func (l *defaultLogger) Debugf(format string, a ...any) {
+	if l.logLevel > LogLevelDebug {
+		return
+	}
+	log.Printf("[Debug] "+format+"\n", a...)
+}
+
+func (l *defaultLogger) Infof(format string, a ...any) {
+	if l.logLevel > LogLevelInfo {
+		return
+	}
+	log.Printf("[Info] "+format+"\n", a...)
+}
+
+func (l *defaultLogger) Warnf(format string, a ...any) {
+	if l.logLevel > LogLevelWarn {
+		return
+	}
+	log.Printf("[Warn] "+format+"\n", a...)
+}
+
+func (l *defaultLogger) Errorf(format string, a ...any) {
+	if l.logLevel > LogLevelError {
+		return
+	}
+	log.Printf("[Error] "+format+"\n", a...)
 }
