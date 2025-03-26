@@ -8,7 +8,6 @@ type Logger interface {
 	Warnf(format string, a ...any)
 	Errorf(format string, a ...any)
 }
-
 type LogLevel uint32
 
 const (
@@ -18,36 +17,36 @@ const (
 	LogLevelError = LogLevel(3)
 )
 
-var DefaultLogger Logger = &Log{
-	logLevel: LogLevelDebug,
+var DefaultLogger Logger = &defaultLogger{
+	logLevel: LogLevelInfo,
 }
 
-type Log struct {
+type defaultLogger struct {
 	logLevel LogLevel
 }
 
-func (l *Log) Debugf(format string, a ...any) {
+func (l *defaultLogger) Debugf(format string, a ...any) {
 	if l.logLevel > LogLevelDebug {
 		return
 	}
 	log.Printf("[Debug] "+format+"\n", a...)
 }
 
-func (l *Log) Infof(format string, a ...any) {
+func (l *defaultLogger) Infof(format string, a ...any) {
 	if l.logLevel > LogLevelInfo {
 		return
 	}
 	log.Printf("[Info] "+format+"\n", a...)
 }
 
-func (l *Log) Warnf(format string, a ...any) {
+func (l *defaultLogger) Warnf(format string, a ...any) {
 	if l.logLevel > LogLevelWarn {
 		return
 	}
 	log.Printf("[Warn] "+format+"\n", a...)
 }
 
-func (l *Log) Errorf(format string, a ...any) {
+func (l *defaultLogger) Errorf(format string, a ...any) {
 	if l.logLevel > LogLevelError {
 		return
 	}

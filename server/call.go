@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -40,7 +41,7 @@ func (server *Server) CreateMessagesSample(ctx context.Context) error {
 func (server *Server) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
 	sessionID, exist := getSessionIDFromCtx(ctx)
 	if !exist {
-		return pkg.ErrLackSessionID
+		return pkg.NewLackSessionError(sessionID)
 	}
 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationCancelled, notify)
 }
@@ -48,7 +49,7 @@ func (server *Server) SendNotification4Cancelled(ctx context.Context, notify *pr
 func (server *Server) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
 	sessionID, exist := getSessionIDFromCtx(ctx)
 	if !exist {
-		return pkg.ErrLackSessionID
+		return pkg.NewLackSessionError(sessionID)
 	}
 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationProgress, notify)
 }
@@ -56,7 +57,7 @@ func (server *Server) SendNotification4Progress(ctx context.Context, notify *pro
 func (server *Server) SendNotification4ToolListChanges(ctx context.Context, notify *protocol.ToolListChangedNotification) error {
 	sessionID, exist := getSessionIDFromCtx(ctx)
 	if !exist {
-		return pkg.ErrLackSessionID
+		return pkg.NewLackSessionError(sessionID)
 	}
 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, notify)
 }
@@ -103,7 +104,7 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 func (server *Server) SendNotification4LoggingMessage(ctx context.Context, notify *protocol.LogMessageNotification) error {
 	sessionID, exist := getSessionIDFromCtx(ctx)
 	if !exist {
-		return pkg.ErrLackSessionID
+		return pkg.NewLackSessionError(sessionID)
 	}
 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationLogMessage, notify)
 }
@@ -122,15 +123,30 @@ func (server *Server) callAndParse(ctx context.Context, sessionID string, method
 
 // 负责request和response的拼接
 func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
-	requestID := server.requestID.Add(1)
-	// 发送请求
+	value, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+	session := value.(*session)
+
+	requestID := strconv.FormatInt(session.requestID.Add(1), 10)
+
 	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
 		return nil, err
 	}
 
-	// TODO：
-	// 通过chan阻塞等待response
-	// <- server.sessionID2session[sessionID].reqID2respChan
-	// 使用ctx进行超时控制
+	respChan := make(chan *protocol.JSONRPCResponse)
+	session.reqID2respChan.Set(requestID, respChan)
+
+	select {
+	case <-ctx.Done():
+		session.reqID2respChan.Remove(requestID)
+		return nil, ctx.Err()
+	case response := <-respChan:
+		if err := response.Error; err != nil {
+			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
+		}
+		return response.RawResult, nil
+	}
 	return nil, nil
 }

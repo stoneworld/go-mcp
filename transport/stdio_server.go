@@ -56,7 +56,7 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *stdioServerTransport) Close(ctx context.Context) error {
+func (t *stdioServerTransport) Shutdown(ctx context.Context) error {
 	if t.cancel == nil {
 		return nil
 	}

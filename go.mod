@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/bytedance/sonic v1.13.1
 	github.com/google/uuid v1.6.0
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/tidwall/gjson v1.18.0
 )
 

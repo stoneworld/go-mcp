@@ -10,16 +10,23 @@ func TestSSE(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	svr, err := NewSSEServerTransport("0.0.0.0:8181")
-	if err != nil {
+	var (
+		err    error
+		svr    ServerTransport
+		client ClientTransport
+	)
+
+	if svr, err = NewSSEServerTransport("0.0.0.0:8181"); err != nil {
 		t.Errorf("NewSSEServerTransport failed: %v", err)
 		return
 	}
-	defer svr.Close(ctx)
+	defer func() {
+		_ = svr.Shutdown(ctx)
+	}()
 
 	time.Sleep(time.Second)
-	client, err := NewSSEClientTransport(ctx, "http://127.0.0.1:8181/sse")
-	if err != nil {
+
+	if client, err = NewSSEClientTransport(ctx, "http://127.0.0.1:8181/sse"); err != nil {
 		t.Errorf("NewSSEClientTransport failed: %v", err)
 		return
 	}

@@ -50,8 +50,8 @@ type SSEClientTransport struct {
 	client         *http.Client
 }
 
-func NewSSEClientTransport(ctx context.Context, serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
-	ctx, cancel := context.WithCancel(ctx)
+func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
+	ctx, cancel := context.WithCancel(parent)
 
 	x := &SSEClientTransport{
 		ctx:             ctx,
@@ -73,7 +73,13 @@ func NewSSEClientTransport(ctx context.Context, serverURL string, opts ...SSECli
 }
 
 func (x *SSEClientTransport) Start() error {
-	req, err := http.NewRequest(http.MethodGet, x.serverURL, nil)
+	var (
+		err  error
+		req  *http.Request
+		resp *http.Response
+	)
+
+	req, err = http.NewRequest(http.MethodGet, x.serverURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -82,13 +88,13 @@ func (x *SSEClientTransport) Start() error {
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
 
-	resp, err := x.client.Do(req)
-	if err != nil {
+	if resp, err = x.client.Do(req); err != nil {
+
 		return fmt.Errorf("failed to connect to SSE stream: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -111,7 +117,9 @@ func (x *SSEClientTransport) Start() error {
 func (x *SSEClientTransport) readSSE(reader io.ReadCloser) {
 	defer pkg.Recover()
 
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	br := bufio.NewReader(reader)
 	var event, data string
@@ -170,25 +178,34 @@ func (x *SSEClientTransport) handleSSEEvent(event, data string) {
 		close(x.endpointChan)
 
 	case "message":
-		ctx, cancel := context.WithTimeout(context.Background(), x.receiveTimeout)
+		ctx, cancel := context.WithTimeout(x.ctx, x.receiveTimeout)
 		defer cancel()
 		x.receiver.Receive(ctx, []byte(data))
 	}
 }
 
 func (x *SSEClientTransport) Send(ctx context.Context, msg Message) error {
-	x.log.Debugf("Sending message: %s to %s", string(msg), x.messageEndpoint.String())
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, x.messageEndpoint.String(), bytes.NewReader(msg))
+	x.log.Debugf("Sending message: %s to %s", msg, x.messageEndpoint.String())
+
+	var (
+		err  error
+		req  *http.Request
+		resp *http.Response
+	)
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, x.messageEndpoint.String(), bytes.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	resp, err := x.client.Do(req)
-	if err != nil {
+
+	if resp, err = x.client.Do(req); err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
+
 	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+
 	return nil
 }
 

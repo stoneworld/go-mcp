@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -28,41 +29,75 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 		expectedMsg = string(msg)
 	}))
 
-	go server.Run()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Run()
+	}()
 
-	defer server.Close(ctx)
+	// 使用 select 来处理可能的错误
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("server.Run() failed: %v", err)
+		}
+	case <-time.After(time.Second):
+		close(errCh)
+		// 服务器正常启动
+	}
 
-	client.Start()
+	defer server.Shutdown(ctx)
+
+	if err := client.Start(); err != nil {
+		t.Fatalf("client.Start() failed: %v", err)
+	}
 	defer client.Close()
 
-	client.Send(context.Background(), Message(msg))
-
-	if msg != expectedMsg {
-		t.Errorf("testClient2Server msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
+	if err := client.Send(context.Background(), Message(msg)); err != nil {
+		t.Fatalf("client.Send() failed: %v", err)
 	}
+
+	assert.Equal(t, expectedMsg, msg)
 }
 
 func testServer2Client(t *testing.T, client ClientTransport, server ServerTransport) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	msg := ""
-	expectedMsg := ""
+
+	var (
+		msg         = ""
+		expectedMsg = ""
+	)
 
 	client.SetReceiver(clientReceive(func(ctx context.Context, msg []byte) {
 		expectedMsg = string(msg)
 	}))
 
-	go server.Run()
-	defer server.Close(ctx)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- server.Run()
+	}()
 
-	time.Sleep(time.Second) // 这里需要等server start ready，不太优雅，后续需要优化
+	// 使用 select 来处理可能的错误
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("server.Run() failed: %v", err)
+		}
+	case <-time.After(time.Second):
+		// 服务器正常启动
+	}
 
-	client.Start()
+	defer server.Shutdown(ctx)
+
+	if err := client.Start(); err != nil {
+		t.Fatalf("client.Start() failed: %v", err)
+	}
 	defer client.Close()
 
-	server.Send(context.Background(), "$test$", Message(msg)) // TODO： 这里需要解决获取不到sessionID的问题
-
-	if msg != expectedMsg {
-		t.Errorf("testServer2Client msg not as expected.\ngot  = %v\nwant = %v", expectedMsg, msg)
+	// TODO： 这里需要解决获取不到sessionID的问题
+	if err := server.Send(context.Background(), "$test$", Message(msg)); err != nil {
+		t.Fatalf("server.Send() failed: %v", err)
 	}
+
+	assert.Equal(t, expectedMsg, msg)
 }
