@@ -21,7 +21,7 @@ type Server struct {
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
 	// TODO：需要定期清理无效session
-	sessionID2session sync.Map
+	sessionID2session *pkg.MemorySessionStore
 
 	inFly sync.WaitGroup
 
@@ -39,8 +39,9 @@ type session struct {
 
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
-		transport: t,
-		logger:    pkg.DefaultLogger,
+		transport:         t,
+		logger:            pkg.DefaultLogger,
+		sessionID2session: pkg.NewMemorySessionStore(),
 	}
 	t.SetReceiver(server)
 
