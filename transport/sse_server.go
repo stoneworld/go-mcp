@@ -281,6 +281,7 @@ func (t *sseServerTransport) Shutdown(ctx context.Context) error {
 
 	t.httpSvr.RegisterOnShutdown(func() {
 		<-ctx.Done()
+		t.cancel()
 	})
 
 	if err := t.httpSvr.Shutdown(ctx); err != nil {

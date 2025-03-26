@@ -25,6 +25,9 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		go func() {
 			defer pkg.Recover()
 
+			server.inFly.Add(1)
+			defer server.inFly.Done()
+
 			if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
 				// TODO: 打印日志
 				return
@@ -42,6 +45,9 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		}
 		go func() {
 			defer pkg.Recover()
+
+			server.inFly.Add(1)
+			defer server.inFly.Done()
 
 			if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
 				// TODO: 打印日志
