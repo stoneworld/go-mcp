@@ -59,7 +59,12 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	go func() {
 		defer pkg.Recover()
 
-		if err := server.receiveRequest(ctx, sessionID, req); err != nil {
+		server.inFly.Add(1)
+		defer server.inFly.Done()
+
+		resp := server.receiveRequest(ctx, req)
+
+		if err := server.sendMsgWithResponse(ctx, sessionID, resp); err != nil {
 			// TODO: 打印日志
 			return
 		}
@@ -68,9 +73,9 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	return
 }
 
-func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) error {
+func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {
 	if !request.IsValid() {
-		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, fmt.Sprintf("invalid request: %v", request))
+		return protocol.NewJSONRPCErrorResponse(request.ID, protocol.INVALID_REQUEST, fmt.Sprintf("invalid request: %v", request))
 	}
 
 	var (
@@ -113,9 +118,9 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 
 	if err != nil {
 		// TODO: 此处需要根据err的类型传入不同的错误码
-		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, err.Error())
+		return protocol.NewJSONRPCErrorResponse(request.ID, protocol.INVALID_REQUEST, err.Error())
 	}
-	return server.sendMsgWithResponse(ctx, sessionID, request.ID, result)
+	return protocol.NewJSONRPCSuccessResponse(request.ID, result)
 }
 
 func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {

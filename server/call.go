@@ -148,5 +148,4 @@ func (server *Server) callClient(ctx context.Context, sessionID string, method p
 		}
 		return response.RawResult, nil
 	}
-	return nil, nil
 }

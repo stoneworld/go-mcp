@@ -274,12 +274,14 @@ func (t *sseServerTransport) writeError(w http.ResponseWriter, code int, message
 }
 
 func (t *sseServerTransport) Shutdown(ctx context.Context) error {
-	t.cancel()
-
 	if t.httpSvr == nil {
 		t.logger.Warnf("shutdown sse server without httpSvr")
 		return nil
 	}
+
+	t.httpSvr.RegisterOnShutdown(func() {
+		<-ctx.Done()
+	})
 
 	if err := t.httpSvr.Shutdown(ctx); err != nil {
 		return fmt.Errorf("failed to shutdown HTTP server: %w", err)

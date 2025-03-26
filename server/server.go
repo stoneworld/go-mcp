@@ -23,6 +23,8 @@ type Server struct {
 	// TODO：需要定期清理无效session
 	sessionID2session sync.Map
 
+	inFly sync.WaitGroup
+
 	logger pkg.Logger
 }
 
@@ -75,6 +77,15 @@ func (server *Server) AddTool(tool *protocol.Tool) {
 }
 
 func (server *Server) Shutdown(ctx context.Context) error {
-	// TODO: 还有一些其他处理操作也可以放在这里
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		defer pkg.Recover()
+
+		server.inFly.Wait()
+		cancel()
+	}()
+
 	return server.transport.Shutdown(ctx)
 }
