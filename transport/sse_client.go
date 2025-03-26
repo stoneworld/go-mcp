@@ -17,20 +17,20 @@ import (
 type SSEClientTransportOption func(*SSEClientTransport)
 
 func WithSSEClientOptionReceiveTimeout(timeout time.Duration) SSEClientTransportOption {
-	return func(o *SSEClientTransport) {
-		o.receiveTimeout = timeout
+	return func(t *SSEClientTransport) {
+		t.receiveTimeout = timeout
 	}
 }
 
 func WithSSEClientOptionHTTPClient(client *http.Client) SSEClientTransportOption {
-	return func(o *SSEClientTransport) {
-		o.client = client
+	return func(t *SSEClientTransport) {
+		t.client = client
 	}
 }
 
 func WithSSEClientOptionLogger(log pkg.Logger) SSEClientTransportOption {
-	return func(o *SSEClientTransport) {
-		o.log = log
+	return func(t *SSEClientTransport) {
+		t.logger = log
 	}
 }
 
@@ -45,7 +45,7 @@ type SSEClientTransport struct {
 	receiver        ClientReceiver
 
 	// options
-	log            pkg.Logger
+	logger         pkg.Logger
 	receiveTimeout time.Duration
 	client         *http.Client
 }
@@ -60,7 +60,7 @@ func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSE
 		endpointChan:    make(chan struct{}, 1),
 		messageEndpoint: nil,
 		receiver:        nil,
-		log:             pkg.DefaultLogger,
+		logger:          pkg.DefaultLogger,
 		receiveTimeout:  time.Second * 30,
 		client:          http.DefaultClient,
 	}
@@ -72,14 +72,14 @@ func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSE
 	return x, nil
 }
 
-func (x *SSEClientTransport) Start() error {
+func (t *SSEClientTransport) Start() error {
 	var (
 		err  error
 		req  *http.Request
 		resp *http.Response
 	)
 
-	req, err = http.NewRequest(http.MethodGet, x.serverURL, nil)
+	req, err = http.NewRequest(http.MethodGet, t.serverURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -88,24 +88,27 @@ func (x *SSEClientTransport) Start() error {
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
 
-	if resp, err = x.client.Do(req); err != nil {
-
+	if resp, err = t.client.Do(req); err != nil {
 		return fmt.Errorf("failed to connect to SSE stream: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return fmt.Errorf("unexpected status code: %d, status: %s", resp.StatusCode, resp.Status)
 	}
 
-	go x.readSSE(resp.Body)
+	go func() {
+		defer pkg.Recover()
+
+		t.readSSE(resp.Body)
+	}()
 
 	// Wait for the endpoint to be received
 
 	select {
-	case <-x.endpointChan:
+	case <-t.endpointChan:
 		// Endpoint received, proceed
-	case <-time.After(30 * time.Second): // Add a timeout
+	case <-time.After(10 * time.Second): // Add a timeout
 		return fmt.Errorf("timeout waiting for endpoint")
 	}
 
@@ -114,9 +117,7 @@ func (x *SSEClientTransport) Start() error {
 
 // readSSE continuously reads the SSE stream and processes events.
 // It runs until the connection is closed or an error occurs.
-func (x *SSEClientTransport) readSSE(reader io.ReadCloser) {
-	defer pkg.Recover()
-
+func (t *SSEClientTransport) readSSE(reader io.ReadCloser) {
 	defer func() {
 		_ = reader.Close()
 	}()
@@ -130,15 +131,15 @@ func (x *SSEClientTransport) readSSE(reader io.ReadCloser) {
 			if err == io.EOF {
 				// Process any pending event before exit
 				if event != "" && data != "" {
-					x.handleSSEEvent(event, data)
+					t.handleSSEEvent(event, data)
 				}
 				break
 			}
 			select {
-			case <-x.ctx.Done():
+			case <-t.ctx.Done():
 				return
 			default:
-				fmt.Printf("SSE stream error: %v\n", err)
+				t.logger.Errorf("SSE stream error: %v", err)
 				return
 			}
 		}
@@ -148,7 +149,7 @@ func (x *SSEClientTransport) readSSE(reader io.ReadCloser) {
 		if line == "" {
 			// Empty line means end of event
 			if event != "" && data != "" {
-				x.handleSSEEvent(event, data)
+				t.handleSSEEvent(event, data)
 				event = ""
 				data = ""
 			}
@@ -165,27 +166,26 @@ func (x *SSEClientTransport) readSSE(reader io.ReadCloser) {
 
 // handleSSEEvent processes SSE events based on their type.
 // Handles 'endpoint' events for connection setup and 'message' events for JSON-RPC communication.
-func (x *SSEClientTransport) handleSSEEvent(event, data string) {
+func (t *SSEClientTransport) handleSSEEvent(event, data string) {
 	switch event {
 	case "endpoint":
 		endpoint, err := url.Parse(data)
 		if err != nil {
-			fmt.Printf("Error parsing endpoint URL: %v\n", err)
+			t.logger.Errorf("Error parsing endpoint URL: %v", err)
 			return
 		}
-		x.log.Debugf("Received endpoint: %s", endpoint.String())
-		x.messageEndpoint = endpoint
-		close(x.endpointChan)
-
+		t.logger.Debugf("Received endpoint: %s", endpoint.String())
+		t.messageEndpoint = endpoint
+		close(t.endpointChan)
 	case "message":
-		ctx, cancel := context.WithTimeout(x.ctx, x.receiveTimeout)
+		ctx, cancel := context.WithTimeout(t.ctx, t.receiveTimeout)
 		defer cancel()
-		x.receiver.Receive(ctx, []byte(data))
+		t.receiver.Receive(ctx, []byte(data))
 	}
 }
 
-func (x *SSEClientTransport) Send(ctx context.Context, msg Message) error {
-	x.log.Debugf("Sending message: %s to %s", msg, x.messageEndpoint.String())
+func (t *SSEClientTransport) Send(ctx context.Context, msg Message) error {
+	t.logger.Debugf("Sending message: %s to %s", msg, t.messageEndpoint.String())
 
 	var (
 		err  error
@@ -193,27 +193,27 @@ func (x *SSEClientTransport) Send(ctx context.Context, msg Message) error {
 		resp *http.Response
 	)
 
-	req, err = http.NewRequestWithContext(ctx, http.MethodPost, x.messageEndpoint.String(), bytes.NewReader(msg))
+	req, err = http.NewRequestWithContext(ctx, http.MethodPost, t.messageEndpoint.String(), bytes.NewReader(msg))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if resp, err = x.client.Do(req); err != nil {
+	if resp, err = t.client.Do(req); err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+		return fmt.Errorf("unexpected status code: %d, status: %s", resp.StatusCode, resp.Status)
 	}
 
 	return nil
 }
 
-func (x *SSEClientTransport) SetReceiver(receiver ClientReceiver) {
-	x.receiver = receiver
+func (t *SSEClientTransport) SetReceiver(receiver ClientReceiver) {
+	t.receiver = receiver
 }
 
-func (x *SSEClientTransport) Close() error {
-	x.cancel()
+func (t *SSEClientTransport) Close() error {
+	t.cancel()
 	return nil
 }

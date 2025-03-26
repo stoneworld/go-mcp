@@ -15,6 +15,8 @@ import (
 // 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
 func (client *Client) Receive(ctx context.Context, msg []byte) {
+	defer pkg.Recover()
+
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
 		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {

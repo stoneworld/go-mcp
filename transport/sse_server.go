@@ -2,12 +2,13 @@ package transport
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"go-mcp/pkg"
 	"io"
 	"net/http"
 	"net/url"
+	"time"
+
+	"go-mcp/pkg"
 
 	"github.com/google/uuid"
 )
@@ -15,34 +16,34 @@ import (
 type SSEServerTransportOption func(*sseServerTransport)
 
 func WithSSEServerTransportOptionLogger(logger pkg.Logger) SSEServerTransportOption {
-	return func(o *sseServerTransport) {
-		o.logger = logger
+	return func(t *sseServerTransport) {
+		t.logger = logger
 	}
 }
 
 func WithSSEServerTransportOptionSSEPath(ssePath string) SSEServerTransportOption {
-	return func(transport *sseServerTransport) {
-		transport.ssePath = ssePath
+	return func(t *sseServerTransport) {
+		t.ssePath = ssePath
 	}
 }
 
 func WithSSEServerTransportOptionMessagePath(messagePath string) SSEServerTransportOption {
-	return func(transport *sseServerTransport) {
-		transport.messagePath = messagePath
+	return func(t *sseServerTransport) {
+		t.messagePath = messagePath
 	}
 }
 
 func WithSSEServerTransportOptionURLPrefix(urlPrefix string) SSEServerTransportOption {
-	return func(transport *sseServerTransport) {
-		transport.urlPrefix = urlPrefix
+	return func(t *sseServerTransport) {
+		t.urlPrefix = urlPrefix
 	}
 }
 
 type SSEServerTransportAndHandlerOption func(*sseServerTransport)
 
 func WithSSEServerTransportAndHandlerOptionLogger(logger pkg.Logger) SSEServerTransportAndHandlerOption {
-	return func(o *sseServerTransport) {
-		o.logger = logger
+	return func(t *sseServerTransport) {
+		t.logger = logger
 	}
 }
 
@@ -70,17 +71,17 @@ type SSEHandler struct {
 }
 
 // HandleSSE handles incoming SSE connections from clients and sends messages to them.
-func (x *SSEHandler) HandleSSE() http.Handler {
+func (h *SSEHandler) HandleSSE() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		x.transport.handleSSE(w, r)
+		h.transport.handleSSE(w, r)
 	})
 }
 
 // HandleMessage processes incoming JSON-RPC messages from clients and sends responses
 // back through both the SSE connection and HTTP response.
-func (x *SSEHandler) HandleMessage() http.Handler {
+func (h *SSEHandler) HandleMessage() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		x.transport.handleMessage(w, r)
+		h.transport.handleMessage(w, r)
 	})
 }
 
@@ -88,101 +89,93 @@ func (x *SSEHandler) HandleMessage() http.Handler {
 func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (ServerTransport, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	x := &sseServerTransport{
-		ctx:                    ctx,
-		cancel:                 cancel,
-		httpSvr:                nil,
-		messageEndpointFullURL: "",
-		sessionStore:           pkg.DefaultSessionStore,
-		receiver:               nil,
-		logger:                 pkg.DefaultLogger,
-		ssePath:                "/sse",
-		messagePath:            "/message",
-		urlPrefix:              "http://" + addr,
+	t := &sseServerTransport{
+		ctx:          ctx,
+		cancel:       cancel,
+		sessionStore: pkg.NewMemorySessionStore(),
+		logger:       pkg.DefaultLogger,
+		ssePath:      "/sse",
+		messagePath:  "/message",
+		urlPrefix:    "http://" + addr,
 	}
 	for _, opt := range opts {
-		opt(x)
+		opt(t)
 	}
 	var err error
-	x.messageEndpointFullURL, err = url.JoinPath(x.urlPrefix + x.messagePath)
+	t.messageEndpointFullURL, err = url.JoinPath(t.urlPrefix + t.messagePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join URL: %w", err)
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(x.ssePath, x.handleSSE)
-	mux.HandleFunc(x.messagePath, x.handleMessage)
-	x.httpSvr = &http.Server{
-		Addr:    addr,
-		Handler: mux,
+	mux.HandleFunc(t.ssePath, t.handleSSE)
+	mux.HandleFunc(t.messagePath, t.handleMessage)
+
+	t.httpSvr = &http.Server{
+		Addr:        addr,
+		Handler:     mux,
+		IdleTimeout: time.Minute,
 	}
 
-	return x, nil
+	return t, nil
 }
 
 // NewSSEServerTransportAndHandler 返回不启动 http 的 transport + Handler 让用户自行启动
 func NewSSEServerTransportAndHandler(messageEndpointFullURL string, opts ...SSEServerTransportAndHandlerOption) (ServerTransport, *SSEHandler, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	x := &sseServerTransport{
+	t := &sseServerTransport{
 		ctx:                    ctx,
 		cancel:                 cancel,
-		httpSvr:                nil,
 		messageEndpointFullURL: messageEndpointFullURL,
-		sessionStore:           pkg.DefaultSessionStore,
-		receiver:               nil,
+		sessionStore:           pkg.NewMemorySessionStore(),
 		logger:                 pkg.DefaultLogger,
-		ssePath:                "",
-		messagePath:            "",
-		urlPrefix:              "",
 	}
 	for _, opt := range opts {
-		opt(x)
+		opt(t)
 	}
 
-	return x, &SSEHandler{
-		transport: x,
-	}, nil
+	return t, &SSEHandler{transport: t}, nil
 }
 
-func (x *sseServerTransport) Run() error {
-	if x.httpSvr == nil {
-		<-x.ctx.Done()
-		return fmt.Errorf("httpSvr is nil, please init before Run()")
-	}
-	err := x.httpSvr.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
+func (t *sseServerTransport) Run() error {
+	if t.httpSvr == nil {
+		<-t.ctx.Done()
 		return nil
 	}
-	if err != nil {
+
+	if err := t.httpSvr.ListenAndServe(); err != nil {
 		return fmt.Errorf("failed to start HTTP server: %w", err)
 	}
 	return nil
 }
 
-func (x *sseServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	conn, ok := x.sessionStore.Load(sessionID)
+func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
+	conn, ok := t.sessionStore.Load(sessionID)
 	if !ok {
-		return nil
+		return pkg.NewLackSessionError(sessionID)
 	}
 	c, ok := conn.(chan []byte)
 	if !ok {
-		return nil
+		return fmt.Errorf("sessionID=%s invalid connection type: %T", sessionID, conn)
 	}
+
 	select {
 	case c <- msg:
+		return nil
 	case <-ctx.Done():
 		return ctx.Err()
+	case <-t.ctx.Done():
+		return fmt.Errorf("transport is shutting down")
 	}
-	return nil
 }
 
-func (x *sseServerTransport) SetReceiver(receiver ServerReceiver) {
-	x.receiver = receiver
+func (t *sseServerTransport) SetReceiver(receiver ServerReceiver) {
+	t.receiver = receiver
 }
 
 // handleSSE handles incoming SSE connections from clients and sends messages to them.
-func (x *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
+func (t *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 	defer pkg.Recover()
 
 	//nolint:govet // Ignore error since we're just logging
@@ -203,9 +196,10 @@ func (x *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 	// Create an SSE connection
 	sessionChan := make(chan []byte, 64)
 	sessionID := uuid.New().String()
-	x.sessionStore.Store(sessionID, sessionChan)
-	defer x.sessionStore.Delete(sessionID)
-	uri := fmt.Sprintf("%s?sessionID=%s", x.messageEndpointFullURL, sessionID)
+	t.sessionStore.Store(sessionID, sessionChan)
+	defer t.sessionStore.Delete(sessionID)
+
+	uri := fmt.Sprintf("%s?sessionID=%s", t.messageEndpointFullURL, sessionID)
 	// Send the initial endpoint event
 	_, _ = fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
 	flusher.Flush()
@@ -214,13 +208,13 @@ func (x *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-x.ctx.Done():
+		case <-t.ctx.Done():
 			// server closed
 			return
 		case msg := <-sessionChan:
 			_, err := fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
 			if err != nil {
-				x.logger.Errorf("Failed to write message: %v", err)
+				t.logger.Errorf("Failed to write message: %v", err)
 				continue
 			}
 			flusher.Flush()
@@ -230,25 +224,25 @@ func (x *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 
 // handleMessage processes incoming JSON-RPC messages from clients and sends responses
 // back through both the SSE connection and HTTP response.
-func (x *sseServerTransport) handleMessage(w http.ResponseWriter, r *http.Request) {
+func (t *sseServerTransport) handleMessage(w http.ResponseWriter, r *http.Request) {
 	defer pkg.RecoverWithFunc(func(r any) {
-		x.writeError(w, http.StatusInternalServerError, "Internal server error")
+		t.writeError(w, http.StatusInternalServerError, "Internal server error")
 	})
 
 	if r.Method != http.MethodPost {
-		x.writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		t.writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
 	sessionID := r.URL.Query().Get("sessionID")
 	if sessionID == "" {
-		x.writeError(w, http.StatusBadRequest, "Missing session ID")
+		t.writeError(w, http.StatusBadRequest, "Missing session ID")
 		return
 	}
 
-	_, ok := x.sessionStore.Load(sessionID)
+	_, ok := t.sessionStore.Load(sessionID)
 	if !ok {
-		x.writeError(w, http.StatusBadRequest, "Invalid session ID")
+		t.writeError(w, http.StatusBadRequest, "Invalid session ID")
 		return
 	}
 
@@ -256,38 +250,38 @@ func (x *sseServerTransport) handleMessage(w http.ResponseWriter, r *http.Reques
 	// Parse message as raw JSON
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
-		x.writeError(w, http.StatusBadRequest, "Invalid request")
+		t.writeError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
-	x.receiver.Receive(ctx, sessionID, bs)
+	t.receiver.Receive(ctx, sessionID, bs)
 	// Process message through MCPServer
 
 	// For notifications, just send 202 Accepted with no body
-	x.logger.Debugf("Received message: %s", string(bs))
+	t.logger.Debugf("Received message: %s", string(bs))
 	// ref: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py#L8
 	// in official httpx, 2xx is success
 	w.WriteHeader(http.StatusAccepted)
 }
 
 // writeError writes a JSON-RPC error response with the given error details.
-func (x *sseServerTransport) writeError(w http.ResponseWriter, code int, message string) {
-	x.logger.Errorf("sseServerTransport writeError: %d %s", code, message)
-	w.Header().Set("Content-Type", "application/json")
+func (t *sseServerTransport) writeError(w http.ResponseWriter, code int, message string) {
+	t.logger.Errorf("sseServerTransport writeError: code: %d, message: %s", code, message)
+	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(code)
 	if _, err := w.Write([]byte(message)); err != nil {
-		x.logger.Errorf("sseServerTransport writeError: %+v", err)
+		t.logger.Errorf("sseServerTransport writeError: %+v", err)
 	}
 }
 
-func (x *sseServerTransport) Shutdown(ctx context.Context) error {
-	x.cancel()
+func (t *sseServerTransport) Shutdown(ctx context.Context) error {
+	t.cancel()
 
-	if x.httpSvr == nil {
-		x.logger.Warnf("shutdown sse server without httpSvr")
+	if t.httpSvr == nil {
+		t.logger.Warnf("shutdown sse server without httpSvr")
 		return nil
 	}
 
-	if err := x.httpSvr.Shutdown(ctx); err != nil {
+	if err := t.httpSvr.Shutdown(ctx); err != nil {
 		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
 	}
 
