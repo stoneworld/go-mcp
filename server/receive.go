@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -23,10 +22,14 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			// 打印日志
 			return
 		}
-		if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
-			// TODO: 打印日志
-			return
-		}
+		go func() {
+			defer pkg.Recover()
+
+			if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
+				// TODO: 打印日志
+				return
+			}
+		}()
 		return
 	}
 
@@ -37,28 +40,37 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			// 打印日志
 			return
 		}
-		if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
-			// TODO: 打印日志
-			return
-		}
+		go func() {
+			defer pkg.Recover()
+
+			if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
+				// TODO: 打印日志
+				return
+			}
+		}()
 		return
 	}
 
 	req := &protocol.JSONRPCRequest{}
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
-		// 打印日志
-		return
-	}
-	if err := server.receiveRequest(ctx, sessionID, req); err != nil {
 		// TODO: 打印日志
 		return
 	}
+	go func() {
+		defer pkg.Recover()
+
+		if err := server.receiveRequest(ctx, sessionID, req); err != nil {
+			// TODO: 打印日志
+			return
+		}
+	}()
+
 	return
 }
 
-func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {
+func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) error {
 	if !request.IsValid() {
-		// return protocol.NewJSONRPCErrorResponse(request.ID,)
+		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, fmt.Sprintf("invalid request: %v", request))
 	}
 
 	var (
@@ -96,14 +108,14 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 	case protocol.LoggingSetLevel:
 		result, err = server.handleRequestWithSetLogLevel(ctx, request.RawParams)
 	default:
-		// return protocol.NewJSONRPCErrorResponse(request.ID)
+		err = fmt.Errorf("request method=%s not supoort", request.Method)
 	}
 
 	if err != nil {
-		// return &protocol.NewJSONRPCErrorResponse(request.ID, ,err.Error())
+		// TODO: 此处需要根据err的类型传入不同的错误码
+		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, err.Error())
 	}
-
-	return protocol.NewJSONRPCSuccessResponse(request.ID, result)
+	return server.sendMsgWithResponse(ctx, sessionID, request.ID, result)
 }
 
 func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
@@ -124,9 +136,6 @@ func (server *Server) receiveNotify(ctx context.Context, sessionID string, notif
 }
 
 func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return pkg.NewLackSessionError(sessionID)
@@ -139,9 +148,9 @@ func (server *Server) receiveResponse(ctx context.Context, sessionID string, res
 	}
 
 	select {
-	case <-ctx.Done(): // 防止上游在重试情况下，发送了多次response。
-		return ctx.Err()
 	case respChan <- response:
+	default:
+		return fmt.Errorf("response repeat: sessionID=%+v, response=%+v", sessionID, response)
 	}
 	return nil
 }
