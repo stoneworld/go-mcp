@@ -7,6 +7,13 @@ import (
 
 func Recover() {
 	if r := recover(); r != nil {
-		log.Println("Recovered in f", r, string(debug.Stack()))
+		log.Printf("panic: %v\nstack: %s", r, debug.Stack())
+	}
+}
+
+func RecoverWithFunc(f func(r any)) {
+	if r := recover(); r != nil {
+		f(r)
+		log.Printf("panic: %v\nstack: %s", r, debug.Stack())
 	}
 }

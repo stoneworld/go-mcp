@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -106,6 +108,19 @@ func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRP
 }
 
 func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
-	// 通过 client.reqID2respChan[response.ID] 将 response 传回发送 request 的协程
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	respChan, ok := client.reqID2respChan.Get(fmt.Sprint(response.ID))
+	if !ok {
+		return fmt.Errorf("%w: requestID=%+v", pkg.ErrLackResponseChan, response.ID)
+	}
+
+	select {
+	case <-ctx.Done(): // 防止上游在重试情况下，发送了多次response。
+		return ctx.Err()
+	case respChan <- response:
+	}
+
 	return nil
 }

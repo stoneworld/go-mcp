@@ -30,7 +30,7 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 
 	go server.Run()
 
-	defer server.Close(ctx)
+	defer server.Shutdown(ctx)
 
 	client.Start()
 	defer client.Close()
@@ -53,7 +53,7 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 	}))
 
 	go server.Run()
-	defer server.Close(ctx)
+	defer server.Shutdown(ctx)
 
 	time.Sleep(time.Second) // 这里需要等server start ready，不太优雅，后续需要优化
 

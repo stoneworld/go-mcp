@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -122,6 +124,24 @@ func (server *Server) receiveNotify(ctx context.Context, sessionID string, notif
 }
 
 func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
-	// 通过 server.reqID2respChan 将 response 传回发送 request 的协程
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	value, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return pkg.NewLackSessionError(sessionID)
+	}
+	session := value.(*session)
+
+	respChan, ok := session.reqID2respChan.Get(fmt.Sprint(response.ID))
+	if !ok {
+		return fmt.Errorf("%w: sessionID=%+v, requestID=%+v", pkg.ErrLackResponseChan, sessionID, response.ID)
+	}
+
+	select {
+	case <-ctx.Done(): // 防止上游在重试情况下，发送了多次response。
+		return ctx.Err()
+	case respChan <- response:
+	}
 	return nil
 }

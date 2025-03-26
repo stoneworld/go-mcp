@@ -8,12 +8,14 @@ import (
 	"go-mcp/pkg"
 	"go-mcp/protocol"
 	"go-mcp/transport"
+
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Client struct {
 	transport transport.ClientTransport
 
-	reqID2respChan map[int]chan *protocol.JSONRPCResponse
+	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
 
 	roots []protocol.Root
 
@@ -28,8 +30,9 @@ type Client struct {
 
 func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
-		transport: t,
-		logger:    pkg.DefaultLogger,
+		transport:      t,
+		logger:         pkg.DefaultLogger,
+		reqID2respChan: cmap.New[chan *protocol.JSONRPCResponse](),
 	}
 	t.SetReceiver(client)
 
@@ -69,7 +72,8 @@ func WithLogger(logger pkg.Logger) Option {
 }
 
 func (client *Client) Close() error {
-	// TODO 还有一些其他处理操作也可以放在这里
-	// client.transport.Close()
+	if err := client.transport.Close(); err != nil {
+		return err
+	}
 	return nil
 }

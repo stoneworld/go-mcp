@@ -15,7 +15,7 @@ func TestSSE(t *testing.T) {
 		t.Errorf("NewSSEServerTransport failed: %v", err)
 		return
 	}
-	defer svr.Close(ctx)
+	defer svr.Shutdown(ctx)
 
 	time.Sleep(time.Second)
 	client, err := NewSSEClientTransport(ctx, "http://127.0.0.1:8181/sse")
