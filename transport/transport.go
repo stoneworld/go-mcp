@@ -2,10 +2,16 @@ package transport
 
 import (
 	"context"
+	"time"
 )
 
 // Message 定义基础消息接口
 type Message []byte
+
+const (
+	mcpMessageDelimiter               = '\n'
+	defaultStdioTransportCloseTimeout = 5 * time.Second
+)
 
 // Transport 是对底层传输层的抽象。
 // GO-MCP 需要能够在 server/client 间传递 JSON-RPC 消息。
@@ -19,7 +25,7 @@ type ClientTransport interface {
 	SetReceiver(receiver ClientReceiver)
 
 	// Close 关闭传输连接
-	Close() error
+	Close(ctx context.Context) error
 }
 
 type ClientReceiver interface {

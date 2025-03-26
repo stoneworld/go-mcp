@@ -3,9 +3,9 @@ package transport
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"go-mcp/pkg"
 )
@@ -14,37 +14,42 @@ const stdioSessionID = "stdio"
 
 type stdioServerTransport struct {
 	receiver ServerReceiver
-	stdin    *bufio.Reader
-	stdout   io.Writer
+	reader   *bufio.Reader
+	writer   io.Writer
 
 	cancel context.CancelFunc
+	done   chan struct{}
+	once   sync.Once
 }
 
-func NewStdioServerTransport() (ServerTransport, error) {
+func NewStdioServerTransport() ServerTransport {
 	return &stdioServerTransport{
-		stdin:  bufio.NewReader(os.Stdin),
-		stdout: os.Stdout,
-	}, nil
+		reader: bufio.NewReader(os.Stdin),
+		writer: os.Stdout,
+
+		done: make(chan struct{}),
+	}
 }
 
 func (t *stdioServerTransport) Run() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	t.cancel = cancel
+	t.once.Do(func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.cancel = cancel
 
-	go func() {
-		for {
+		go pkg.SafeRunGo(ctx, func() {
 			t.receive(ctx)
-		}
-	}()
+			close(t.done)
+		})
+	})
 
 	return nil
 }
 
 func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	if _, err := t.stdout.Write(msg); err != nil {
-		return fmt.Errorf("failed to write request: %w", err)
-	}
-	return nil
+	msg = append(msg, mcpMessageDelimiter)
+
+	_, err := t.writer.Write(msg)
+	return err
 }
 
 func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
@@ -52,20 +57,40 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 }
 
 func (t *stdioServerTransport) Close(ctx context.Context) error {
-	// t. cancel()
-	return nil
+	if t.cancel == nil {
+		return nil
+	}
+
+	t.cancel()
+
+	timeoutCtx, cancelTimeout := context.WithTimeout(context.Background(), defaultStdioTransportCloseTimeout)
+	defer cancelTimeout()
+
+	select {
+	case <-t.done:
+		return nil
+	case <-timeoutCtx.Done():
+		return timeoutCtx.Err()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (t *stdioServerTransport) receive(ctx context.Context) {
-	defer pkg.Recover()
-
-	line, err := t.stdin.ReadBytes('\n')
-	if err != nil {
-		if err != io.EOF {
-			// TODO: 记录日志
+	for {
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			line, err := t.reader.ReadBytes(mcpMessageDelimiter)
+			if err != nil {
+				if err != io.EOF {
+					// todo: handler error
+				}
+				return
+			}
+
+			t.receiver.Receive(ctx, stdioSessionID, line)
 		}
-		return
 	}
-	t.receiver.Receive(ctx, stdioSessionID, line)
 }

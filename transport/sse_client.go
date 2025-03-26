@@ -196,7 +196,7 @@ func (x *SSEClientTransport) SetReceiver(receiver ClientReceiver) {
 	x.receiver = receiver
 }
 
-func (x *SSEClientTransport) Close() error {
+func (x *SSEClientTransport) Close(ctx context.Context) error {
 	x.cancel()
 	return nil
 }
