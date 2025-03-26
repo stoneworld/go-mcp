@@ -3,6 +3,7 @@ package pkg
 import (
 	"log"
 	"runtime/debug"
+	"unsafe"
 )
 
 func Recover() {
@@ -16,4 +17,8 @@ func RecoverWithFunc(f func(r any)) {
 		f(r)
 		log.Printf("panic: %v\nstack: %s", r, debug.Stack())
 	}
+}
+
+func B2S(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

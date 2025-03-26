@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-mcp/pkg"
 	"io"
 	"net/http"
 	"net/url"
-	"sync"
-
-	"go-mcp/pkg"
 
 	"github.com/google/uuid"
 )
@@ -56,8 +54,7 @@ type sseServerTransport struct {
 
 	messageEndpointFullURL string // 自动生成
 
-	// key=string, value=chan []byte
-	sessionMap sync.Map
+	sessionStore pkg.SessionStore
 
 	receiver ServerReceiver
 
@@ -96,7 +93,7 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 		cancel:                 cancel,
 		httpSvr:                nil,
 		messageEndpointFullURL: "",
-		sessionMap:             sync.Map{},
+		sessionStore:           pkg.DefaultSessionStore,
 		receiver:               nil,
 		logger:                 pkg.DefaultLogger,
 		ssePath:                "/sse",
@@ -132,7 +129,7 @@ func NewSSEServerTransportAndHandler(messageEndpointFullURL string, opts ...SSES
 		cancel:                 cancel,
 		httpSvr:                nil,
 		messageEndpointFullURL: messageEndpointFullURL,
-		sessionMap:             sync.Map{},
+		sessionStore:           pkg.DefaultSessionStore,
 		receiver:               nil,
 		logger:                 pkg.DefaultLogger,
 		ssePath:                "",
@@ -151,7 +148,7 @@ func NewSSEServerTransportAndHandler(messageEndpointFullURL string, opts ...SSES
 func (x *sseServerTransport) Run() error {
 	if x.httpSvr == nil {
 		<-x.ctx.Done()
-		return nil
+		return fmt.Errorf("httpSvr is nil, please init before Run()")
 	}
 	err := x.httpSvr.ListenAndServe()
 	if errors.Is(err, http.ErrServerClosed) {
@@ -164,7 +161,7 @@ func (x *sseServerTransport) Run() error {
 }
 
 func (x *sseServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	conn, ok := x.sessionMap.Load(sessionID)
+	conn, ok := x.sessionStore.Load(sessionID)
 	if !ok {
 		return nil
 	}
@@ -206,8 +203,8 @@ func (x *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 	// Create an SSE connection
 	sessionChan := make(chan []byte, 64)
 	sessionID := uuid.New().String()
-	x.sessionMap.Store(sessionID, sessionChan)
-	defer x.sessionMap.Delete(sessionID)
+	x.sessionStore.Store(sessionID, sessionChan)
+	defer x.sessionStore.Delete(sessionID)
 	uri := fmt.Sprintf("%s?sessionID=%s", x.messageEndpointFullURL, sessionID)
 	// Send the initial endpoint event
 	_, _ = fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
@@ -249,7 +246,7 @@ func (x *sseServerTransport) handleMessage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	_, ok := x.sessionMap.Load(sessionID)
+	_, ok := x.sessionStore.Load(sessionID)
 	if !ok {
 		x.writeError(w, http.StatusBadRequest, "Invalid session ID")
 		return
@@ -284,10 +281,15 @@ func (x *sseServerTransport) writeError(w http.ResponseWriter, code int, message
 
 func (x *sseServerTransport) Shutdown(ctx context.Context) error {
 	x.cancel()
-	if x.httpSvr != nil {
-		if err := x.httpSvr.Shutdown(ctx); err != nil {
-			return fmt.Errorf("failed to shutdown HTTP server: %w", err)
-		}
+
+	if x.httpSvr == nil {
+		x.logger.Warnf("shutdown sse server without httpSvr")
+		return nil
 	}
+
+	if err := x.httpSvr.Shutdown(ctx); err != nil {
+		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
+	}
+
 	return nil
 }
