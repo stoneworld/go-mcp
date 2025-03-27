@@ -13,14 +13,13 @@ import (
 // 对来自客户端的 message(request、response、notification)进行接收处理
 // 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
-func (client *Client) Receive(ctx context.Context, msg []byte) {
+func (client *Client) Receive(ctx context.Context, msg []byte) error {
 	defer pkg.Recover()
 
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
 		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
-			// 打印日志
-			return
+			return err
 		}
 		go func() {
 			defer pkg.Recover()
@@ -30,7 +29,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 				return
 			}
 		}()
-		return
+		return nil
 	}
 
 	// 判断 request和response
@@ -38,7 +37,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 		resp := &protocol.JSONRPCResponse{}
 		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
 			// 打印日志
-			return
+			return err
 		}
 		go func() {
 			defer pkg.Recover()
@@ -48,13 +47,13 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 				return
 			}
 		}()
-		return
+		return nil
 	}
 
 	req := &protocol.JSONRPCRequest{}
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		// 打印日志
-		return
+		return err
 	}
 	go func() {
 		defer pkg.Recover()
@@ -64,7 +63,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) {
 			return
 		}
 	}()
-	return
+	return nil
 }
 
 func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) error {

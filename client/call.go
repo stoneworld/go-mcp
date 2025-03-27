@@ -102,10 +102,7 @@ func (client *Client) callAndParse(ctx context.Context, method protocol.Method, 
 		return err
 	}
 
-	if err := pkg.JsonUnmarshal(rawResult, &result); err != nil {
-		return fmt.Errorf("JsonUnmarshal: rawResult=%s, err=%w", rawResult, err)
-	}
-	return nil
+	return pkg.JsonUnmarshal(rawResult, &result)
 }
 
 // 负责request和response的拼接

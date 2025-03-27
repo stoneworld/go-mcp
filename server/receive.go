@@ -13,60 +13,51 @@ import (
 // 对来自客户端的 message(request、response、notification)进行接收处理
 // 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
-func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) {
+func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) error {
 	ctx = setSessionIDToCtx(ctx, sessionID)
 
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
 		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
-			// 打印日志
-			return
+			return err
 		}
 		go func() {
 			defer pkg.Recover()
-
-			server.inFly.Add(1)
-			defer server.inFly.Done()
 
 			if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
 				// TODO: 打印日志
 				return
 			}
 		}()
-		return
+		return nil
 	}
 
 	// 判断 request和response
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
 		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
-			// 打印日志
-			return
+			return err
 		}
 		go func() {
 			defer pkg.Recover()
-
-			server.inFly.Add(1)
-			defer server.inFly.Done()
 
 			if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
 				// TODO: 打印日志
 				return
 			}
 		}()
-		return
+		return nil
 	}
 
 	req := &protocol.JSONRPCRequest{}
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
-		// TODO: 打印日志
-		return
+		return err
 	}
 	go func() {
 		defer pkg.Recover()
 
-		server.inFly.Add(1)
-		defer server.inFly.Done()
+		server.inFlyRequest.Add(1)
+		defer server.inFlyRequest.Done()
 
 		resp := server.receiveRequest(ctx, req)
 
@@ -76,7 +67,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		}
 	}()
 
-	return
+	return nil
 }
 
 func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {

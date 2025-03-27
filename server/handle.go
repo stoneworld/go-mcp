@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -47,7 +46,7 @@ func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Con
 
 func (server *Server) handleRequestWithListTools(ctx context.Context, rawParams json.RawMessage) (*protocol.ListToolsResult, error) {
 	request := &protocol.ListToolsRequest{}
-	if err := parse(rawParams, request); err != nil {
+	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
 		return nil, err
 	}
 	// TODO: 需要处理request.Cursor的翻页操作
@@ -68,15 +67,8 @@ func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParam
 
 func (server *Server) handleNotifyWithCancelled(ctx context.Context, rawParams json.RawMessage) error {
 	param := &protocol.CancelledNotification{}
-	if err := parse(rawParams, param); err != nil {
+	if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
 		return err
 	}
 	return server.cancelledNotifyHandler(ctx, param)
-}
-
-func parse(rawParams json.RawMessage, request interface{}) error {
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return fmt.Errorf("JsonUnmarshal: rawParams=%s, err=%w", rawParams, err)
-	}
-	return nil
 }

@@ -180,7 +180,10 @@ func (t *SSEClientTransport) handleSSEEvent(event, data string) {
 	case "message":
 		ctx, cancel := context.WithTimeout(t.ctx, t.receiveTimeout)
 		defer cancel()
-		t.receiver.Receive(ctx, []byte(data))
+		if err := t.receiver.Receive(ctx, []byte(data)); err != nil {
+			t.logger.Errorf("Error receive message: %v", err)
+			return
+		}
 	}
 }
 

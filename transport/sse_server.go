@@ -166,7 +166,7 @@ func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-t.ctx.Done():
-		return fmt.Errorf("transport is shutting down")
+		return ctx.Err()
 	}
 }
 
@@ -204,14 +204,11 @@ func (t *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
 	flusher.Flush()
 
-	for {
+	for msg := range sessionChan {
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.ctx.Done():
-			// server closed
-			return
-		case msg := <-sessionChan:
+		default:
 			_, err := fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
 			if err != nil {
 				t.logger.Errorf("Failed to write message: %v", err)
@@ -250,10 +247,13 @@ func (t *sseServerTransport) handleMessage(w http.ResponseWriter, r *http.Reques
 	// Parse message as raw JSON
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
-		t.writeError(w, http.StatusBadRequest, "Invalid request")
+		t.writeError(w, http.StatusBadRequest, fmt.Sprintf("Invalid request: %v", err))
 		return
 	}
-	t.receiver.Receive(ctx, sessionID, bs)
+	if err = t.receiver.Receive(ctx, sessionID, bs); err != nil {
+		t.writeError(w, http.StatusBadRequest, fmt.Sprintf("Failed to receive: %v", err))
+		return
+	}
 	// Process message through MCPServer
 
 	// For notifications, just send 202 Accepted with no body
@@ -273,18 +273,31 @@ func (t *sseServerTransport) writeError(w http.ResponseWriter, code int, message
 	}
 }
 
-func (t *sseServerTransport) Shutdown(ctx context.Context) error {
+func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context.Context) error {
+	shutdownFunc := func() {
+		<-serverCtx.Done()
+
+		t.cancel()
+
+		t.sessionStore.Range(func(key string, value interface{}) bool {
+			if c, ok := value.(chan []byte); ok {
+				close(c)
+			}
+			return true
+		})
+
+	}
+
 	if t.httpSvr == nil {
 		t.logger.Warnf("shutdown sse server without httpSvr")
+
+		shutdownFunc()
 		return nil
 	}
 
-	t.httpSvr.RegisterOnShutdown(func() {
-		<-ctx.Done()
-		t.cancel()
-	})
+	t.httpSvr.RegisterOnShutdown(shutdownFunc)
 
-	if err := t.httpSvr.Shutdown(ctx); err != nil {
+	if err := t.httpSvr.Shutdown(userCtx); err != nil {
 		return fmt.Errorf("failed to shutdown HTTP server: %w", err)
 	}
 

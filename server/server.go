@@ -23,7 +23,9 @@ type Server struct {
 	// TODO：需要定期清理无效session
 	sessionID2session *pkg.MemorySessionStore
 
-	inFly sync.WaitGroup
+	inFlyRequest sync.WaitGroup
+
+	inShutdown atomic.Bool // true when server is in shutdown
 
 	logger pkg.Logger
 }
@@ -77,16 +79,18 @@ func (server *Server) AddTool(tool *protocol.Tool) {
 	server.tools = append(server.tools, tool)
 }
 
-func (server *Server) Shutdown(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
+func (server *Server) Shutdown(userCtx context.Context) error {
+	server.inShutdown.Store(true)
+
+	serverCtx, cancel := context.WithCancel(userCtx)
 	defer cancel()
 
 	go func() {
 		defer pkg.Recover()
 
-		server.inFly.Wait()
+		server.inFlyRequest.Wait()
 		cancel()
 	}()
 
-	return server.transport.Shutdown(ctx)
+	return server.transport.Shutdown(userCtx, serverCtx)
 }
