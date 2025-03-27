@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 
 	"go-mcp/pkg"
 )
@@ -13,14 +12,20 @@ import (
 type MockClientTransport struct {
 	receiver ClientReceiver
 
-	in  *bufio.ReadWriter
-	out *bufio.ReadWriter
+	in  io.Reader
+	out io.Writer
+
+	logger pkg.Logger
 
 	cancel context.CancelFunc
 }
 
-func NewMockClientTransport(in *bufio.ReadWriter, out *bufio.ReadWriter) *MockClientTransport {
-	return &MockClientTransport{}
+func NewMockClientTransport(in io.Reader, out io.Writer) *MockClientTransport {
+	return &MockClientTransport{
+		in:     in,
+		out:    out,
+		logger: pkg.DefaultLogger,
+	}
 }
 
 func (t *MockClientTransport) Start() error {
@@ -28,9 +33,9 @@ func (t *MockClientTransport) Start() error {
 	t.cancel = cancel
 
 	go func() {
-		for {
-			t.receive(ctx)
-		}
+		defer pkg.Recover()
+
+		t.receive(ctx)
 	}()
 
 	return nil
@@ -39,9 +44,6 @@ func (t *MockClientTransport) Start() error {
 func (t *MockClientTransport) Send(ctx context.Context, msg Message) error {
 	if _, err := t.out.Write(append(msg, "\n"...)); err != nil {
 		return fmt.Errorf("failed to write: %w", err)
-	}
-	if err := t.out.Flush(); err != nil {
-		return fmt.Errorf("failed to flush: %w", err)
 	}
 	return nil
 }
@@ -56,15 +58,19 @@ func (t *MockClientTransport) Close() error {
 }
 
 func (t *MockClientTransport) receive(ctx context.Context) {
-	defer pkg.Recover()
+	s := bufio.NewScanner(t.in)
 
-	line, err := t.in.ReadBytes('\n')
-	if err != nil {
-		if err != io.EOF {
-			log.Fatal(err)
+	for i := 0; s.Scan(); i++ {
+		if err := t.receiver.Receive(ctx, s.Bytes()); err != nil {
+			t.logger.Errorf("receiver failed: %v", err)
 			return
+		}
+	}
+
+	if err := s.Err(); err != nil {
+		if err != io.EOF {
+			t.logger.Errorf("unexpected error reading input: %v", err)
 		}
 		return
 	}
-	t.receiver.Receive(ctx, line)
 }
