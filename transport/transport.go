@@ -37,7 +37,7 @@ type ClientReceiver interface {
 }
 
 type ServerTransport interface {
-	// Run 开始监听, 这是同步的, 在 Shutdown 之前, 不能返回
+	// Run 开始监听请求, 这是同步的, 在 Shutdown 之前, 不能返回
 	Run() error
 
 	// Send 发送消息
@@ -46,7 +46,14 @@ type ServerTransport interface {
 	// SetReceiver 设置对对端消息的处理器
 	SetReceiver(ServerReceiver)
 
-	// Shutdown 关闭监听, 内部实现时需要使用 ctx 控制超时
+	// Shutdown 优雅关闭, 内部实现时需要先停止对消息的接收，再等待 serverCtx 被 cancel，同时使用 userCtx 控制超时。
+	// userCtx is used to control the timeout of the server shutdown.
+	// serverCtx is used to coordinate the internal cleanup sequence:
+	// 1. turn off message listen
+	// 2. Wait for serverCtx to be done (indicating server shutdown is complete)
+	// 3. Cancel the transport's context to stop all ongoing operations
+	// 4. Wait for all in-flight sends to complete
+	// 5. Close all session
 	Shutdown(userCtx context.Context, serverCtx context.Context) error
 }
 

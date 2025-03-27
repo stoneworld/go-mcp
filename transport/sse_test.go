@@ -3,13 +3,9 @@ package transport
 import (
 	"context"
 	"testing"
-	"time"
 )
 
 func TestSSE(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
 	var (
 		err    error
 		svr    ServerTransport
@@ -21,12 +17,10 @@ func TestSSE(t *testing.T) {
 		return
 	}
 
-	time.Sleep(time.Second)
-
-	if client, err = NewSSEClientTransport(ctx, "http://127.0.0.1:8181/sse"); err != nil {
+	if client, err = NewSSEClientTransport(context.Background(), "http://127.0.0.1:8181/sse"); err != nil {
 		t.Errorf("NewSSEClientTransport failed: %v", err)
 		return
 	}
 
-	testClient2Server(t, client, svr)
+	testTransport(t, client, svr)
 }
