@@ -20,47 +20,20 @@ func (r clientReceive) Receive(ctx context.Context, msg []byte) error {
 	return r(ctx, msg)
 }
 
-func testClient2Server(t *testing.T, client ClientTransport, server ServerTransport) {
-	msg := "hello"
-	expectedMsg := ""
+func testTransport(t *testing.T, client ClientTransport, server ServerTransport) {
+	msgWithServer := "hello"
+	expectedMsgWithServer := ""
+	server.SetReceiver(serverReceive(func(ctx context.Context, sessionID string, msg []byte) error {
+		expectedMsgWithServer = string(msg)
+		return nil
+	}))
 
-	testSendReceive(t, client, server, func() {
-		server.SetReceiver(serverReceive(func(ctx context.Context, sessionID string, msg []byte) error {
-			expectedMsg = string(msg)
-			return nil
-		}))
-	}, func() {
-		if err := client.Send(context.Background(), Message(msg)); err != nil {
-			t.Fatalf("client.Send() failed: %v", err)
-		}
-	})
-
-	assert.Equal(t, expectedMsg, msg)
-}
-
-func testServer2Client(t *testing.T, client ClientTransport, server ServerTransport) {
-	var (
-		msg         = "hello"
-		expectedMsg = ""
-	)
-
-	testSendReceive(t, client, server, func() {
-		client.SetReceiver(clientReceive(func(ctx context.Context, msg []byte) error {
-			expectedMsg = string(msg)
-			return nil
-		}))
-	}, func() {
-		// TODO： 这里需要解决获取不到sessionID的问题
-		if err := server.Send(context.Background(), "$test$", Message(msg)); err != nil {
-			t.Fatalf("server.Send() failed: %v", err)
-		}
-	})
-
-	assert.Equal(t, expectedMsg, msg)
-}
-
-func testSendReceive(t *testing.T, client ClientTransport, server ServerTransport, setReceive, send func()) {
-	setReceive()
+	msgWithClient := "hello"
+	expectedMsgWithClient := ""
+	client.SetReceiver(clientReceive(func(ctx context.Context, msg []byte) error {
+		expectedMsgWithClient = string(msg)
+		return nil
+	}))
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -78,10 +51,13 @@ func testSendReceive(t *testing.T, client ClientTransport, server ServerTranspor
 	}
 
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		userCtx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 		defer cancel()
 
-		if err := server.Shutdown(ctx, ctx); err != nil {
+		serverCtx, cancel := context.WithCancel(userCtx)
+		cancel()
+
+		if err := server.Shutdown(userCtx, serverCtx); err != nil {
 			t.Errorf("server.Shutdown() failed: %v", err)
 		}
 	}()
@@ -96,7 +72,19 @@ func testSendReceive(t *testing.T, client ClientTransport, server ServerTranspor
 		}
 	}()
 
-	send()
-
+	if err := client.Send(context.Background(), Message(msgWithServer)); err != nil {
+		t.Fatalf("client.Send() failed: %v", err)
+	}
 	time.Sleep(time.Second * 1)
+	assert.Equal(t, expectedMsgWithServer, msgWithServer)
+
+	sessionID := ""
+	if cli, ok := client.(*SSEClientTransport); ok {
+		sessionID = cli.messageEndpoint.Query().Get("sessionID")
+	}
+	if err := server.Send(context.Background(), sessionID, Message(msgWithClient)); err != nil {
+		t.Fatalf("server.Send() failed: %v", err)
+	}
+	time.Sleep(time.Second * 1)
+	assert.Equal(t, expectedMsgWithClient, msgWithClient)
 }

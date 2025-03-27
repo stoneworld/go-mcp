@@ -12,6 +12,5 @@ func TestMockTransport(t *testing.T) {
 	serverTransport := NewMockServerTransport(reader2, writer1)
 	clientTransport := NewMockClientTransport(reader1, writer2)
 
-	testClient2Server(t, clientTransport, serverTransport)
-	testServer2Client(t, clientTransport, serverTransport)
+	testTransport(t, clientTransport, serverTransport)
 }
