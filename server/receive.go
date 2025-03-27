@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go-mcp/pkg"
@@ -53,10 +54,14 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		return err
 	}
+
+	server.inFlyRequest.Add(1)
+	if server.inShutdown.Load() {
+		defer server.inFlyRequest.Done()
+		return errors.New("server already shutdown")
+	}
 	go func() {
 		defer pkg.Recover()
-
-		server.inFlyRequest.Add(1)
 		defer server.inFlyRequest.Done()
 
 		resp := server.receiveRequest(ctx, req)

@@ -23,9 +23,8 @@ type Server struct {
 	// TODO：需要定期清理无效session
 	sessionID2session *pkg.MemorySessionStore
 
+	inShutdown   atomic.Bool // true when server is in shutdown
 	inFlyRequest sync.WaitGroup
-
-	inShutdown atomic.Bool // true when server is in shutdown
 
 	logger pkg.Logger
 }

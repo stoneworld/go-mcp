@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"go-mcp/pkg"
@@ -56,6 +57,8 @@ type sseServerTransport struct {
 	messageEndpointFullURL string // 自动生成
 
 	sessionStore pkg.SessionStore
+
+	inFlySend sync.WaitGroup
 
 	receiver ServerReceiver
 
@@ -151,6 +154,15 @@ func (t *sseServerTransport) Run() error {
 }
 
 func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
+	t.inFlySend.Add(1)
+	defer t.inFlySend.Done()
+
+	select {
+	case <-t.ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	conn, ok := t.sessionStore.Load(sessionID)
 	if !ok {
 		return pkg.NewLackSessionError(sessionID)
@@ -164,8 +176,6 @@ func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 	case c <- msg:
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
-	case <-t.ctx.Done():
 		return ctx.Err()
 	}
 }
@@ -279,6 +289,8 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 
 		t.cancel()
 
+		t.inFlySend.Wait()
+
 		t.sessionStore.Range(func(key string, value interface{}) bool {
 			if c, ok := value.(chan []byte); ok {
 				close(c)
@@ -289,8 +301,6 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 	}
 
 	if t.httpSvr == nil {
-		t.logger.Warnf("shutdown sse server without httpSvr")
-
 		shutdownFunc()
 		return nil
 	}
