@@ -82,7 +82,7 @@ func TestServer(t *testing.T) {
 
 			var respMap map[string]interface{}
 			if err := pkg.JsonUnmarshal(respBytes, &respMap); err != nil {
-				t.Errorf("json Unmarshal: %+v", err)
+				t.Error(err)
 			}
 
 			expectedResp := protocol.NewJSONRPCSuccessResponse(uuid, tt.expectedResponse)
@@ -92,7 +92,7 @@ func TestServer(t *testing.T) {
 			}
 			var expectedRespMap map[string]interface{}
 			if err := pkg.JsonUnmarshal(expectedRespBytes, &expectedRespMap); err != nil {
-				t.Errorf("json Unmarshal: %+v", err)
+				t.Error(err)
 			}
 
 			if !reflect.DeepEqual(respMap, expectedRespMap) {

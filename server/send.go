@@ -27,14 +27,8 @@ func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, 
 	return nil
 }
 
-func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string, requestID protocol.RequestID, result protocol.ServerResponse) error {
-	if requestID == nil {
-		return fmt.Errorf("requestID can't is nil")
-	}
-
-	resp := protocol.NewJSONRPCSuccessResponse(requestID, result)
-
-	message, err := sonic.Marshal(resp)
+func (server *Server) sendMsgWithResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
+	message, err := sonic.Marshal(response)
 	if err != nil {
 		return err
 	}
@@ -55,24 +49,6 @@ func (server *Server) sendMsgWithNotification(ctx context.Context, sessionID str
 
 	if err := server.transport.Send(ctx, sessionID, message); err != nil {
 		return fmt.Errorf("sendNotification: transport send: %w", err)
-	}
-	return nil
-}
-
-func (server *Server) sendMsgWithError(ctx context.Context, sessionID string, requestID protocol.RequestID, code int, msg string) error {
-	if requestID == nil {
-		return fmt.Errorf("requestID can't is nil")
-	}
-
-	resp := protocol.NewJSONRPCErrorResponse(requestID, code, msg)
-
-	message, err := sonic.Marshal(resp)
-	if err != nil {
-		return err
-	}
-
-	if err := server.transport.Send(ctx, sessionID, message); err != nil {
-		return fmt.Errorf("sendResponse: transport send: %w", err)
 	}
 	return nil
 }

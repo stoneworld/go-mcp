@@ -21,7 +21,10 @@ type Server struct {
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
 	// TODO：需要定期清理无效session
-	sessionID2session sync.Map
+	sessionID2session *pkg.MemorySessionStore
+
+	inShutdown   atomic.Bool // true when server is in shutdown
+	inFlyRequest sync.WaitGroup
 
 	logger pkg.Logger
 }
@@ -37,8 +40,9 @@ type session struct {
 
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
-		transport: t,
-		logger:    pkg.DefaultLogger,
+		transport:         t,
+		logger:            pkg.DefaultLogger,
+		sessionID2session: pkg.NewMemorySessionStore(),
 	}
 	t.SetReceiver(server)
 
@@ -74,7 +78,18 @@ func (server *Server) AddTool(tool *protocol.Tool) {
 	server.tools = append(server.tools, tool)
 }
 
-func (server *Server) Shutdown(ctx context.Context) error {
-	// TODO: 还有一些其他处理操作也可以放在这里
-	return server.transport.Shutdown(ctx)
+func (server *Server) Shutdown(userCtx context.Context) error {
+	server.inShutdown.Store(true)
+
+	serverCtx, cancel := context.WithCancel(userCtx)
+	defer cancel()
+
+	go func() {
+		defer pkg.Recover()
+
+		server.inFlyRequest.Wait()
+		cancel()
+	}()
+
+	return server.transport.Shutdown(userCtx, serverCtx)
 }
