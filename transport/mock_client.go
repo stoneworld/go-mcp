@@ -60,7 +60,7 @@ func (t *MockClientTransport) Close() error {
 func (t *MockClientTransport) receive(ctx context.Context) {
 	s := bufio.NewScanner(t.in)
 
-	for i := 0; s.Scan(); i++ {
+	for s.Scan() {
 		if err := t.receiver.Receive(ctx, s.Bytes()); err != nil {
 			t.logger.Errorf("receiver failed: %v", err)
 			return

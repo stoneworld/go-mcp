@@ -60,9 +60,13 @@ func (t *MockServerTransport) Shutdown(userCtx context.Context, serverCtx contex
 }
 
 func (t *MockServerTransport) receive(ctx context.Context) {
+	b := make([]byte, 0, 10000000)
+	t.in.Read(b)
+	fmt.Println(string(b))
+
 	s := bufio.NewScanner(t.in)
 
-	for i := 0; s.Scan(); i++ {
+	for s.Scan() {
 		if err := t.receiver.Receive(ctx, mockSessionID, s.Bytes()); err != nil {
 			t.logger.Errorf("receiver failed: %v", err)
 			return

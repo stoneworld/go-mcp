@@ -49,7 +49,11 @@ func WithSSEServerTransportAndHandlerOptionLogger(logger pkg.Logger) SSEServerTr
 }
 
 type sseServerTransport struct {
-	ctx    context.Context
+	// ctx is the context that controls the lifecycle of the SSE server.
+	// It is used to coordinate cancellation of all ongoing send operations when the server is shutting down.
+	ctx context.Context
+	// cancel is the function to cancel the ctx when the server needs to shut down.
+	// It is called during server shutdown to gracefully terminate all connections and operations.
 	cancel context.CancelFunc
 
 	httpSvr *http.Server
