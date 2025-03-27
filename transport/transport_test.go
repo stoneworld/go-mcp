@@ -2,9 +2,10 @@ package transport
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type serverReceive func(ctx context.Context, sessionID string, msg []byte)
@@ -22,6 +23,7 @@ func (r clientReceive) Receive(ctx context.Context, msg []byte) {
 func testClient2Server(t *testing.T, client ClientTransport, server ServerTransport) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
+
 	msg := "hello"
 	expectedMsg := "hello"
 

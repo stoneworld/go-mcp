@@ -20,9 +20,6 @@ func TestSSE(t *testing.T) {
 		t.Errorf("NewSSEServerTransport failed: %v", err)
 		return
 	}
-	defer func() {
-		_ = svr.Shutdown(ctx)
-	}()
 
 	time.Sleep(time.Second)
 

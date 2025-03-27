@@ -23,9 +23,7 @@ type MemorySessionStore struct {
 
 // NewMemorySessionStore 创建一个新的内存 session 存储
 func NewMemorySessionStore() *MemorySessionStore {
-	return &MemorySessionStore{
-		store: sync.Map{},
-	}
+	return &MemorySessionStore{}
 }
 
 func (s *MemorySessionStore) Store(key string, value interface{}) {
@@ -45,6 +43,3 @@ func (s *MemorySessionStore) Range(f func(key string, value interface{}) bool) {
 		return f(key.(string), value)
 	})
 }
-
-// DefaultSessionStore 默认的 session 存储实现
-var DefaultSessionStore SessionStore = NewMemorySessionStore()

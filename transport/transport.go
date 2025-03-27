@@ -39,7 +39,7 @@ type ClientTransport interface {
 }
 
 type ClientReceiver interface {
-	Receive(ctx context.Context, msg []byte)
+	Receive(ctx context.Context, msg []byte) error
 }
 
 type ServerTransport interface {
@@ -53,9 +53,9 @@ type ServerTransport interface {
 	SetReceiver(ServerReceiver)
 
 	// Shutdown 关闭监听, 内部实现时需要使用 ctx 控制超时
-	Shutdown(ctx context.Context) error
+	Shutdown(userCtx context.Context, serverCtx context.Context) error
 }
 
 type ServerReceiver interface {
-	Receive(ctx context.Context, sessionID string, msg []byte)
+	Receive(ctx context.Context, sessionID string, msg []byte) error
 }
