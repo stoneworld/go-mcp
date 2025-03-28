@@ -70,9 +70,7 @@ func (t *MockServerTransport) receive(ctx context.Context) {
 	}
 
 	if err := s.Err(); err != nil {
-		if err != io.EOF {
-			t.logger.Errorf("unexpected error reading input: %v", err)
-		}
+		t.logger.Errorf("unexpected error reading input: %v", err)
 		return
 	}
 }

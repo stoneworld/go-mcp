@@ -61,7 +61,7 @@ func (t *stdioServerTransport) Shutdown(userCtx context.Context, serverCtx conte
 
 	select {
 	case <-serverCtx.Done():
-		return serverCtx.Err()
+		return nil
 	case <-userCtx.Done():
 		return userCtx.Err()
 	}
@@ -83,9 +83,7 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 	}
 
 	if err := s.Err(); err != nil {
-		if err != io.EOF {
-			t.logger.Errorf("unexpected error reading input: %v", err)
-		}
+		t.logger.Errorf("server server unexpected error reading input: %v", err)
 		return
 	}
 }

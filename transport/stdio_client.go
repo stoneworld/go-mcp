@@ -3,8 +3,10 @@ package transport
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 
 	"go-mcp/pkg"
@@ -15,7 +17,7 @@ const mcpMessageDelimiter = '\n'
 type stdioClientTransport struct {
 	cmd      *exec.Cmd
 	receiver ClientReceiver
-	reader   io.Reader
+	reader   io.ReadCloser
 	writer   io.WriteCloser
 
 	logger pkg.Logger
@@ -24,8 +26,10 @@ type stdioClientTransport struct {
 	receiveShutDone chan struct{}
 }
 
-func NewStdioClientTransport(command string, args ...string) (ClientTransport, error) {
+func NewStdioClientTransport(command string, env []string, args ...string) (ClientTransport, error) {
 	cmd := exec.Command(command, args...)
+
+	cmd.Env = append(os.Environ(), env...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -38,10 +42,11 @@ func NewStdioClientTransport(command string, args ...string) (ClientTransport, e
 	}
 
 	client := &stdioClientTransport{
-		cmd:    cmd,
-		reader: stdout,
-		writer: stdin,
-		logger: pkg.DefaultLogger,
+		cmd:             cmd,
+		reader:          stdout,
+		writer:          stdin,
+		logger:          pkg.DefaultLogger,
+		receiveShutDone: make(chan struct{}),
 	}
 
 	return client, nil
@@ -80,8 +85,11 @@ func (t *stdioClientTransport) Close() error {
 	if err := t.writer.Close(); err != nil {
 		return fmt.Errorf("failed to close writer: %w", err)
 	}
+	if err := t.reader.Close(); err != nil {
+		return fmt.Errorf("failed to close writer: %w", err)
+	}
 
-	if err := t.cmd.Wait(); err != nil {
+	if err := t.cmd.Process.Kill(); err != nil {
 		return err
 	}
 
@@ -106,8 +114,8 @@ func (t *stdioClientTransport) receive(ctx context.Context) {
 	}
 
 	if err := s.Err(); err != nil {
-		if err != io.EOF {
-			t.logger.Errorf("unexpected error reading input: %v", err)
+		if !errors.Is(err, io.ErrClosedPipe) { // 单测时会保这个错，在这里屏蔽掉
+			t.logger.Errorf("client receive unexpected error reading input: %v", err)
 		}
 		return
 	}
