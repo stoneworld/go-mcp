@@ -55,17 +55,17 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context) error {
 	return nil
 }
 
-func (client *Client) ListTools(ctx context.Context) error {
-	return nil
+func (client *Client) ListTools(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
+	result := &protocol.ListToolsResult{}
+
+	if err := client.callAndParse(ctx, protocol.ToolsList, &request, &result); err != nil {
+		return nil, fmt.Errorf("ListTools: %w", err)
+	}
+	return result, nil
 }
 
 func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	result := &protocol.CallToolResult{}
-
-	if err := client.callAndParse(ctx, protocol.ToolsCall, &request, &result); err != nil {
-		return nil, fmt.Errorf("CallTool: %w", err)
-	}
-	return result, nil
+	return nil, nil
 }
 
 func (client *Client) CompleteRequest(ctx context.Context) error {
