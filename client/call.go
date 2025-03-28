@@ -138,7 +138,7 @@ func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsR
 	response, err := client.callServer(ctx, protocol.ToolsList, request)
 	if err != nil {
 		return nil, err
-	}c
+	}
 
 	var result protocol.ListToolsResult
 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
@@ -148,12 +148,7 @@ func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsR
 }
 
 func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	result := &protocol.CallToolResult{}
-
-	if err := client.callAndParse(ctx, protocol.ToolsCall, &request, &result); err != nil {
-		return nil, fmt.Errorf("CallTool: %w", err)
-	}
-	return result, nil
+	return nil, nil
 }
 
 func (client *Client) CompleteRequest(ctx context.Context, request protocol.CompleteRequest) (*protocol.CompleteResult, error) {

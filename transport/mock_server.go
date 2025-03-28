@@ -60,10 +60,6 @@ func (t *MockServerTransport) Shutdown(userCtx context.Context, serverCtx contex
 }
 
 func (t *MockServerTransport) receive(ctx context.Context) {
-	b := make([]byte, 0, 10000000)
-	t.in.Read(b)
-	fmt.Println(string(b))
-
 	s := bufio.NewScanner(t.in)
 
 	for s.Scan() {
