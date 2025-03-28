@@ -1,17 +1,39 @@
 package main
 
 import (
-	"bufio"
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"go-mcp/transport"
 )
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		_, err := fmt.Fprintf(os.Stdout, "%s\n", scanner.Bytes())
-		if err != nil {
+	t := transport.NewStdioServerTransport()
+
+	go func() {
+		if err := t.Run(); err != nil {
+			fmt.Println(err)
 			return
 		}
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	<-sigChan
+
+	userCtx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+
+	serverCtx, cancel := context.WithCancel(userCtx)
+	cancel()
+
+	if err := t.Shutdown(userCtx, serverCtx); err != nil {
+		fmt.Println(err)
+		return
 	}
 }

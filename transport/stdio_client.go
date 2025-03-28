@@ -6,21 +6,22 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"sync"
 
 	"go-mcp/pkg"
 )
 
+const mcpMessageDelimiter = '\n'
+
 type stdioClientTransport struct {
 	cmd      *exec.Cmd
 	receiver ClientReceiver
+	reader   io.Reader
+	writer   io.WriteCloser
 
-	reader *bufio.Reader
-	writer io.WriteCloser
+	logger pkg.Logger
 
-	cancel context.CancelFunc
-	done   chan struct{}
-	once   sync.Once
+	cancel          context.CancelFunc
+	receiveShutDone chan struct{}
 }
 
 func NewStdioClientTransport(command string, args ...string) (ClientTransport, error) {
@@ -38,37 +39,34 @@ func NewStdioClientTransport(command string, args ...string) (ClientTransport, e
 
 	client := &stdioClientTransport{
 		cmd:    cmd,
-		reader: bufio.NewReader(stdout),
+		reader: stdout,
 		writer: stdin,
-	}
-
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start command: %w", err)
+		logger: pkg.DefaultLogger,
 	}
 
 	return client, nil
 }
 
 func (t *stdioClientTransport) Start() error {
-	t.once.Do(func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		t.cancel = cancel
+	if err := t.cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start command: %w", err)
+	}
 
-		go func() {
-			defer pkg.Recover()
+	ctx, cancel := context.WithCancel(context.Background())
+	t.cancel = cancel
 
-			t.receive(ctx)
-			close(t.done)
-		}()
-	})
+	go func() {
+		defer pkg.Recover()
+
+		t.receive(ctx)
+		close(t.receiveShutDone)
+	}()
 
 	return nil
 }
 
 func (t *stdioClientTransport) Send(ctx context.Context, msg Message) error {
-	msg = append(msg, mcpMessageDelimiter)
-
-	_, err := t.writer.Write(msg)
+	_, err := t.writer.Write(append(msg, mcpMessageDelimiter))
 	return err
 }
 
@@ -76,35 +74,41 @@ func (t *stdioClientTransport) SetReceiver(receiver ClientReceiver) {
 	t.receiver = receiver
 }
 
-func (t *stdioClientTransport) Close(ctx context.Context) error {
-	if t.cancel == nil {
-		return nil
-	}
-
+func (t *stdioClientTransport) Close() error {
 	t.cancel()
 
 	if err := t.writer.Close(); err != nil {
 		return fmt.Errorf("failed to close writer: %w", err)
 	}
 
-	return t.cmd.Wait()
+	if err := t.cmd.Wait(); err != nil {
+		return err
+	}
+
+	<-t.receiveShutDone
+
+	return nil
 }
 
 func (t *stdioClientTransport) receive(ctx context.Context) {
-	for {
+	s := bufio.NewScanner(t.reader)
+
+	for s.Scan() {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			line, err := t.reader.ReadBytes(mcpMessageDelimiter)
-			if err != nil {
-				if err != io.EOF {
-					// todo: handler error
-				}
+			if err := t.receiver.Receive(ctx, s.Bytes()); err != nil {
+				t.logger.Errorf("receiver failed: %v", err)
 				return
 			}
-
-			t.receiver.Receive(ctx, line)
 		}
+	}
+
+	if err := s.Err(); err != nil {
+		if err != io.EOF {
+			t.logger.Errorf("unexpected error reading input: %v", err)
+		}
+		return
 	}
 }

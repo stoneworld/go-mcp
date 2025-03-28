@@ -14,8 +14,6 @@ import (
 	"go-mcp/pkg"
 )
 
-const mcpMessageDelimiter = '\n'
-
 type SSEClientTransportOption func(*SSEClientTransport)
 
 func WithSSEClientOptionReceiveTimeout(timeout time.Duration) SSEClientTransportOption {
@@ -218,7 +216,7 @@ func (t *SSEClientTransport) SetReceiver(receiver ClientReceiver) {
 	t.receiver = receiver
 }
 
-func (t *SSEClientTransport) Close(ctx context.Context) error {
+func (t *SSEClientTransport) Close() error {
 	t.cancel()
 
 	return nil

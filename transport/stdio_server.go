@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"sync"
 
 	"go-mcp/pkg"
 )
@@ -14,47 +13,40 @@ const stdioSessionID = "stdio"
 
 type stdioServerTransport struct {
 	receiver ServerReceiver
-	reader   *bufio.Reader
+	reader   io.Reader
 	writer   io.Writer
 
-	cancel context.CancelFunc
-	done   chan struct{}
-	once   sync.Once
+	logger pkg.Logger
+
+	cancel          context.CancelFunc
+	receiveShutDone chan struct{}
 }
 
 func NewStdioServerTransport() ServerTransport {
-	return NewStdioServerTransportWithIO(os.Stdin, os.Stdout)
-}
-
-func NewStdioServerTransportWithIO(in io.Reader, out io.Writer) ServerTransport {
 	return &stdioServerTransport{
-		reader: bufio.NewReader(in),
-		writer: out,
+		reader: os.Stdin,
+		writer: os.Stdout,
+		logger: pkg.DefaultLogger,
 
-		done: make(chan struct{}),
+		receiveShutDone: make(chan struct{}),
 	}
 }
 
 func (t *stdioServerTransport) Run() error {
-	t.once.Do(func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		t.cancel = cancel
+	ctx, cancel := context.WithCancel(context.Background())
+	t.cancel = cancel
 
-		go func() {
-			defer pkg.Recover()
+	go func() {
+		defer pkg.Recover()
 
-			t.receive(ctx)
-			close(t.done)
-		}()
-	})
-
+		t.receive(ctx)
+		close(t.receiveShutDone)
+	}()
 	return nil
 }
 
 func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	msg = append(msg, mcpMessageDelimiter)
-
-	_, err := t.writer.Write(msg)
+	_, err := t.writer.Write(append(msg, mcpMessageDelimiter))
 	return err
 }
 
@@ -62,38 +54,38 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *stdioServerTransport) Shutdown(ctx context.Context, serverCtx context.Context) error {
-	if t.cancel == nil {
-		return nil
-	}
-
+func (t *stdioServerTransport) Shutdown(userCtx context.Context, serverCtx context.Context) error {
 	t.cancel()
 
+	<-t.receiveShutDone
+
 	select {
-	case <-t.done:
-		return nil
 	case <-serverCtx.Done():
 		return serverCtx.Err()
-	case <-ctx.Done():
-		return ctx.Err()
+	case <-userCtx.Done():
+		return userCtx.Err()
 	}
 }
 
 func (t *stdioServerTransport) receive(ctx context.Context) {
-	for {
+	s := bufio.NewScanner(t.reader)
+
+	for s.Scan() {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			line, err := t.reader.ReadBytes(mcpMessageDelimiter)
-			if err != nil {
-				if err != io.EOF {
-					// todo: handler error
-				}
+			if err := t.receiver.Receive(ctx, stdioSessionID, s.Bytes()); err != nil {
+				t.logger.Errorf("receiver failed: %v", err)
 				return
 			}
-
-			t.receiver.Receive(ctx, stdioSessionID, line)
 		}
+	}
+
+	if err := s.Err(); err != nil {
+		if err != io.EOF {
+			t.logger.Errorf("unexpected error reading input: %v", err)
+		}
+		return
 	}
 }
