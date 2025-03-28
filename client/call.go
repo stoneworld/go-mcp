@@ -26,7 +26,7 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	// todo add meta
+	//TODO add meta
 	notify := &protocol.InitializedNotification{
 		Meta: map[string]interface{}{},
 	}

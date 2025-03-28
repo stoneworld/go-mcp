@@ -17,14 +17,43 @@ import (
 // 2. 发送请求 server.callClient(ctx)
 // 3. 响应解析
 
-func (server *Server) ping(ctx context.Context) error {
-	// server.callClient(ctx)
-	return nil
+func (server *Server) ping(ctx context.Context) (*protocol.PingResult, error) {
+	sessionID, exist := getSessionIDFromCtx(ctx)
+	if !exist {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+
+	request := &protocol.PingRequest{}
+
+	response, err := server.callClient(ctx, sessionID, protocol.Ping, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.PingResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (server *Server) listRoots(ctx context.Context) error {
-	// server.callClient(ctx)
-	return nil
+func (server *Server) listRoots(ctx context.Context) (*protocol.ListRootsResult, error) {
+	sessionID, exist := getSessionIDFromCtx(ctx)
+	if !exist {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+
+	request := &protocol.ListRootsRequest{}
+	response, err := server.callClient(ctx, sessionID, protocol.RootsList, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListRootsResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
 func (server *Server) CreateMessagesSample(ctx context.Context) error {
