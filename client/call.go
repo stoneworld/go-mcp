@@ -25,7 +25,17 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	//client.SendNotification4Initialized(ctx)
+
+	// todo add meta
+	notify := &protocol.InitializedNotification{
+		Meta: map[string]interface{}{},
+	}
+	if err := client.sendNotification4Initialized(ctx, notify); nil != err {
+		return nil, fmt.Errorf("failed to send InitializedNotification: %w", err)
+	}
+
+	client.capabilities = result.Capabilities
+	client.initialized = true
 	return &result, nil
 }
 
@@ -147,8 +157,17 @@ func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsR
 	return &result, nil
 }
 
-func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	return nil, nil
+func (client *Client) CallTool(ctx context.Context, request protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+	response, err := client.callServer(ctx, protocol.ToolsCall, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.CallToolResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
 func (client *Client) CompleteRequest(ctx context.Context, request protocol.CompleteRequest) (*protocol.CompleteResult, error) {
@@ -207,6 +226,10 @@ func (client *Client) callAndParse(ctx context.Context, method protocol.Method, 
 
 // 负责request和response的拼接
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
+	if !client.initialized && method != protocol.Initialize {
+		return nil, fmt.Errorf("client not initialized")
+	}
+
 	requestID := strconv.FormatInt(client.requestID.Add(1), 10)
 	// 发送请求
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {

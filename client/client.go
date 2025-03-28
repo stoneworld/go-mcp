@@ -25,6 +25,10 @@ type Client struct {
 
 	requestID atomic.Int64
 
+	initialized bool
+
+	capabilities protocol.ServerCapabilities
+
 	logger pkg.Logger
 }
 
