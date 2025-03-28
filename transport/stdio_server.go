@@ -11,6 +11,14 @@ import (
 
 const stdioSessionID = "stdio"
 
+type StdioServerTransportOption func(*stdioServerTransport)
+
+func WithStdioServerOptionLogger(log pkg.Logger) StdioServerTransportOption {
+	return func(t *stdioServerTransport) {
+		t.logger = log
+	}
+}
+
 type stdioServerTransport struct {
 	receiver ServerReceiver
 	reader   io.Reader
@@ -22,14 +30,19 @@ type stdioServerTransport struct {
 	receiveShutDone chan struct{}
 }
 
-func NewStdioServerTransport() ServerTransport {
-	return &stdioServerTransport{
+func NewStdioServerTransport(opts ...StdioServerTransportOption) ServerTransport {
+	t := &stdioServerTransport{
 		reader: os.Stdin,
 		writer: os.Stdout,
 		logger: pkg.DefaultLogger,
 
 		receiveShutDone: make(chan struct{}),
 	}
+
+	for _, opt := range opts {
+		opt(t)
+	}
+	return t
 }
 
 func (t *stdioServerTransport) Run() error {

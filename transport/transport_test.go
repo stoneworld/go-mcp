@@ -79,7 +79,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	assert.Equal(t, expectedMsgWithServer, msgWithServer)
 
 	sessionID := ""
-	if cli, ok := client.(*SSEClientTransport); ok {
+	if cli, ok := client.(*sseClientTransport); ok {
 		sessionID = cli.messageEndpoint.Query().Get("sessionID")
 	}
 

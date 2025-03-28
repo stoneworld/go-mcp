@@ -12,6 +12,20 @@ import (
 	"go-mcp/pkg"
 )
 
+type StdioClientTransportOption func(*stdioClientTransport)
+
+func WithStdioClientOptionLogger(log pkg.Logger) StdioClientTransportOption {
+	return func(t *stdioClientTransport) {
+		t.logger = log
+	}
+}
+
+func WithStdioClientOptionEnv(env ...string) StdioClientTransportOption {
+	return func(t *stdioClientTransport) {
+		t.cmd.Env = append(t.cmd.Env, env...)
+	}
+}
+
 const mcpMessageDelimiter = '\n'
 
 type stdioClientTransport struct {
@@ -26,10 +40,10 @@ type stdioClientTransport struct {
 	receiveShutDone chan struct{}
 }
 
-func NewStdioClientTransport(command string, env []string, args ...string) (ClientTransport, error) {
+func NewStdioClientTransport(command string, args []string, opts ...StdioClientTransportOption) (ClientTransport, error) {
 	cmd := exec.Command(command, args...)
 
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = os.Environ()
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -41,7 +55,7 @@ func NewStdioClientTransport(command string, env []string, args ...string) (Clie
 		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
 
-	client := &stdioClientTransport{
+	t := &stdioClientTransport{
 		cmd:             cmd,
 		reader:          stdout,
 		writer:          stdin,
@@ -49,7 +63,10 @@ func NewStdioClientTransport(command string, env []string, args ...string) (Clie
 		receiveShutDone: make(chan struct{}),
 	}
 
-	return client, nil
+	for _, opt := range opts {
+		opt(t)
+	}
+	return t, nil
 }
 
 func (t *stdioClientTransport) Start() error {
