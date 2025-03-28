@@ -36,11 +36,17 @@ func NewStdioClientTransport(command string, args ...string) (ClientTransport, e
 		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
 
-	return &stdioClientTransport{
+	client := &stdioClientTransport{
 		cmd:    cmd,
 		reader: bufio.NewReader(stdout),
 		writer: stdin,
-	}, nil
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start command: %w", err)
+	}
+
+	return client, nil
 }
 
 func (t *stdioClientTransport) Start() error {
