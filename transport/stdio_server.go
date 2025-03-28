@@ -40,10 +40,12 @@ func (t *stdioServerTransport) Run() error {
 		ctx, cancel := context.WithCancel(context.Background())
 		t.cancel = cancel
 
-		go pkg.SafeRunGo(ctx, func() {
+		go func() {
+			defer pkg.Recover()
+
 			t.receive(ctx)
 			close(t.done)
-		})
+		}()
 	})
 
 	return nil
