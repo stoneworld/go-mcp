@@ -16,47 +16,135 @@ import (
 // 2. 发送请求 client.callServer(ctx)
 // 3. 响应解析
 
-func (client *Client) initialization(ctx context.Context) error {
-	// client.callServer(ctx)
-	// client.SendNotification4Initialized(ctx)
-	return nil
+func (client *Client) initialization(ctx context.Context, request protocol.InitializeRequest) (*protocol.InitializeResult, error) {
+	response, err := client.callServer(ctx, protocol.Initialize, request)
+	if err != nil {
+		return nil, err
+	}
+	var result protocol.InitializeResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	//client.SendNotification4Initialized(ctx)
+	return &result, nil
 }
 
-func (client *Client) Ping(ctx context.Context) error {
-	// client.callServer(ctx)
-	return nil
+func (client *Client) Ping(ctx context.Context, request protocol.PingRequest) (*protocol.PingResult, error) {
+	response, err := client.callServer(ctx, protocol.Ping, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.PingResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) ListPrompts(ctx context.Context) error {
-	return nil
+func (client *Client) ListPrompts(ctx context.Context, request protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
+	response, err := client.callServer(ctx, protocol.PromptsList, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListPromptsResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) GetPrompt(ctx context.Context) error {
-	return nil
+func (client *Client) GetPrompt(ctx context.Context, request protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
+	response, err := client.callServer(ctx, protocol.PromptsGet, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.GetPromptResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	return &result, nil
 }
 
-func (client *Client) ListResources(ctx context.Context) error {
-	return nil
+func (client *Client) ListResources(ctx context.Context, request protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
+	response, err := client.callServer(ctx, protocol.ResourcesList, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListResourcesResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, err
 }
 
-func (client *Client) ReadResource(ctx context.Context) error {
-	return nil
+func (client *Client) ReadResource(ctx context.Context, request protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+	response, err := client.callServer(ctx, protocol.ResourcesRead, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ReadResourceResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) ListResourceTemplates(ctx context.Context) error {
-	return nil
+func (client *Client) ListResourceTemplates(ctx context.Context, request protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
+	response, err := client.callServer(ctx, protocol.ResourceListTemplates, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListResourceTemplatesResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) SubscribeResourceChange(ctx context.Context) error {
-	return nil
+func (client *Client) SubscribeResourceChange(ctx context.Context, request protocol.SubscribeRequest) (*protocol.SubscribeResult, error) {
+	response, err := client.callServer(ctx, protocol.ResourcesSubscribe, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.SubscribeResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) UnSubscribeResourceChange(ctx context.Context) error {
-	return nil
+func (client *Client) UnSubscribeResourceChange(ctx context.Context, request protocol.UnsubscribeRequest) (*protocol.UnsubscribeResult, error) {
+	response, err := client.callServer(ctx, protocol.ResourcesUnsubscribe, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.UnsubscribeResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) ListTools(ctx context.Context) error {
-	return nil
+func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
+	response, err := client.callServer(ctx, protocol.ToolsList, request)
+	if err != nil {
+		return nil, err
+	}c
+
+	var result protocol.ListToolsResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
 func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
@@ -68,12 +156,29 @@ func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRe
 	return result, nil
 }
 
-func (client *Client) CompleteRequest(ctx context.Context) error {
-	return nil
+func (client *Client) CompleteRequest(ctx context.Context, request protocol.CompleteRequest) (*protocol.CompleteResult, error) {
+	response, err := client.callServer(ctx, protocol.CompletionComplete, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.CompleteResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
-func (client *Client) SetLogLevel(ctx context.Context) error {
-	return nil
+func (client *Client) SetLogLevel(ctx context.Context, request protocol.SetLoggingLevelResult) (*protocol.SetLoggingLevelResult, error) {
+	response, err := client.callServer(ctx, protocol.LoggingSetLevel, request)
+	if err != nil {
+		return nil, err
+	}
+	var result protocol.SetLoggingLevelResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
 // 通知

@@ -28,7 +28,7 @@ type Client struct {
 	logger pkg.Logger
 }
 
-func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
+func NewClient(t transport.ClientTransport, request protocol.InitializeRequest, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport:      t,
 		logger:         pkg.DefaultLogger,
@@ -44,7 +44,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
 	}
 
-	if err := client.initialization(context.Background()); err != nil {
+	if _, err := client.initialization(context.Background(), request); err != nil {
 		return nil, err
 	}
 
