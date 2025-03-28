@@ -1,72 +1,97 @@
 package transport
 
-//
-// import (
-// 	"bufio"
-// 	"context"
-// 	"fmt"
-// 	"io"
-// 	"os"
-//
-// 	"go-mcp/pkg"
-// )
-//
-// const stdioSessionID = "stdio"
-//
-// type stdioServerTransport struct {
-// 	receiver ServerReceiver
-// 	stdin    *bufio.Reader
-// 	stdout   io.Writer
-//
-// 	cancel context.CancelFunc
-// }
-//
-// func NewStdioServerTransport() (ServerTransport, error) {
-// 	return &stdioServerTransport{
-// 		stdin:  bufio.NewReader(os.Stdin),
-// 		stdout: os.Stdout,
-// 	}, nil
-// }
-//
-// func (t *stdioServerTransport) Run() error {
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	t.cancel = cancel
-//
-// 	go func() {
-// 		for {
-// 			t.receive(ctx)
-// 		}
-// 	}()
-//
-// 	return nil
-// }
-//
-// func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-// 	if _, err := t.stdout.Write(msg); err != nil {
-// 		return fmt.Errorf("failed to write request: %w", err)
-// 	}
-// 	return nil
-// }
-//
-// func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
-// 	t.receiver = receiver
-// }
-//
-// func (t *stdioServerTransport) Shutdown(ctx context.Context) error {
-// 	// t. cancel()
-// 	return nil
-// }
-//
-// func (t *stdioServerTransport) receive(ctx context.Context) {
-// 	defer pkg.Recover()
-//
-// 	line, err := t.stdin.ReadBytes('\n')
-// 	if err != nil {
-// 		if err != io.EOF {
-// 			// TODO: 记录日志
-// 			return
-// 		}
-// 		return
-// 	}
-// 	t.receiver.Receive(ctx, stdioSessionID, line)
-// }
+import (
+	"bufio"
+	"context"
+	"io"
+	"os"
+	"sync"
+
+	"go-mcp/pkg"
+)
+
+const stdioSessionID = "stdio"
+
+type stdioServerTransport struct {
+	receiver ServerReceiver
+	reader   *bufio.Reader
+	writer   io.Writer
+
+	cancel context.CancelFunc
+	done   chan struct{}
+	once   sync.Once
+}
+
+func NewStdioServerTransport() ServerTransport {
+	return NewStdioServerTransportWithIO(os.Stdin, os.Stdout)
+}
+
+func NewStdioServerTransportWithIO(in io.Reader, out io.Writer) ServerTransport {
+	return &stdioServerTransport{
+		reader: bufio.NewReader(in),
+		writer: out,
+
+		done: make(chan struct{}),
+	}
+}
+
+func (t *stdioServerTransport) Run() error {
+	t.once.Do(func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.cancel = cancel
+
+		go pkg.SafeRunGo(ctx, func() {
+			t.receive(ctx)
+			close(t.done)
+		})
+	})
+
+	return nil
+}
+
+func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
+	msg = append(msg, mcpMessageDelimiter)
+
+	_, err := t.writer.Write(msg)
+	return err
+}
+
+func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
+	t.receiver = receiver
+}
+
+func (t *stdioServerTransport) Shutdown(ctx context.Context, serverCtx context.Context) error {
+	if t.cancel == nil {
+		return nil
+	}
+
+	t.cancel()
+
+	select {
+	case <-t.done:
+		return nil
+	case <-serverCtx.Done():
+		return serverCtx.Err()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (t *stdioServerTransport) receive(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			line, err := t.reader.ReadBytes(mcpMessageDelimiter)
+			if err != nil {
+				if err != io.EOF {
+					// todo: handler error
+				}
+				return
+			}
+
+			t.receiver.Receive(ctx, stdioSessionID, line)
+		}
+	}
+}

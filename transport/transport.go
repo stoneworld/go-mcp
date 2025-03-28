@@ -2,6 +2,7 @@ package transport
 
 import (
 	"context"
+	"time"
 
 	"go-mcp/pkg"
 )
@@ -18,6 +19,11 @@ func (msg Message) String() string {
 	return pkg.B2S(msg)
 }
 
+const (
+	mcpMessageDelimiter               = '\n'
+	defaultStdioTransportCloseTimeout = 5 * time.Second
+)
+
 type ClientTransport interface {
 	// Start 启动传输连接
 	Start() error
@@ -29,7 +35,7 @@ type ClientTransport interface {
 	SetReceiver(receiver ClientReceiver)
 
 	// Close 关闭传输连接
-	Close() error
+	Close(ctx context.Context) error
 }
 
 type ClientReceiver interface {
