@@ -83,13 +83,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 		sessionID = cli.messageEndpoint.Query().Get("sessionID")
 	}
 
-	if err := client.Start(); err != nil {
-		t.Fatalf("client.Start() failed: %v", err)
-	}
-
-	// TODO： 这里需要解决获取不到sessionID的问题
 	if err := server.Send(context.Background(), sessionID, Message(msgWithClient)); err != nil {
-
 		t.Fatalf("server.Send() failed: %v", err)
 	}
 	time.Sleep(time.Second * 1)
