@@ -43,7 +43,6 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 			t.Fatalf("server.Run() failed: %v", err)
 		}
 	case <-time.After(time.Second):
-		close(errCh)
 		// 服务器正常启动
 	}
 
@@ -52,7 +51,7 @@ func testClient2Server(t *testing.T, client ClientTransport, server ServerTransp
 	if err := client.Start(); err != nil {
 		t.Fatalf("client.Start() failed: %v", err)
 	}
-	defer client.Close()
+	defer client.Close(ctx)
 
 	if err := client.Send(context.Background(), Message(msg)); err != nil {
 		t.Fatalf("client.Send() failed: %v", err)
@@ -94,7 +93,7 @@ func testServer2Client(t *testing.T, client ClientTransport, server ServerTransp
 	if err := client.Start(); err != nil {
 		t.Fatalf("client.Start() failed: %v", err)
 	}
-	defer client.Close()
+	defer client.Close(ctx)
 
 	// TODO： 这里需要解决获取不到sessionID的问题
 	if err := server.Send(context.Background(), "$test$", Message(msg)); err != nil {

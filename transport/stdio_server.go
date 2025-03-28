@@ -23,9 +23,13 @@ type stdioServerTransport struct {
 }
 
 func NewStdioServerTransport() ServerTransport {
+	return NewStdioServerTransportWithIO(os.Stdin, os.Stdout)
+}
+
+func NewStdioServerTransportWithIO(in io.Reader, out io.Writer) ServerTransport {
 	return &stdioServerTransport{
-		reader: bufio.NewReader(os.Stdin),
-		writer: os.Stdout,
+		reader: bufio.NewReader(in),
+		writer: out,
 
 		done: make(chan struct{}),
 	}
@@ -56,21 +60,18 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 	t.receiver = receiver
 }
 
-func (t *stdioServerTransport) Shutdown(ctx context.Context) error {
+func (t *stdioServerTransport) Shutdown(ctx context.Context, serverCtx context.Context) error {
 	if t.cancel == nil {
 		return nil
 	}
 
 	t.cancel()
 
-	timeoutCtx, cancelTimeout := context.WithTimeout(context.Background(), defaultStdioTransportCloseTimeout)
-	defer cancelTimeout()
-
 	select {
 	case <-t.done:
 		return nil
-	case <-timeoutCtx.Done():
-		return timeoutCtx.Err()
+	case <-serverCtx.Done():
+		return serverCtx.Err()
 	case <-ctx.Done():
 		return ctx.Err()
 	}

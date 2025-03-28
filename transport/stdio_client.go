@@ -3,29 +3,44 @@ package transport
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
+	"os/exec"
 	"sync"
 
 	"go-mcp/pkg"
 )
 
 type stdioClientTransport struct {
+	cmd      *exec.Cmd
 	receiver ClientReceiver
-	reader   *bufio.Reader
-	writer   io.Writer
+
+	reader *bufio.Reader
+	writer io.WriteCloser
 
 	cancel context.CancelFunc
 	done   chan struct{}
 	once   sync.Once
 }
 
-func NewStdioClientTransport(in io.Reader, out io.Writer) ClientTransport {
-	return &stdioClientTransport{
-		reader: bufio.NewReader(in),
-		writer: out,
+func NewStdioClientTransport(command string, args ...string) (ClientTransport, error) {
+	cmd := exec.Command(command, args...)
 
-		done: make(chan struct{}),
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create stdin pipe: %w", err)
 	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+
+	return &stdioClientTransport{
+		cmd:    cmd,
+		reader: bufio.NewReader(stdout),
+		writer: stdin,
+	}, nil
 }
 
 func (t *stdioClientTransport) Start() error {
@@ -60,17 +75,11 @@ func (t *stdioClientTransport) Close(ctx context.Context) error {
 
 	t.cancel()
 
-	timeoutCtx, cancelTimeout := context.WithTimeout(context.Background(), defaultStdioTransportCloseTimeout)
-	defer cancelTimeout()
-
-	select {
-	case <-t.done:
-		return nil
-	case <-timeoutCtx.Done():
-		return timeoutCtx.Err()
-	case <-ctx.Done():
-		return ctx.Err()
+	if err := t.writer.Close(); err != nil {
+		return fmt.Errorf("failed to close writer: %w", err)
 	}
+
+	return t.cmd.Wait()
 }
 
 func (t *stdioClientTransport) receive(ctx context.Context) {
