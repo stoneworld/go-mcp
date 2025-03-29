@@ -56,7 +56,7 @@ func TestClient(t *testing.T) {
 				return client.ListTools(context.Background(), request.(protocol.ListToolsRequest))
 			},
 			request: protocol.NewListToolsRequest(""),
-			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{&protocol.Tool{
+			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{{
 				Name:        "test_tool",
 				Description: "test_tool",
 				InputSchema: map[string]interface{}{

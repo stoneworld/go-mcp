@@ -6,7 +6,7 @@ import (
 	"go-mcp/pkg"
 )
 
-const jsonrpc_version = "2.0"
+const jsonrpcVersion = "2.0"
 
 // Standard JSON-RPC error codes
 const (
@@ -55,7 +55,7 @@ func (r *JSONRPCRequest) UnmarshalJSON(data []byte) error {
 
 // IsValid checks if the request is valid according to JSON-RPC 2.0 spec
 func (r *JSONRPCRequest) IsValid() bool {
-	return r.JSONRPC == jsonrpc_version && r.Method != ""
+	return r.JSONRPC == jsonrpcVersion && r.Method != ""
 }
 
 // JSONRPCResponse represents a response to a request.
@@ -136,7 +136,7 @@ func (r *JSONRPCNotification) UnmarshalJSON(data []byte) error {
 // NewJSONRPCRequest creates a new JSON-RPC request
 func NewJSONRPCRequest(id RequestID, method Method, params interface{}) *JSONRPCRequest {
 	return &JSONRPCRequest{
-		JSONRPC: jsonrpc_version,
+		JSONRPC: jsonrpcVersion,
 		ID:      id,
 		Method:  method,
 		Params:  params,
@@ -146,7 +146,7 @@ func NewJSONRPCRequest(id RequestID, method Method, params interface{}) *JSONRPC
 // NewJSONRPCSuccessResponse creates a new JSON-RPC response
 func NewJSONRPCSuccessResponse(id RequestID, result interface{}) *JSONRPCResponse {
 	return &JSONRPCResponse{
-		JSONRPC: jsonrpc_version,
+		JSONRPC: jsonrpcVersion,
 		ID:      id,
 		Result:  result,
 	}
@@ -155,7 +155,7 @@ func NewJSONRPCSuccessResponse(id RequestID, result interface{}) *JSONRPCRespons
 // NewJSONRPCErrorResponse NewError creates a new JSON-RPC error response
 func NewJSONRPCErrorResponse(id RequestID, code int, message string) *JSONRPCResponse {
 	err := &JSONRPCResponse{
-		JSONRPC: jsonrpc_version,
+		JSONRPC: jsonrpcVersion,
 		ID:      id,
 		Error: &responseErr{
 			Code:    code,
@@ -168,7 +168,7 @@ func NewJSONRPCErrorResponse(id RequestID, code int, message string) *JSONRPCRes
 // NewJSONRPCNotification creates a new JSON-RPC notification
 func NewJSONRPCNotification(method Method, params interface{}) *JSONRPCNotification {
 	return &JSONRPCNotification{
-		JSONRPC: jsonrpc_version,
+		JSONRPC: jsonrpcVersion,
 		Method:  method,
 		Params:  params,
 	}

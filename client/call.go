@@ -17,6 +17,8 @@ import (
 // 3. 响应解析
 
 func (client *Client) initialization(ctx context.Context, request protocol.InitializeRequest) (*protocol.InitializeResult, error) {
+	request.ProtocolVersion = protocol.Version
+
 	response, err := client.callServer(ctx, protocol.Initialize, request)
 	if err != nil {
 		return nil, err
@@ -26,11 +28,7 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	// TODO add meta
-	notify := &protocol.InitializedNotification{
-		Meta: map[string]interface{}{},
-	}
-	if err := client.sendNotification4Initialized(ctx, notify); nil != err {
+	if err := client.sendNotification4Initialized(ctx); nil != err {
 		return nil, fmt.Errorf("failed to send InitializedNotification: %w", err)
 	}
 
@@ -182,7 +180,7 @@ func (client *Client) CallTool(ctx context.Context, request protocol.CallToolReq
 // 	return &result, nil
 // }
 //
-// func (client *Client) SetLogLevel(ctx context.Context, request protocol.SetLoggingLevelResult) (*protocol.SetLoggingLevelResult, error) {
+// func (client *Client) SetLogLevel(ctx context.Context, request protocol.SetLoggingLevelRequest) (*protocol.SetLoggingLevelResult, error) {
 // 	response, err := client.callServer(ctx, protocol.LoggingSetLevel, request)
 // 	if err != nil {
 // 		return nil, err
@@ -198,20 +196,20 @@ func (client *Client) CallTool(ctx context.Context, request protocol.CallToolReq
 // 1. 构造通知结构体
 // 2. 发送通知 client.sendMsgWithNotification(ctx)
 
-func (client *Client) sendNotification4Initialized(ctx context.Context, notify *protocol.InitializedNotification) error {
-	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, notify)
+func (client *Client) sendNotification4Initialized(ctx context.Context) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, protocol.NewInitializedNotification())
 }
 
 // func (client *Client) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
 // 	return client.sendMsgWithNotification(ctx, protocol.NotificationCancelled, notify)
 // }
-//
+
 // func (client *Client) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
 // 	return client.sendMsgWithNotification(ctx, protocol.NotificationProgress, notify)
 // }
 
-// func (client *Client) SendNotification4RootListChanges(ctx context.Context, notify *protocol.RootsListChangedNotification) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, notify)
+// func (client *Client) SendNotification4RootListChanges(ctx context.Context) error {
+// 	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, protocol.NewRootsListChangedNotification())
 // }
 
 func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request protocol.ClientRequest, result protocol.ServerResponse) error {
