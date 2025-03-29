@@ -39,7 +39,7 @@ func TestClient(t *testing.T) {
 		outScan = bufio.NewScanner(out)
 	)
 
-	client, err := NewClient(transport.NewMockClientTransport(in, out))
+	client, err := NewClient(transport.NewMockClientTransport(in, out), protocol.InitializeRequest{})
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
@@ -53,7 +53,7 @@ func TestClient(t *testing.T) {
 		{
 			name: "test_call_tool",
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
-				return client.ListTools(context.Background(), request.(*protocol.ListToolsRequest))
+				return client.ListTools(context.Background(), request.(protocol.ListToolsRequest))
 			},
 			request: protocol.NewListToolsRequest(""),
 			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{&protocol.Tool{
