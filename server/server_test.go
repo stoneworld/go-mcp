@@ -51,6 +51,8 @@ func TestServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
+
+	// add tool
 	testTool := &protocol.Tool{
 		Name:        "test_tool",
 		Description: "test_tool",
@@ -58,7 +60,15 @@ func TestServer(t *testing.T) {
 			"a": "int",
 		},
 	}
-	server.AddTool(testTool)
+	testToolCallContent := protocol.TextContent{
+		Type: "text",
+		Text: "pong",
+	}
+	server.AddTool(testTool, func(ctr protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+		return &protocol.CallToolResult{
+			Content: []protocol.Content{testToolCallContent},
+		}, nil
+	})
 
 	// add prompt
 	testPrompt := protocol.Prompt{
@@ -75,8 +85,8 @@ func TestServer(t *testing.T) {
 	testPromtGetResponse := &protocol.GetPromptResult{
 		Description: "test_prompt_description",
 	}
-	server.AddPrompt(testPrompt, func(protocol.GetPromptRequest) *protocol.GetPromptResult {
-		return testPromtGetResponse
+	server.AddPrompt(testPrompt, func(protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
+		return testPromtGetResponse, nil
 	})
 
 	// add resource
@@ -90,12 +100,12 @@ func TestServer(t *testing.T) {
 		MimeType: testResource.MimeType,
 		Text:     "test",
 	}
-	server.AddResource(testResource, func(protocol.ReadResourceRequest) *protocol.ReadResourceResult {
+	server.AddResource(testResource, func(protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
 		return &protocol.ReadResourceResult{
 			Contents: []protocol.ResourceContents{
 				testResourceContent,
 			},
-		}
+		}, nil
 	})
 
 	// add resource template
@@ -122,6 +132,18 @@ func TestServer(t *testing.T) {
 			method:           protocol.ToolsList,
 			request:          protocol.ListToolsRequest{},
 			expectedResponse: protocol.ListToolsResult{Tools: []*protocol.Tool{testTool}},
+		},
+		{
+			name:   "test_call_tool",
+			method: protocol.ToolsCall,
+			request: protocol.CallToolRequest{
+				Name: testTool.Name,
+			},
+			expectedResponse: protocol.CallToolResult{
+				Content: []protocol.Content{
+					testToolCallContent,
+				},
+			},
 		},
 		{
 			name:    "test_initialize",

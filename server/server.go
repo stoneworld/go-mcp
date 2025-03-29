@@ -17,10 +17,11 @@ type Server struct {
 	transport transport.ServerTransport
 
 	tools             []*protocol.Tool
+	toolHandlers      map[string]ToolHandlerFunc
 	prompts           []protocol.Prompt
-	promptHandlers    map[string]PromptHandleFunc
+	promptHandlers    map[string]PromptHandlerFunc
 	resources         []protocol.Resource
-	resourceHandlers  map[string]ResourceHandleFunc
+	resourceHandlers  map[string]ResourceHandlerFunc
 	resourceTemplates []protocol.ResourceTemplate
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
@@ -56,7 +57,7 @@ type session struct {
 
 func newSession() *session {
 	return &session{
-		reqID2respChan:      cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]{},
+		reqID2respChan:      cmap.New[chan *protocol.JSONRPCResponse](),
 		subscribedResources: cmap.New[struct{}](),
 	}
 }
@@ -96,26 +97,32 @@ func (server *Server) Start() error {
 	return nil
 }
 
-func (server *Server) AddTool(tool *protocol.Tool) {
+type ToolHandlerFunc func(protocol.CallToolRequest) (*protocol.CallToolResult, error)
+
+func (server *Server) AddTool(tool *protocol.Tool, toolHandler ToolHandlerFunc) {
 	server.tools = append(server.tools, tool)
+	if server.toolHandlers == nil {
+		server.toolHandlers = map[string]ToolHandlerFunc{}
+	}
+	server.toolHandlers[tool.Name] = toolHandler
 }
 
-type PromptHandleFunc func(protocol.GetPromptRequest) *protocol.GetPromptResult
+type PromptHandlerFunc func(protocol.GetPromptRequest) (*protocol.GetPromptResult, error)
 
-func (server *Server) AddPrompt(prompt protocol.Prompt, promptHandler PromptHandleFunc) {
+func (server *Server) AddPrompt(prompt protocol.Prompt, promptHandler PromptHandlerFunc) {
 	server.prompts = append(server.prompts, prompt)
 	if server.promptHandlers == nil {
-		server.promptHandlers = map[string]PromptHandleFunc{}
+		server.promptHandlers = map[string]PromptHandlerFunc{}
 	}
 	server.promptHandlers[prompt.Name] = promptHandler
 }
 
-type ResourceHandleFunc func(protocol.ReadResourceRequest) *protocol.ReadResourceResult
+type ResourceHandlerFunc func(protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error)
 
-func (server *Server) AddResource(resource protocol.Resource, resourceHandler ResourceHandleFunc) {
+func (server *Server) AddResource(resource protocol.Resource, resourceHandler ResourceHandlerFunc) {
 	server.resources = append(server.resources, resource)
 	if server.resourceHandlers == nil {
-		server.resourceHandlers = map[string]ResourceHandleFunc{}
+		server.resourceHandlers = map[string]ResourceHandlerFunc{}
 	}
 	server.resourceHandlers[resource.URI] = resourceHandler
 }
