@@ -26,6 +26,11 @@ type Server struct {
 	inShutdown   atomic.Bool // true when server is in shutdown
 	inFlyRequest sync.WaitGroup
 
+	// The result requirements
+	protocolVersion string
+	capabilities    protocol.ServerCapabilities
+	serverInfo      protocol.Implementation
+
 	logger pkg.Logger
 }
 
@@ -33,6 +38,9 @@ type session struct {
 	requestID atomic.Int64
 
 	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
+
+	// cache client initialize reqeust info
+	clientInitializeRequest *protocol.InitializeRequest
 
 	first     bool
 	readyChan chan struct{}
@@ -43,6 +51,19 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 		transport:         t,
 		logger:            pkg.DefaultLogger,
 		sessionID2session: pkg.NewMemorySessionStore(),
+		protocolVersion:   protocol.PROTOCOL_VERSION,
+		capabilities: protocol.ServerCapabilities{
+			Prompts: &protocol.PromptsCapability{
+				ListChanged: true,
+			},
+			Resources: &protocol.ResourcesCapability{
+				Subscribe:   true,
+				ListChanged: true,
+			},
+			Tools: &protocol.ToolsCapability{
+				ListChanged: true,
+			},
+		},
 	}
 	t.SetReceiver(server)
 
@@ -71,6 +92,24 @@ func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *prot
 func WithLogger(logger pkg.Logger) Option {
 	return func(s *Server) {
 		s.logger = logger
+	}
+}
+
+func WithProtocolVersion(protocolVersion string) Option {
+	return func(s *Server) {
+		s.protocolVersion = protocolVersion
+	}
+}
+
+func WithCapabilities(capabilities protocol.ServerCapabilities) Option {
+	return func(s *Server) {
+		s.capabilities = capabilities
+	}
+}
+
+func WithInfo(serverInfo protocol.Implementation) Option {
+	return func(s *Server) {
+		s.serverInfo = serverInfo
 	}
 }
 

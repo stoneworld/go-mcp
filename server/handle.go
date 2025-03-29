@@ -9,7 +9,28 @@ import (
 )
 
 func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
-	return nil, nil
+	var req protocol.InitializeRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	// TODO: validate client initialize request
+
+	// cache client information to session
+	sessionID, _ := getSessionIDFromCtx(ctx)
+	value, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+	session := value.(*session)
+	session.clientInitializeRequest = &req
+
+	result := protocol.InitializeResult{
+		ProtocolVersion: server.protocolVersion,
+		Capabilities:    server.capabilities,
+		ServerInfo:      server.serverInfo,
+	}
+	return &result, nil
 }
 
 func (server *Server) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (*protocol.PingResult, error) {

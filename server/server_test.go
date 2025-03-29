@@ -39,7 +39,15 @@ func TestServer(t *testing.T) {
 		outScan = bufio.NewScanner(out)
 	)
 
-	server, err := NewServer(transport.NewMockServerTransport(in, out))
+	server, err := NewServer(
+		transport.NewMockServerTransport(in, out),
+		WithInfo(protocol.Implementation{
+			Name:    "ExampleServer",
+			Version: "1.0.0",
+		}))
+
+	// TODO: add mock session id auto
+	server.sessionID2session.Store("mock", &session{})
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
@@ -69,6 +77,16 @@ func TestServer(t *testing.T) {
 			method:           protocol.ToolsList,
 			request:          protocol.ListToolsRequest{},
 			expectedResponse: protocol.ListToolsResult{Tools: []*protocol.Tool{testTool}},
+		},
+		{
+			name:    "test_initialize",
+			method:  protocol.Initialize,
+			request: protocol.InitializeRequest{},
+			expectedResponse: protocol.InitializeResult{
+				ProtocolVersion: protocol.PROTOCOL_VERSION,
+				Capabilities:    server.capabilities,
+				ServerInfo:      server.serverInfo,
+			},
 		},
 	}
 
