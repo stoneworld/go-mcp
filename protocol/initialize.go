@@ -23,7 +23,7 @@ type Implementation struct {
 	Version string `json:"version"`
 }
 
-// Capabilities
+// ClientCapabilities Capabilities
 type ClientCapabilities struct {
 	// Experimental map[string]interface{} `json:"experimental,omitempty"`
 	// Roots        *RootsCapability       `json:"roots,omitempty"`

@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+var ErrServerNotSupport = errors.New("this feature serve not support")
+
 var ErrLackResponseChan = errors.New("lack response chan")
 
 type LackSessionError struct {

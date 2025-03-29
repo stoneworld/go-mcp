@@ -28,11 +28,20 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
+	if result.ProtocolVersion != request.ProtocolVersion {
+		return nil, fmt.Errorf("protocol version mismatch, expected %s, got %s", request.ProtocolVersion, result.ProtocolVersion)
+	}
+
 	if err := client.sendNotification4Initialized(ctx); nil != err {
 		return nil, fmt.Errorf("failed to send InitializedNotification: %w", err)
 	}
 
-	client.capabilities = result.Capabilities
+	client.ClientInfo = &request.ClientInfo
+	client.ClientCapabilities = &request.Capabilities
+
+	client.ServerInfo = &result.ServerInfo
+	client.ServerCapabilities = &result.Capabilities
+	client.ServerInstructions = result.Instructions
 	return &result, nil
 }
 
@@ -50,6 +59,10 @@ func (client *Client) Ping(ctx context.Context, request protocol.PingRequest) (*
 }
 
 func (client *Client) ListPrompts(ctx context.Context, request protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
+	if client.ServerCapabilities.Prompts == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.PromptsList, request)
 	if err != nil {
 		return nil, err
@@ -63,6 +76,10 @@ func (client *Client) ListPrompts(ctx context.Context, request protocol.ListProm
 }
 
 func (client *Client) GetPrompt(ctx context.Context, request protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
+	if client.ServerCapabilities.Prompts == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.PromptsGet, request)
 	if err != nil {
 		return nil, err
@@ -77,6 +94,10 @@ func (client *Client) GetPrompt(ctx context.Context, request protocol.GetPromptR
 }
 
 func (client *Client) ListResources(ctx context.Context, request protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
+	if client.ServerCapabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ResourcesList, request)
 	if err != nil {
 		return nil, err
@@ -90,6 +111,10 @@ func (client *Client) ListResources(ctx context.Context, request protocol.ListRe
 }
 
 func (client *Client) ReadResource(ctx context.Context, request protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+	if client.ServerCapabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ResourcesRead, request)
 	if err != nil {
 		return nil, err
@@ -103,6 +128,10 @@ func (client *Client) ReadResource(ctx context.Context, request protocol.ReadRes
 }
 
 func (client *Client) ListResourceTemplates(ctx context.Context, request protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
+	if client.ServerCapabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ResourceListTemplates, request)
 	if err != nil {
 		return nil, err
@@ -116,6 +145,10 @@ func (client *Client) ListResourceTemplates(ctx context.Context, request protoco
 }
 
 func (client *Client) SubscribeResourceChange(ctx context.Context, request protocol.SubscribeRequest) (*protocol.SubscribeResult, error) {
+	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ResourcesSubscribe, request)
 	if err != nil {
 		return nil, err
@@ -129,6 +162,10 @@ func (client *Client) SubscribeResourceChange(ctx context.Context, request proto
 }
 
 func (client *Client) UnSubscribeResourceChange(ctx context.Context, request protocol.UnsubscribeRequest) (*protocol.UnsubscribeResult, error) {
+	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ResourcesUnsubscribe, request)
 	if err != nil {
 		return nil, err
@@ -142,6 +179,10 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context, request pro
 }
 
 func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
+	if client.ServerCapabilities.Tools == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ToolsList, request)
 	if err != nil {
 		return nil, err
@@ -155,6 +196,10 @@ func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsR
 }
 
 func (client *Client) CallTool(ctx context.Context, request protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+	if client.ServerCapabilities.Tools == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	response, err := client.callServer(ctx, protocol.ToolsCall, request)
 	if err != nil {
 		return nil, err

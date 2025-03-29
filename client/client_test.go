@@ -64,6 +64,80 @@ func TestClient(t *testing.T) {
 				},
 			}}, ""),
 		},
+		{
+			name: "test_ping",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.Ping(context.Background(), request.(protocol.PingRequest))
+			},
+			request:          protocol.NewPingRequest(),
+			expectedResponse: protocol.NewPingResponse(),
+		},
+		{
+			name: "test_list_prompts",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.ListPrompts(context.Background(), request.(protocol.ListPromptsRequest))
+			},
+			request:          protocol.NewListPromptsRequest(""),
+			expectedResponse: protocol.NewListPromptsResponse([]protocol.Prompt{{Name: "prompt1"}, {Name: "prompt2"}}, ""),
+		},
+		{
+			name: "test_get_prompt",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.GetPrompt(context.Background(), request.(protocol.GetPromptRequest))
+			},
+			request:          protocol.NewGetPromptRequest("prompt1", map[string]string{}),
+			expectedResponse: protocol.NewGetPromptResponse([]protocol.PromptMessage{{Role: protocol.RoleUser, Content: protocol.TextContent{Type: "text", Text: "prompt content"}}}, "test description"),
+		},
+		{
+			name: "test_list_resources",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.ListResources(context.Background(), request.(protocol.ListResourcesRequest))
+			},
+			request:          protocol.NewListResourcesRequest(""),
+			expectedResponse: protocol.NewListResourcesResponse([]protocol.Resource{{Name: "resource1"}, {Name: "resource2"}}, ""),
+		},
+		{
+			name: "test_read_resource",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.ReadResource(context.Background(), request.(protocol.ReadResourceRequest))
+			},
+			request:          protocol.NewReadResourceRequest("resource1"),
+			expectedResponse: protocol.NewReadResourceResponse([]protocol.ResourceContents{protocol.TextResourceContents{URI: "resource1", Text: "resource content", MimeType: "text/plain"}}),
+		},
+		{
+			name: "test_list_resource_templates",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.ListResourceTemplates(context.Background(), request.(protocol.ListResourceTemplatesRequest))
+			},
+			request:          protocol.NewListResourceTemplatesRequest(""),
+			expectedResponse: protocol.NewListResourceTemplatesResponse([]protocol.ResourceTemplate{{Name: "template1"}, {Name: "template2"}}, ""),
+		},
+		{
+			name: "test_subscribe_resource_change",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.SubscribeResourceChange(context.Background(), request.(protocol.SubscribeRequest))
+			},
+			request:          protocol.NewSubscribeRequest("resource1"),
+			expectedResponse: &protocol.SubscribeResult{},
+		},
+		{
+			name: "test_unsubscribe_resource_change",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.UnSubscribeResourceChange(context.Background(), request.(protocol.UnsubscribeRequest))
+			},
+			request:          protocol.NewUnsubscribeRequest("subscription_id"),
+			expectedResponse: &protocol.UnsubscribeResult{},
+		},
+		{
+			name: "test_call_tool",
+			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
+				return client.CallTool(context.Background(), request.(protocol.CallToolRequest))
+			},
+			request: protocol.NewCallToolRequest("test_tool", map[string]interface{}{
+				"a": 1,
+			}),
+			expectedResponse: protocol.NewCallToolResponse([]protocol.Content{protocol.TextContent{Type: "text", Text: "success"}}, false),
+		},
 	}
 
 	for _, tt := range tests {

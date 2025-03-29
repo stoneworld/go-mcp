@@ -27,7 +27,12 @@ type Client struct {
 
 	initialized atomic.Bool
 
-	capabilities protocol.ServerCapabilities
+	ClientInfo         *protocol.Implementation
+	ClientCapabilities *protocol.ClientCapabilities
+
+	ServerCapabilities *protocol.ServerCapabilities
+	ServerInfo         *protocol.Implementation
+	ServerInstructions string
 
 	logger pkg.Logger
 }
