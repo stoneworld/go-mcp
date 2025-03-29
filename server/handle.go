@@ -102,11 +102,35 @@ func (server *Server) handleRequestWitListResourceTemplates(ctx context.Context,
 }
 
 func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
-	return nil, nil
+	var req protocol.SubscribeRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	sessionID, _ := getSessionIDFromCtx(ctx)
+	value, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+	session := value.(*session)
+	session.subscribedResources.Set(req.URI, struct{}{})
+	return &protocol.SubscribeResult{}, nil
 }
 
 func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (*protocol.UnsubscribeResult, error) {
-	return nil, nil
+	var req protocol.UnsubscribeRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	sessionID, _ := getSessionIDFromCtx(ctx)
+	value, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.NewLackSessionError(sessionID)
+	}
+	session := value.(*session)
+	session.subscribedResources.Remove(req.URI)
+	return &protocol.UnsubscribeResult{}, nil
 }
 
 func (server *Server) handleRequestWithListTools(ctx context.Context, rawParams json.RawMessage) (*protocol.ListToolsResult, error) {

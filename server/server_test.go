@@ -47,7 +47,7 @@ func TestServer(t *testing.T) {
 		}))
 
 	// TODO: add mock session id auto
-	server.sessionID2session.Store("mock", &session{})
+	server.sessionID2session.Store("mock", newSession())
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
@@ -180,6 +180,22 @@ func TestServer(t *testing.T) {
 			expectedResponse: protocol.ListResourceTemplatesResult{
 				ResourceTemplates: []protocol.ResourceTemplate{testReourceTemplate},
 			},
+		},
+		{
+			name:   "test_resource_subscribe",
+			method: protocol.ResourcesSubscribe,
+			request: protocol.SubscribeRequest{
+				URI: testResource.URI,
+			},
+			expectedResponse: protocol.SubscribeResult{},
+		},
+		{
+			name:   "test_resource_unsubscribe",
+			method: protocol.ResourcesUnsubscribe,
+			request: protocol.UnsubscribeRequest{
+				URI: testResource.URI,
+			},
+			expectedResponse: protocol.UnsubscribeResult{},
 		},
 	}
 

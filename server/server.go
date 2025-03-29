@@ -47,8 +47,18 @@ type session struct {
 	// cache client initialize reqeust info
 	clientInitializeRequest *protocol.InitializeRequest
 
+	// subscribed resources
+	subscribedResources cmap.ConcurrentMap[string, struct{}]
+
 	first     bool
 	readyChan chan struct{}
+}
+
+func newSession() *session {
+	return &session{
+		reqID2respChan:      cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]{},
+		subscribedResources: cmap.New[struct{}](),
+	}
 }
 
 func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
