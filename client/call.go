@@ -17,6 +17,8 @@ import (
 // 3. 响应解析
 
 func (client *Client) initialization(ctx context.Context, request protocol.InitializeRequest) (*protocol.InitializeResult, error) {
+	request.ProtocolVersion = protocol.Version
+
 	response, err := client.callServer(ctx, protocol.Initialize, request)
 	if err != nil {
 		return nil, err
@@ -26,11 +28,7 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	// TODO add meta
-	notify := &protocol.InitializedNotification{
-		Meta: map[string]interface{}{},
-	}
-	if err := client.sendNotification4Initialized(ctx, notify); nil != err {
+	if err := client.sendNotification4Initialized(ctx); nil != err {
 		return nil, fmt.Errorf("failed to send InitializedNotification: %w", err)
 	}
 
@@ -198,8 +196,8 @@ func (client *Client) CallTool(ctx context.Context, request protocol.CallToolReq
 // 1. 构造通知结构体
 // 2. 发送通知 client.sendMsgWithNotification(ctx)
 
-func (client *Client) sendNotification4Initialized(ctx context.Context, notify *protocol.InitializedNotification) error {
-	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, notify)
+func (client *Client) sendNotification4Initialized(ctx context.Context) error {
+	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, protocol.NewInitializedNotification())
 }
 
 // func (client *Client) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {

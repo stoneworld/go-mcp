@@ -1,5 +1,7 @@
 package protocol
 
+const Version = "2024-11-05"
+
 // InitializeRequest represents the initialize request sent from client to server
 type InitializeRequest struct {
 	ClientInfo      Implementation     `json:"clientInfo"`
@@ -23,9 +25,9 @@ type Implementation struct {
 
 // Capabilities
 type ClientCapabilities struct {
-	Experimental map[string]interface{} `json:"experimental,omitempty"`
-	Roots        *RootsCapability       `json:"roots,omitempty"`
-	Sampling     interface{}            `json:"sampling,omitempty"`
+	// Experimental map[string]interface{} `json:"experimental,omitempty"`
+	// Roots        *RootsCapability       `json:"roots,omitempty"`
+	// Sampling     interface{}            `json:"sampling,omitempty"`
 }
 
 type RootsCapability struct {
@@ -59,20 +61,20 @@ type InitializedNotification struct {
 }
 
 // NewInitializeRequest creates a new initialize request
-func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabilities, protocolVersion string) *InitializeRequest {
+func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabilities) *InitializeRequest {
 	return &InitializeRequest{
 		ClientInfo:      clientInfo,
 		Capabilities:    capabilities,
-		ProtocolVersion: protocolVersion,
+		ProtocolVersion: Version,
 	}
 }
 
 // NewInitializeResponse creates a new initialize response
-func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabilities, protocolVersion string, instructions string) *InitializeResult {
+func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabilities, instructions string) *InitializeResult {
 	return &InitializeResult{
 		ServerInfo:      serverInfo,
 		Capabilities:    capabilities,
-		ProtocolVersion: protocolVersion,
+		ProtocolVersion: Version,
 		Instructions:    instructions,
 	}
 }
