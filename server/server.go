@@ -16,9 +16,12 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	tools          []*protocol.Tool
-	prompts        []protocol.Prompt
-	promptHandlers map[string]PromptHandleFunc
+	tools             []*protocol.Tool
+	prompts           []protocol.Prompt
+	promptHandlers    map[string]PromptHandleFunc
+	resources         []protocol.Resource
+	resourceHandlers  map[string]ResourceHandleFunc
+	resourceTemplates []protocol.ResourceTemplate
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
@@ -95,6 +98,20 @@ func (server *Server) AddPrompt(prompt protocol.Prompt, promptHandler PromptHand
 		server.promptHandlers = map[string]PromptHandleFunc{}
 	}
 	server.promptHandlers[prompt.Name] = promptHandler
+}
+
+type ResourceHandleFunc func(protocol.ReadResourceRequest) *protocol.ReadResourceResult
+
+func (server *Server) AddResource(resource protocol.Resource, resourceHandler ResourceHandleFunc) {
+	server.resources = append(server.resources, resource)
+	if server.resourceHandlers == nil {
+		server.resourceHandlers = map[string]ResourceHandleFunc{}
+	}
+	server.resourceHandlers[resource.URI] = resourceHandler
+}
+
+func (server *Server) AddResourceTemplate(tmpl protocol.ResourceTemplate) {
+	server.resourceTemplates = append(server.resourceTemplates, tmpl)
 }
 
 func (server *Server) Shutdown(userCtx context.Context) error {

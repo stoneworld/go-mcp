@@ -57,7 +57,6 @@ func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams 
 	}
 
 	// TODO: validate request's arguments
-
 	handleFunc, ok := server.promptHandlers[req.Name]
 	if !ok {
 		return nil, fmt.Errorf("missing prompt handler, promptName=%s", req.Name)
@@ -66,15 +65,40 @@ func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams 
 }
 
 func (server *Server) handleRequestWithListResources(ctx context.Context, rawParams json.RawMessage) (*protocol.ListResourcesResult, error) {
-	return nil, nil
+	var req protocol.ListResourcesRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	// TODO: list resources with cursor
+	return &protocol.ListResourcesResult{
+		Resources: server.resources,
+	}, nil
 }
 
 func (server *Server) handleRequestWithReadResource(ctx context.Context, rawParams json.RawMessage) (*protocol.ReadResourceResult, error) {
-	return nil, nil
+	var req protocol.ReadResourceRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	handleFunc, ok := server.resourceHandlers[req.URI]
+	if !ok {
+		return nil, fmt.Errorf("missing resource read handler, uri=%s", req.URI)
+	}
+	return handleFunc(req), nil
 }
 
 func (server *Server) handleRequestWitListResourceTemplates(ctx context.Context, rawParams json.RawMessage) (*protocol.ListResourceTemplatesResult, error) {
-	return nil, nil
+	var req protocol.ListResourceTemplatesRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	// TODO: list resource template with cursor
+	return &protocol.ListResourceTemplatesResult{
+		ResourceTemplates: server.resourceTemplates,
+	}, nil
 }
 
 func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
