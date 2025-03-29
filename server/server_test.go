@@ -60,6 +60,7 @@ func TestServer(t *testing.T) {
 	}
 	server.AddTool(testTool)
 
+	// add prompt
 	testPrompt := protocol.Prompt{
 		Name:        "test_prompt",
 		Description: "test_prompt_description",
@@ -71,13 +72,38 @@ func TestServer(t *testing.T) {
 			},
 		},
 	}
-
 	testPromtGetResponse := &protocol.GetPromptResult{
 		Description: "test_prompt_description",
 	}
 	server.AddPrompt(testPrompt, func(protocol.GetPromptRequest) *protocol.GetPromptResult {
 		return testPromtGetResponse
 	})
+
+	// add resource
+	testResource := protocol.Resource{
+		URI:      "file:///test.txt",
+		Name:     "test.txt",
+		MimeType: "text/plain-txt",
+	}
+	testResourceContent := protocol.TextResourceContents{
+		URI:      testResource.URI,
+		MimeType: testResource.MimeType,
+		Text:     "test",
+	}
+	server.AddResource(testResource, func(protocol.ReadResourceRequest) *protocol.ReadResourceResult {
+		return &protocol.ReadResourceResult{
+			Contents: []protocol.ResourceContents{
+				testResourceContent,
+			},
+		}
+	})
+
+	// add resource template
+	testReourceTemplate := protocol.ResourceTemplate{
+		URITemplate: "file:///{path}",
+		Name:        "test",
+	}
+	server.AddResourceTemplate(testReourceTemplate)
 
 	go func() {
 		if err := server.Start(); err != nil {
@@ -128,6 +154,32 @@ func TestServer(t *testing.T) {
 				Name: testPrompt.Name,
 			},
 			expectedResponse: testPromtGetResponse,
+		},
+		{
+			name:    "test_list_resource",
+			method:  protocol.ResourcesList,
+			request: protocol.ListResourcesRequest{},
+			expectedResponse: protocol.ListResourcesResult{
+				Resources: []protocol.Resource{testResource},
+			},
+		},
+		{
+			name:   "test_read_resource",
+			method: protocol.ResourcesRead,
+			request: protocol.ReadResourceRequest{
+				URI: testResource.URI,
+			},
+			expectedResponse: protocol.ReadResourceResult{
+				Contents: []protocol.ResourceContents{testResourceContent},
+			},
+		},
+		{
+			name:    "test_list_resource_template",
+			method:  protocol.ResourceListTemplates,
+			request: protocol.ListResourceTemplatesRequest{},
+			expectedResponse: protocol.ListResourceTemplatesResult{
+				ResourceTemplates: []protocol.ResourceTemplate{testReourceTemplate},
+			},
 		},
 	}
 
