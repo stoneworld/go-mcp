@@ -10,13 +10,7 @@ import (
 	"go-mcp/protocol"
 )
 
-// 请求
-
-// 1. 请求构造
-// 2. 发送请求 client.callServer(ctx)
-// 3. 响应解析
-
-func (client *Client) initialization(ctx context.Context, request protocol.InitializeRequest) (*protocol.InitializeResult, error) {
+func (client *Client) initialization(ctx context.Context, request *protocol.InitializeRequest) (*protocol.InitializeResult, error) {
 	request.ProtocolVersion = protocol.Version
 
 	response, err := client.callServer(ctx, protocol.Initialize, request)
@@ -42,10 +36,12 @@ func (client *Client) initialization(ctx context.Context, request protocol.Initi
 	client.ServerInfo = &result.ServerInfo
 	client.ServerCapabilities = &result.Capabilities
 	client.ServerInstructions = result.Instructions
+
+	client.initialized.Store(true)
 	return &result, nil
 }
 
-func (client *Client) Ping(ctx context.Context, request protocol.PingRequest) (*protocol.PingResult, error) {
+func (client *Client) Ping(ctx context.Context, request *protocol.PingRequest) (*protocol.PingResult, error) {
 	response, err := client.callServer(ctx, protocol.Ping, request)
 	if err != nil {
 		return nil, err
@@ -58,7 +54,7 @@ func (client *Client) Ping(ctx context.Context, request protocol.PingRequest) (*
 	return &result, nil
 }
 
-func (client *Client) ListPrompts(ctx context.Context, request protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
+func (client *Client) ListPrompts(ctx context.Context, request *protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
 	if client.ServerCapabilities.Prompts == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -75,7 +71,7 @@ func (client *Client) ListPrompts(ctx context.Context, request protocol.ListProm
 	return &result, nil
 }
 
-func (client *Client) GetPrompt(ctx context.Context, request protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
+func (client *Client) GetPrompt(ctx context.Context, request *protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
 	if client.ServerCapabilities.Prompts == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -93,7 +89,7 @@ func (client *Client) GetPrompt(ctx context.Context, request protocol.GetPromptR
 	return &result, nil
 }
 
-func (client *Client) ListResources(ctx context.Context, request protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
+func (client *Client) ListResources(ctx context.Context, request *protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
 	if client.ServerCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -110,7 +106,7 @@ func (client *Client) ListResources(ctx context.Context, request protocol.ListRe
 	return &result, err
 }
 
-func (client *Client) ReadResource(ctx context.Context, request protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+func (client *Client) ReadResource(ctx context.Context, request *protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
 	if client.ServerCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -127,7 +123,7 @@ func (client *Client) ReadResource(ctx context.Context, request protocol.ReadRes
 	return &result, nil
 }
 
-func (client *Client) ListResourceTemplates(ctx context.Context, request protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
+func (client *Client) ListResourceTemplates(ctx context.Context, request *protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
 	if client.ServerCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -144,7 +140,7 @@ func (client *Client) ListResourceTemplates(ctx context.Context, request protoco
 	return &result, nil
 }
 
-func (client *Client) SubscribeResourceChange(ctx context.Context, request protocol.SubscribeRequest) (*protocol.SubscribeResult, error) {
+func (client *Client) SubscribeResourceChange(ctx context.Context, request *protocol.SubscribeRequest) (*protocol.SubscribeResult, error) {
 	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -161,7 +157,7 @@ func (client *Client) SubscribeResourceChange(ctx context.Context, request proto
 	return &result, nil
 }
 
-func (client *Client) UnSubscribeResourceChange(ctx context.Context, request protocol.UnsubscribeRequest) (*protocol.UnsubscribeResult, error) {
+func (client *Client) UnSubscribeResourceChange(ctx context.Context, request *protocol.UnsubscribeRequest) (*protocol.UnsubscribeResult, error) {
 	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -178,7 +174,7 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context, request pro
 	return &result, nil
 }
 
-func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
+func (client *Client) ListTools(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
 	if client.ServerCapabilities.Tools == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -195,7 +191,7 @@ func (client *Client) ListTools(ctx context.Context, request protocol.ListToolsR
 	return &result, nil
 }
 
-func (client *Client) CallTool(ctx context.Context, request protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 	if client.ServerCapabilities.Tools == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
@@ -212,7 +208,7 @@ func (client *Client) CallTool(ctx context.Context, request protocol.CallToolReq
 	return &result, nil
 }
 
-// func (client *Client) CompleteRequest(ctx context.Context, request protocol.CompleteRequest) (*protocol.CompleteResult, error) {
+// func (client *Client) CompleteRequest(ctx context.Context, request *protocol.CompleteRequest) (*protocol.CompleteResult, error) {
 // 	response, err := client.callServer(ctx, protocol.CompletionComplete, request)
 // 	if err != nil {
 // 		return nil, err
@@ -225,7 +221,7 @@ func (client *Client) CallTool(ctx context.Context, request protocol.CallToolReq
 // 	return &result, nil
 // }
 //
-// func (client *Client) SetLogLevel(ctx context.Context, request protocol.SetLoggingLevelRequest) (*protocol.SetLoggingLevelResult, error) {
+// func (client *Client) SetLogLevel(ctx context.Context, request *protocol.SetLoggingLevelRequest) (*protocol.SetLoggingLevelResult, error) {
 // 	response, err := client.callServer(ctx, protocol.LoggingSetLevel, request)
 // 	if err != nil {
 // 		return nil, err
@@ -257,7 +253,7 @@ func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 // 	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, protocol.NewRootsListChangedNotification())
 // }
 
-func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request protocol.ClientRequest, result protocol.ServerResponse) error {
+func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request *protocol.ClientRequest, result protocol.ServerResponse) error {
 	rawResult, err := client.callServer(ctx, method, request)
 	if err != nil {
 		return err

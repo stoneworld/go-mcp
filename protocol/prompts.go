@@ -1,5 +1,12 @@
 package protocol
 
+import (
+	"encoding/json"
+	"fmt"
+
+	"go-mcp/pkg"
+)
+
 // ListPromptsRequest represents a request to list available prompts
 type ListPromptsRequest struct {
 	Cursor string `json:"cursor,omitempty"`
@@ -39,6 +46,43 @@ type GetPromptResult struct {
 type PromptMessage struct {
 	Role    Role    `json:"role"`
 	Content Content `json:"content"`
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for PromptMessage
+func (m *PromptMessage) UnmarshalJSON(data []byte) error {
+	type Alias PromptMessage
+	aux := &struct {
+		Content json.RawMessage `json:"content"`
+		*Alias
+	}{
+		Alias: (*Alias)(m),
+	}
+	if err := pkg.JsonUnmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Try to unmarshal content as TextContent first
+	var textContent TextContent
+	if err := pkg.JsonUnmarshal(aux.Content, &textContent); err == nil {
+		m.Content = textContent
+		return nil
+	}
+
+	// Try to unmarshal content as ImageContent
+	var imageContent ImageContent
+	if err := pkg.JsonUnmarshal(aux.Content, &imageContent); err == nil {
+		m.Content = imageContent
+		return nil
+	}
+
+	// Try to unmarshal content as embeddedResource
+	var embeddedResource EmbeddedResource
+	if err := pkg.JsonUnmarshal(aux.Content, &embeddedResource); err == nil {
+		m.Content = embeddedResource
+		return nil
+	}
+
+	return fmt.Errorf("unknown content type")
 }
 
 // PromptListChangedNotification represents a notification that the prompt list has changed

@@ -37,7 +37,7 @@ type Client struct {
 	logger pkg.Logger
 }
 
-func NewClient(t transport.ClientTransport, request protocol.InitializeRequest, opts ...Option) (*Client, error) {
+func NewClient(t transport.ClientTransport, request *protocol.InitializeRequest, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport:      t,
 		logger:         pkg.DefaultLogger,
@@ -56,7 +56,6 @@ func NewClient(t transport.ClientTransport, request protocol.InitializeRequest, 
 	if _, err := client.initialization(context.Background(), request); err != nil {
 		return nil, err
 	}
-	client.initialized.Store(true)
 
 	return client, nil
 }
