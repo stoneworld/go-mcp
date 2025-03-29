@@ -12,7 +12,7 @@
 而我们强烈建议，官方库永远使用HTTPS，这样可以避免一些误操作。
 
 ```bash
-git clone https://github.com/github.com/thinkinaixyz/go-mcp.git
+git clone https://github.com/thinkinaixyz/go-mcp.git
 cd go-mcp
 git remote add upstream 'git@github.com:<your github username>/go-mcp.git'
 ```
@@ -27,11 +27,11 @@ git fetch upstream
 
 ## 4 创建 feature 分支
 我们在创建新的 feature 分支的时候，要先考虑清楚，从哪个分支切出来。
-我们假设，现在我们希望添加的特性将会被合并到master分支，或者说我们的新特性要在master的基础上进行，执行：
+我们假设，现在我们希望添加的特性将会被合并到`main`分支，或者说我们的新特性要在`main`的基础上进行，执行：
 ```bash
-git checkout -b feature/my-feature origin/master
+git checkout -b feature/my-feature origin/main
 ```
-这样我们就切出来一个分支了。该分支的代码和origin/master上的完全一致。
+这样我们就切出来一个分支了。该分支的代码和`origin/main`上的完全一致。
 
 ## 5 Golint
 ```bash
