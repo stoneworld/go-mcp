@@ -60,6 +60,25 @@ func TestServer(t *testing.T) {
 	}
 	server.AddTool(testTool)
 
+	testPrompt := protocol.Prompt{
+		Name:        "test_prompt",
+		Description: "test_prompt_description",
+		Arguments: []protocol.PromptArgument{
+			{
+				Name:        "params1",
+				Description: "params1's description",
+				Required:    true,
+			},
+		},
+	}
+
+	testPromtGetResponse := &protocol.GetPromptResult{
+		Description: "test_prompt_description",
+	}
+	server.AddPrompt(testPrompt, func(protocol.GetPromptRequest) *protocol.GetPromptResult {
+		return testPromtGetResponse
+	})
+
 	go func() {
 		if err := server.Start(); err != nil {
 			t.Errorf("server start: %+v", err)
@@ -87,6 +106,28 @@ func TestServer(t *testing.T) {
 				Capabilities:    server.capabilities,
 				ServerInfo:      server.serverInfo,
 			},
+		},
+		{
+			name:             "test_ping",
+			method:           protocol.Ping,
+			request:          protocol.PingRequest{},
+			expectedResponse: protocol.PingResult{},
+		},
+		{
+			name:    "test_list_prompt",
+			method:  protocol.PromptsList,
+			request: protocol.ListPromptsRequest{},
+			expectedResponse: protocol.ListPromptsResult{
+				Prompts: []protocol.Prompt{testPrompt},
+			},
+		},
+		{
+			name:   "test_get_prompt",
+			method: protocol.PromptsGet,
+			request: protocol.GetPromptRequest{
+				Name: testPrompt.Name,
+			},
+			expectedResponse: testPromtGetResponse,
 		},
 	}
 

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
@@ -38,11 +39,30 @@ func (server *Server) handleRequestWithPing(ctx context.Context, rawParams json.
 }
 
 func (server *Server) handleRequestWithListPrompts(ctx context.Context, rawParams json.RawMessage) (*protocol.ListPromptsResult, error) {
-	return nil, nil
+	var req protocol.ListPromptsRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	// TODO: list prompt with cursor
+	return &protocol.ListPromptsResult{
+		Prompts: server.prompts,
+	}, nil
 }
 
 func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams json.RawMessage) (*protocol.GetPromptResult, error) {
-	return nil, nil
+	var req protocol.GetPromptRequest
+	if err := pkg.JsonUnmarshal(rawParams, &req); err != nil {
+		return nil, err
+	}
+
+	// TODO: validate request's arguments
+
+	handleFunc, ok := server.promptHandlers[req.Name]
+	if !ok {
+		return nil, fmt.Errorf("missing prompt handler, promptName=%s", req.Name)
+	}
+	return handleFunc(req), nil
 }
 
 func (server *Server) handleRequestWithListResources(ctx context.Context, rawParams json.RawMessage) (*protocol.ListResourcesResult, error) {

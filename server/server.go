@@ -16,7 +16,9 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	tools []*protocol.Tool
+	tools          []*protocol.Tool
+	prompts        []protocol.Prompt
+	promptHandlers map[string]PromptHandleFunc
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
@@ -81,40 +83,18 @@ func (server *Server) Start() error {
 	return nil
 }
 
-type Option func(*Server)
-
-func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
-	return func(s *Server) {
-		s.cancelledNotifyHandler = handler
-	}
-}
-
-func WithLogger(logger pkg.Logger) Option {
-	return func(s *Server) {
-		s.logger = logger
-	}
-}
-
-func WithProtocolVersion(protocolVersion string) Option {
-	return func(s *Server) {
-		s.protocolVersion = protocolVersion
-	}
-}
-
-func WithCapabilities(capabilities protocol.ServerCapabilities) Option {
-	return func(s *Server) {
-		s.capabilities = capabilities
-	}
-}
-
-func WithInfo(serverInfo protocol.Implementation) Option {
-	return func(s *Server) {
-		s.serverInfo = serverInfo
-	}
-}
-
 func (server *Server) AddTool(tool *protocol.Tool) {
 	server.tools = append(server.tools, tool)
+}
+
+type PromptHandleFunc func(protocol.GetPromptRequest) *protocol.GetPromptResult
+
+func (server *Server) AddPrompt(prompt protocol.Prompt, promptHandler PromptHandleFunc) {
+	server.prompts = append(server.prompts, prompt)
+	if server.promptHandlers == nil {
+		server.promptHandlers = map[string]PromptHandleFunc{}
+	}
+	server.promptHandlers[prompt.Name] = promptHandler
 }
 
 func (server *Server) Shutdown(userCtx context.Context) error {
