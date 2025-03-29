@@ -81,7 +81,7 @@ func WithLogger(logger pkg.Logger) Option {
 }
 
 func (client *Client) Close() error {
-	if err := client.transport.Close(context.Background()); err != nil {
+	if err := client.transport.Close(); err != nil {
 		return err
 	}
 	return nil
