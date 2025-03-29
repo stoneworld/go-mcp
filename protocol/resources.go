@@ -1,5 +1,12 @@
 package protocol
 
+import (
+	"encoding/json"
+	"fmt"
+
+	"go-mcp/pkg"
+)
+
 // ListResourcesRequest represents a request to list available resources
 type ListResourcesRequest struct {
 	Cursor string `json:"cursor,omitempty"`
@@ -30,6 +37,41 @@ type ReadResourceRequest struct {
 // ReadResourceResult represents the response to a read resource request
 type ReadResourceResult struct {
 	Contents []ResourceContents `json:"contents"`
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for ReadResourceResult
+func (r *ReadResourceResult) UnmarshalJSON(data []byte) error {
+	type Alias ReadResourceResult
+	aux := &struct {
+		Contents []json.RawMessage `json:"contents"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+	if err := pkg.JsonUnmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	r.Contents = make([]ResourceContents, len(aux.Contents))
+	for i, content := range aux.Contents {
+		// Try to unmarshal content as TextResourceContents first
+		var textContent TextResourceContents
+		if err := pkg.JsonUnmarshal(content, &textContent); err == nil {
+			r.Contents[i] = textContent
+			continue
+		}
+
+		// Try to unmarshal content as BlobResourceContents
+		var blobContent BlobResourceContents
+		if err := pkg.JsonUnmarshal(content, &blobContent); err == nil {
+			r.Contents[i] = blobContent
+			continue
+		}
+
+		return fmt.Errorf("unknown content type at index %d", i)
+	}
+
+	return nil
 }
 
 // Resource related types
@@ -98,6 +140,27 @@ type ImageContent struct {
 
 func (i ImageContent) GetType() string {
 	return "image"
+}
+
+// EmbeddedResource represents the contents of a resource, embedded into a prompt or tool call result.
+// It is up to the client how best to render embedded resources for the benefit of the LLM and/or the user.
+type EmbeddedResource struct {
+	Type        string           `json:"type"` // Must be "resource"
+	Resource    ResourceContents `json:"resource"`
+	Annotations *Annotations     `json:"annotations,omitempty"`
+}
+
+// NewEmbeddedResource creates a new EmbeddedResource
+func NewEmbeddedResource(resource ResourceContents, annotations *Annotations) *EmbeddedResource {
+	return &EmbeddedResource{
+		Type:        "resource",
+		Resource:    resource,
+		Annotations: annotations,
+	}
+}
+
+func (i EmbeddedResource) GetType() string {
+	return "resource"
 }
 
 type ResourceContents interface {

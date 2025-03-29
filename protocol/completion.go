@@ -22,11 +22,13 @@ type ResourceReference struct {
 
 // CompleteResult represents the response to a completion request
 type CompleteResult struct {
-	Completion struct {
-		Values  []string `json:"values"`
-		HasMore bool     `json:"hasMore,omitempty"`
-		Total   int      `json:"total,omitempty"`
-	} `json:"completion"`
+	Completion Complete `json:"completion"`
+}
+
+type Complete struct {
+	Values  []string `json:"values"`
+	HasMore bool     `json:"hasMore,omitempty"`
+	Total   int      `json:"total,omitempty"`
 }
 
 // NewCompleteRequest creates a new completion request
