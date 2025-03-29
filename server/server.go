@@ -16,13 +16,14 @@ import (
 type Server struct {
 	transport transport.ServerTransport
 
-	tools             []*protocol.Tool
-	toolHandlers      map[string]ToolHandlerFunc
-	prompts           []protocol.Prompt
-	promptHandlers    map[string]PromptHandlerFunc
-	resources         []protocol.Resource
-	resourceHandlers  map[string]ResourceHandlerFunc
-	resourceTemplates []protocol.ResourceTemplate
+	tools              []*protocol.Tool
+	toolHandlers       map[string]ToolHandlerFunc
+	prompts            []protocol.Prompt
+	promptHandlers     map[string]PromptHandlerFunc
+	resources          []protocol.Resource
+	resourceHandlers   map[string]ResourceHandlerFunc
+	resourceTemplates  []protocol.ResourceTemplate
+	completionHandlers map[string]CompletionHandlerFunc
 
 	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
 
@@ -129,6 +130,16 @@ func (server *Server) AddResource(resource protocol.Resource, resourceHandler Re
 
 func (server *Server) AddResourceTemplate(tmpl protocol.ResourceTemplate) {
 	server.resourceTemplates = append(server.resourceTemplates, tmpl)
+}
+
+type CompletionHandlerFunc func(protocol.CompleteRequest) (*protocol.CompleteResult, error)
+
+func (server *Server) AddCompletion(id string, handler CompletionHandlerFunc) {
+	if server.completionHandlers == nil {
+		server.completionHandlers = map[string]CompletionHandlerFunc{}
+	}
+
+	server.completionHandlers[id] = handler
 }
 
 func (server *Server) Shutdown(userCtx context.Context) error {

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"go-mcp/pkg"
@@ -158,7 +159,26 @@ func (server *Server) handleRequestWithCallTool(ctx context.Context, rawParams j
 }
 
 func (server *Server) handleRequestWithCompleteRequest(ctx context.Context, rawParams json.RawMessage) (*protocol.CompleteResult, error) {
-	return nil, nil
+	var request protocol.CompleteRequest
+	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+		return nil, err
+	}
+
+	var handerName string
+	switch v := request.Ref.(type) {
+	case protocol.PromptReference:
+		handerName = fmt.Sprintf("%s/%s", v.Type, v.Name)
+	case protocol.ResourceReference:
+		handerName = fmt.Sprintf("%s/%s", v.Type, v.URI)
+	default:
+		return nil, errors.New("invalid complete request")
+	}
+
+	handlerFunc, ok := server.completionHandlers[handerName]
+	if !ok {
+		return nil, fmt.Errorf("missing complete handler, name=%s", handerName)
+	}
+	return handlerFunc(request)
 }
 
 func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParams json.RawMessage) (*protocol.SetLoggingLevelResult, error) {
