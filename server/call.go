@@ -17,126 +17,139 @@ import (
 // 2. 发送请求 server.callClient(ctx)
 // 3. 响应解析
 
-func (server *Server) ping(ctx context.Context) (*protocol.PingResult, error) {
+func (server *Server) ping(ctx context.Context) error {
 	sessionID, exist := getSessionIDFromCtx(ctx)
 	if !exist {
-		return nil, pkg.NewLackSessionError(sessionID)
+		return pkg.NewLackSessionError(sessionID)
 	}
 
-	request := &protocol.PingRequest{}
-
-	response, err := server.callClient(ctx, sessionID, protocol.Ping, request)
+	response, err := server.callClient(ctx, sessionID, protocol.Ping, protocol.NewPingRequest())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var result protocol.PingResult
 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	return &result, nil
-}
-
-func (server *Server) listRoots(ctx context.Context) (*protocol.ListRootsResult, error) {
-	sessionID, exist := getSessionIDFromCtx(ctx)
-	if !exist {
-		return nil, pkg.NewLackSessionError(sessionID)
-	}
-
-	request := &protocol.ListRootsRequest{}
-	response, err := server.callClient(ctx, sessionID, protocol.RootsList, request)
-	if err != nil {
-		return nil, err
-	}
-
-	var result protocol.ListRootsResult
-	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return &result, nil
-}
-
-func (server *Server) CreateMessagesSample(ctx context.Context) error {
-	// 可以从 ctx 里取得 session id, sessionID, exist := getSessionIDFromCtx(ctx)
-	// server.callClient(ctx)
 	return nil
 }
+
+// func (server *Server) listRoots(ctx context.Context) (*protocol.ListRootsResult, error) {
+// 	sessionID, exist := getSessionIDFromCtx(ctx)
+// 	if !exist {
+// 		return nil, pkg.NewLackSessionError(sessionID)
+// 	}
+//
+// 	request := &protocol.ListRootsRequest{}
+// 	response, err := server.callClient(ctx, sessionID, protocol.RootsList, request)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	var result protocol.ListRootsResult
+// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+// 	}
+// 	return &result, nil
+// }
+//
+// func (server *Server) CreateMessagesSample(ctx context.Context) (*protocol.CreateMessageResult, error) {
+// 	sessionID, exist := getSessionIDFromCtx(ctx)
+// 	if !exist {
+// 		return nil, pkg.NewLackSessionError(sessionID)
+// 	}
+//
+// 	request := &protocol.CreateMessageRequest{}
+// 	response, err := server.callClient(ctx, sessionID, protocol.SamplingCreateMessage, request)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	var result protocol.CreateMessageResult
+// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+// 	}
+// 	return &result, nil
+// }
 
 // 通知
 // 1. 构造通知结构体
 // 2. Cancelled、Progress、LoggingMessage类型的通知，可以从 ctx 里取得 session id, sessionID, exist := getSessionIDFromCtx(ctx)
 // 3. 发送通知 server.sendMsgWithNotification(ctx)
 
-func (server *Server) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
-	sessionID, exist := getSessionIDFromCtx(ctx)
-	if !exist {
-		return pkg.NewLackSessionError(sessionID)
-	}
-	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationCancelled, notify)
-}
+// func (server *Server) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
+// 	sessionID, exist := getSessionIDFromCtx(ctx)
+// 	if !exist {
+// 		return pkg.NewLackSessionError(sessionID)
+// 	}
+// 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationCancelled, notify)
+// }
+//
+// func (server *Server) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
+// 	sessionID, exist := getSessionIDFromCtx(ctx)
+// 	if !exist {
+// 		return pkg.NewLackSessionError(sessionID)
+// 	}
+// 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationProgress, notify)
+// }
 
-func (server *Server) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
-	sessionID, exist := getSessionIDFromCtx(ctx)
-	if !exist {
-		return pkg.NewLackSessionError(sessionID)
-	}
-	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationProgress, notify)
-}
-
-func (server *Server) SendNotification4ToolListChanges(ctx context.Context, notify *protocol.ToolListChangedNotification) error {
-	sessionID, exist := getSessionIDFromCtx(ctx)
-	if !exist {
-		return pkg.NewLackSessionError(sessionID)
-	}
-	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, notify)
-}
-
-func (server *Server) SendNotification4PromptListChanges(ctx context.Context, notify *protocol.PromptListChangedNotification) error {
-	// TODO: 获取订阅了此通知的sessionID
-	sessionIDList := []string{}
-
+func (server *Server) SendNotification4ToolListChanges(ctx context.Context) error {
 	var errList error
-	for _, sessionID := range sessionIDList {
-		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationPromptsListChanged, notify); err != nil {
+	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, &protocol.ToolListChangedNotification{}); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
-	}
+		return true
+	})
 	return errList
 }
 
-func (server *Server) SendNotification4ResourceListChanges(ctx context.Context, notify *protocol.ResourceListChangedNotification) error {
-	// TODO: 获取订阅了此通知的sessionID
-	sessionIDList := []string{}
-
+func (server *Server) SendNotification4PromptListChanges(ctx context.Context) error {
 	var errList error
-	for _, sessionID := range sessionIDList {
-		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesListChanged, notify); err != nil {
+	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationPromptsListChanged, &protocol.PromptListChangedNotification{}); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
-	}
+		return true
+	})
+	return errList
+}
+
+func (server *Server) SendNotification4ResourceListChanges(ctx context.Context) error {
+	var errList error
+	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesListChanged, &protocol.ResourceListChangedNotification{}); err != nil {
+			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
+		}
+		return true
+	})
 	return errList
 }
 
 func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
-	// TODO: 获取订阅了此通知的sessionID
-	sessionIDList := []string{}
-
 	var errList error
-	for _, sessionID := range sessionIDList {
+	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+		_, ok := value.(*session)
+		if !ok {
+			return true
+		}
+		// TODO: 使用session里订阅的资源判断是否要发送通知
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesUpdated, notify); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
-	}
+		return true
+	})
 	return errList
 }
 
-func (server *Server) SendNotification4LoggingMessage(ctx context.Context, notify *protocol.LogMessageNotification) error {
-	sessionID, exist := getSessionIDFromCtx(ctx)
-	if !exist {
-		return pkg.NewLackSessionError(sessionID)
-	}
-	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationLogMessage, notify)
-}
+// func (server *Server) SendNotification4LoggingMessage(ctx context.Context, notify *protocol.LogMessageNotification) error {
+// 	sessionID, exist := getSessionIDFromCtx(ctx)
+// 	if !exist {
+// 		return pkg.NewLackSessionError(sessionID)
+// 	}
+// 	return server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationLogMessage, notify)
+// }
 
 func (server *Server) callAndParse(ctx context.Context, sessionID string, method protocol.Method, request protocol.ServerRequest, result protocol.ClientResponse) error {
 	rawResult, err := server.callClient(ctx, sessionID, method, request)

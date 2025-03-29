@@ -25,7 +25,7 @@ type Client struct {
 
 	requestID atomic.Int64
 
-	initialized bool
+	initialized atomic.Bool
 
 	capabilities protocol.ServerCapabilities
 
@@ -51,6 +51,7 @@ func NewClient(t transport.ClientTransport, request protocol.InitializeRequest, 
 	if _, err := client.initialization(context.Background(), request); err != nil {
 		return nil, err
 	}
+	client.initialized.Store(true)
 
 	return client, nil
 }
