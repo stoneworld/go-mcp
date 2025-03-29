@@ -14,29 +14,27 @@ import (
 	"go-mcp/pkg"
 )
 
-const mcpMessageDelimiter = '\n'
-
-type SSEClientTransportOption func(*SSEClientTransport)
+type SSEClientTransportOption func(*sseClientTransport)
 
 func WithSSEClientOptionReceiveTimeout(timeout time.Duration) SSEClientTransportOption {
-	return func(t *SSEClientTransport) {
+	return func(t *sseClientTransport) {
 		t.receiveTimeout = timeout
 	}
 }
 
 func WithSSEClientOptionHTTPClient(client *http.Client) SSEClientTransportOption {
-	return func(t *SSEClientTransport) {
+	return func(t *sseClientTransport) {
 		t.client = client
 	}
 }
 
 func WithSSEClientOptionLogger(log pkg.Logger) SSEClientTransportOption {
-	return func(t *SSEClientTransport) {
+	return func(t *sseClientTransport) {
 		t.logger = log
 	}
 }
 
-type SSEClientTransport struct {
+type sseClientTransport struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -55,7 +53,7 @@ type SSEClientTransport struct {
 func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
 	ctx, cancel := context.WithCancel(parent)
 
-	x := &SSEClientTransport{
+	x := &sseClientTransport{
 		ctx:             ctx,
 		cancel:          cancel,
 		serverURL:       serverURL,
@@ -74,7 +72,7 @@ func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSE
 	return x, nil
 }
 
-func (t *SSEClientTransport) Start() error {
+func (t *sseClientTransport) Start() error {
 	var (
 		err  error
 		req  *http.Request
@@ -119,7 +117,7 @@ func (t *SSEClientTransport) Start() error {
 
 // readSSE continuously reads the SSE stream and processes events.
 // It runs until the connection is closed or an error occurs.
-func (t *SSEClientTransport) readSSE(reader io.ReadCloser) {
+func (t *sseClientTransport) readSSE(reader io.ReadCloser) {
 	defer func() {
 		_ = reader.Close()
 	}()
@@ -168,7 +166,7 @@ func (t *SSEClientTransport) readSSE(reader io.ReadCloser) {
 
 // handleSSEEvent processes SSE events based on their type.
 // Handles 'endpoint' events for connection setup and 'message' events for JSON-RPC communication.
-func (t *SSEClientTransport) handleSSEEvent(event, data string) {
+func (t *sseClientTransport) handleSSEEvent(event, data string) {
 	switch event {
 	case "endpoint":
 		endpoint, err := url.Parse(data)
@@ -189,7 +187,7 @@ func (t *SSEClientTransport) handleSSEEvent(event, data string) {
 	}
 }
 
-func (t *SSEClientTransport) Send(ctx context.Context, msg Message) error {
+func (t *sseClientTransport) Send(ctx context.Context, msg Message) error {
 	t.logger.Debugf("Sending message: %s to %s", msg, t.messageEndpoint.String())
 
 	var (
@@ -214,11 +212,11 @@ func (t *SSEClientTransport) Send(ctx context.Context, msg Message) error {
 	return nil
 }
 
-func (t *SSEClientTransport) SetReceiver(receiver ClientReceiver) {
+func (t *sseClientTransport) SetReceiver(receiver ClientReceiver) {
 	t.receiver = receiver
 }
 
-func (t *SSEClientTransport) Close(ctx context.Context) error {
+func (t *sseClientTransport) Close() error {
 	t.cancel()
 
 	return nil

@@ -29,7 +29,7 @@ type ClientTransport interface {
 	SetReceiver(receiver ClientReceiver)
 
 	// Close 关闭传输连接
-	Close(ctx context.Context) error
+	Close() error
 }
 
 type ClientReceiver interface {

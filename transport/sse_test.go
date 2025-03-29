@@ -13,13 +13,11 @@ func TestSSE(t *testing.T) {
 	)
 
 	if svr, err = NewSSEServerTransport("0.0.0.0:8181"); err != nil {
-		t.Errorf("NewSSEServerTransport failed: %v", err)
-		return
+		t.Fatalf("NewSSEServerTransport failed: %v", err)
 	}
 
 	if client, err = NewSSEClientTransport(context.Background(), "http://127.0.0.1:8181/sse"); err != nil {
-		t.Errorf("NewSSEClientTransport failed: %v", err)
-		return
+		t.Fatalf("NewSSEClientTransport failed: %v", err)
 	}
 
 	testTransport(t, client, svr)
