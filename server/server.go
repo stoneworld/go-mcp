@@ -68,7 +68,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 		transport:         t,
 		logger:            pkg.DefaultLogger,
 		sessionID2session: pkg.NewMemorySessionStore(),
-		protocolVersion:   protocol.PROTOCOL_VERSION,
+		protocolVersion:   protocol.Version,
 		capabilities: protocol.ServerCapabilities{
 			Prompts: &protocol.PromptsCapability{
 				ListChanged: true,

@@ -150,7 +150,7 @@ func TestServer(t *testing.T) {
 			method:  protocol.Initialize,
 			request: protocol.InitializeRequest{},
 			expectedResponse: protocol.InitializeResult{
-				ProtocolVersion: protocol.PROTOCOL_VERSION,
+				ProtocolVersion: protocol.Version,
 				Capabilities:    server.capabilities,
 				ServerInfo:      server.serverInfo,
 			},

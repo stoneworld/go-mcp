@@ -44,7 +44,7 @@ func (t *MockServerTransport) Run() error {
 }
 
 func (t *MockServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	if _, err := t.out.Write(append(msg, "\n"...)); err != nil {
+	if _, err := t.out.Write(append(msg, mcpMessageDelimiter)); err != nil {
 		return fmt.Errorf("failed to write: %w", err)
 	}
 	return nil

@@ -1,7 +1,5 @@
 package protocol
 
-const Version = "2024-11-05"
-
 // InitializeRequest represents the initialize request sent from client to server
 type InitializeRequest struct {
 	ClientInfo      Implementation     `json:"clientInfo"`
