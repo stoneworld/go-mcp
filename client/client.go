@@ -17,11 +17,10 @@ type Client struct {
 
 	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
 
-	roots []protocol.Root
-
-	createMessagesSampleHandler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)
-
-	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
+	notifyHandlerWithToolsListChanged    func(ctx context.Context, request *protocol.ToolListChangedNotification) error
+	notifyHandlerWithPromptListChanged   func(ctx context.Context, request *protocol.PromptListChangedNotification) error
+	notifyHandlerWithResourceListChanged func(ctx context.Context, request *protocol.ResourceListChangedNotification) error
+	notifyHandlerWithResourcesUpdated    func(ctx context.Context, request *protocol.ResourceUpdatedNotification) error
 
 	requestID atomic.Int64
 
@@ -62,15 +61,27 @@ func NewClient(t transport.ClientTransport, request *protocol.InitializeRequest,
 
 type Option func(*Client)
 
-func WithCreateMessagesSampleHandler(handler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)) Option {
+func WithToolsListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.ToolListChangedNotification) error) Option {
 	return func(s *Client) {
-		s.createMessagesSampleHandler = handler
+		s.notifyHandlerWithToolsListChanged = handler
 	}
 }
 
-func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
+func WithPromptListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.PromptListChangedNotification) error) Option {
 	return func(s *Client) {
-		s.cancelledNotifyHandler = handler
+		s.notifyHandlerWithPromptListChanged = handler
+	}
+}
+
+func WithResourceListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.ResourceListChangedNotification) error) Option {
+	return func(s *Client) {
+		s.notifyHandlerWithResourceListChanged = handler
+	}
+}
+
+func WithResourcesUpdatedNotifyHandler(handler func(ctx context.Context, request *protocol.ResourceUpdatedNotification) error) Option {
+	return func(s *Client) {
+		s.notifyHandlerWithResourcesUpdated = handler
 	}
 }
 

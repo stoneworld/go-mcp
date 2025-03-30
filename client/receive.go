@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go-mcp/pkg"
@@ -9,9 +10,6 @@ import (
 
 	"github.com/tidwall/gjson"
 )
-
-// 对来自客户端的 message(request、response、notification)进行接收处理
-// 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
 
 func (client *Client) Receive(ctx context.Context, msg []byte) error {
 	defer pkg.Recover()
@@ -25,7 +23,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 			defer pkg.Recover()
 
 			if err := client.receiveNotify(ctx, notify); err != nil {
-				// TODO: 打印日志
+				client.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
 		}()
@@ -36,14 +34,13 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
 		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
-			// 打印日志
 			return err
 		}
 		go func() {
 			defer pkg.Recover()
 
-			if err := client.receiveResponse(ctx, resp); err != nil {
-				// TODO: 打印日志
+			if err := client.receiveResponse(resp); err != nil {
+				client.logger.Errorf("receive response:%+v error: %s", resp, err.Error())
 				return
 			}
 		}()
@@ -52,14 +49,16 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 
 	req := &protocol.JSONRPCRequest{}
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
-		// 打印日志
 		return err
+	}
+	if !req.IsValid() {
+		return pkg.ErrRequestInvalid
 	}
 	go func() {
 		defer pkg.Recover()
 
 		if err := client.receiveRequest(ctx, req); err != nil {
-			// TODO: 打印日志
+			client.logger.Errorf("receive request:%+v error: %s", req, err.Error())
 			return
 		}
 	}()
@@ -67,12 +66,6 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 }
 
 func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) error {
-	if !request.IsValid() {
-		// return protocol.NewJSONRPCErrorResponse(request.ID,)
-	}
-
-	// TODO：此处需要根据 request.Method 判断客户端是否声明此能力，如果未声明则报错返回。
-
 	var (
 		result protocol.ClientResponse
 		err    error
@@ -81,45 +74,49 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 	switch request.Method {
 	case protocol.Ping:
 		result, err = client.handleRequestWithPing()
-	case protocol.RootsList:
-		result, err = client.handleRequestWithListRoots(ctx, request.RawParams)
-	case protocol.SamplingCreateMessage:
-		result, err = client.handleRequestWithCreateMessagesSampling(ctx, request.RawParams)
+	// case protocol.RootsList:
+	// 	result, err = client.handleRequestWithListRoots(ctx, request.RawParams)
+	// case protocol.SamplingCreateMessage:
+	// 	result, err = client.handleRequestWithCreateMessagesSampling(ctx, request.RawParams)
 	default:
-		err = fmt.Errorf("request method=%s not supoort", request.Method)
+		err = fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, request.Method)
 	}
 
 	if err != nil {
-		// TODO: 此处需要根据err的类型传入不同的错误码
-		return client.sendMsgWithError(ctx, request.ID, protocol.INVALID_REQUEST, err.Error())
+		if errors.Is(err, pkg.ErrMethodNotSupport) {
+			return client.sendMsgWithError(ctx, request.ID, protocol.METHOD_NOT_FOUND, err.Error())
+		} else if errors.Is(err, pkg.ErrRequestInvalid) {
+			return client.sendMsgWithError(ctx, request.ID, protocol.INVALID_REQUEST, err.Error())
+		} else if errors.Is(err, pkg.ErrJsonUnmarshal) {
+			return client.sendMsgWithError(ctx, request.ID, protocol.PARSE_ERROR, err.Error())
+		}
+		return client.sendMsgWithError(ctx, request.ID, protocol.INTERNAL_ERROR, err.Error())
 	}
 	return client.sendMsgWithResponse(ctx, request.ID, result)
 }
 
 func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
 	switch notify.Method {
-	case protocol.NotificationCancelled:
-		return client.handleNotifyWithCancelled(ctx, notify.RawParams)
-	case protocol.NotificationProgress:
-		// TODO
+	// case protocol.NotificationCancelled:
+	// 	return client.handleNotifyWithCancelled(ctx, notify.RawParams)
+	// case protocol.NotificationProgress:
+	// 	return nil
+	// case protocol.NotificationLogMessage:
+	//	return nil
 	case protocol.NotificationToolsListChanged:
-		// TODO
+		return client.handleNotifyWithToolsListChanged(ctx, notify.RawParams)
 	case protocol.NotificationPromptsListChanged:
-		// TODO
+		return client.handleNotifyWithPromptsListChanged(ctx, notify.RawParams)
 	case protocol.NotificationResourcesListChanged:
-		// TODO
+		return client.handleNotifyWithResourcesListChanged(ctx, notify.RawParams)
 	case protocol.NotificationResourcesUpdated:
-	// TODO
-	case protocol.NotificationLogMessage:
-		// TODO
+		return client.handleNotifyWithResourcesUpdated(ctx, notify.RawParams)
 	default:
-		// TODO: return pkg.errors
-		return nil
+		return fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, notify.Method)
 	}
-	return nil
 }
 
-func (client *Client) receiveResponse(ctx context.Context, response *protocol.JSONRPCResponse) error {
+func (client *Client) receiveResponse(response *protocol.JSONRPCResponse) error {
 	respChan, ok := client.reqID2respChan.Get(fmt.Sprint(response.ID))
 	if !ok {
 		return fmt.Errorf("%w: requestID=%+v", pkg.ErrLackResponseChan, response.ID)
@@ -128,7 +125,7 @@ func (client *Client) receiveResponse(ctx context.Context, response *protocol.JS
 	select {
 	case respChan <- response:
 	default:
-		return fmt.Errorf("duplicate response received: response=%+v", response)
+		return fmt.Errorf("%w: response=%+v", pkg.ErrDuplicateResponseReceived, response)
 	}
 	return nil
 }

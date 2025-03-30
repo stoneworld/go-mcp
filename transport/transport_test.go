@@ -22,16 +22,16 @@ func (r clientReceive) Receive(ctx context.Context, msg []byte) error {
 
 func testTransport(t *testing.T, client ClientTransport, server ServerTransport) {
 	msgWithServer := "hello"
-	expectedMsgWithServer := ""
+	expectedMsgWithServerCh := make(chan string, 1)
 	server.SetReceiver(serverReceive(func(ctx context.Context, sessionID string, msg []byte) error {
-		expectedMsgWithServer = string(msg)
+		expectedMsgWithServerCh <- string(msg)
 		return nil
 	}))
 
 	msgWithClient := "hello"
-	expectedMsgWithClient := ""
+	expectedMsgWithClientCh := make(chan string, 1)
 	client.SetReceiver(clientReceive(func(ctx context.Context, msg []byte) error {
-		expectedMsgWithClient = string(msg)
+		expectedMsgWithClientCh <- string(msg)
 		return nil
 	}))
 
@@ -75,8 +75,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	if err := client.Send(context.Background(), Message(msgWithServer)); err != nil {
 		t.Fatalf("client.Send() failed: %v", err)
 	}
-	time.Sleep(time.Second * 1)
-	assert.Equal(t, expectedMsgWithServer, msgWithServer)
+	assert.Equal(t, <-expectedMsgWithServerCh, msgWithServer)
 
 	sessionID := ""
 	if cli, ok := client.(*sseClientTransport); ok {
@@ -86,6 +85,5 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	if err := server.Send(context.Background(), sessionID, Message(msgWithClient)); err != nil {
 		t.Fatalf("server.Send() failed: %v", err)
 	}
-	time.Sleep(time.Second * 1)
-	assert.Equal(t, expectedMsgWithClient, msgWithClient)
+	assert.Equal(t, <-expectedMsgWithClientCh, msgWithClient)
 }

@@ -5,9 +5,17 @@ import (
 	"fmt"
 )
 
-var ErrServerNotSupport = errors.New("this feature serve not support")
+var ErrServerNotSupport = errors.New("this feature server not support")
+
+var ErrRequestInvalid = errors.New("request invalid")
 
 var ErrLackResponseChan = errors.New("lack response chan")
+
+var ErrDuplicateResponseReceived = errors.New("duplicate response received")
+
+var ErrMethodNotSupport = errors.New("method not support")
+
+var ErrJsonUnmarshal = errors.New("json unmarshal error")
 
 type LackSessionError struct {
 	SessionID string

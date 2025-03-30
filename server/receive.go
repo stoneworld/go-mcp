@@ -157,7 +157,7 @@ func (server *Server) receiveResponse(ctx context.Context, sessionID string, res
 	select {
 	case respChan <- response:
 	default:
-		return fmt.Errorf("response repeat: sessionID=%+v, response=%+v", sessionID, response)
+		return fmt.Errorf("%w: sessionID=%+v, response=%+v", pkg.ErrDuplicateResponseReceived, sessionID, response)
 	}
 	return nil
 }
