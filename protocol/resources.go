@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"go-mcp/pkg"
+
+	"github.com/yosida95/uritemplate/v3"
 )
 
 // ListResourcesRequest represents a request to list available resources
@@ -27,7 +29,8 @@ type ListResourceTemplatesResult struct {
 
 // ReadResourceRequest represents a request to read a specific resource
 type ReadResourceRequest struct {
-	URI string `json:"uri"`
+	URI       string                 `json:"uri"`
+	Arguments map[string]interface{} `json:"-"`
 }
 
 // ReadResourceResult represents the response to a read resource request
@@ -82,10 +85,46 @@ type Resource struct {
 
 type ResourceTemplate struct {
 	Annotated
-	Name        string `json:"name"`
-	URITemplate string `json:"uriTemplate"`
-	Description string `json:"description,omitempty"`
-	MimeType    string `json:"mimeType,omitempty"`
+	Name              string                `json:"name"`
+	URITemplate       string                `json:"uriTemplate"`
+	URITemplateParsed *uritemplate.Template `json:"-"`
+	Description       string                `json:"description,omitempty"`
+	MimeType          string                `json:"mimeType,omitempty"`
+}
+
+func (t *ResourceTemplate) UnmarshalJSON(data []byte) error {
+	type Alias ResourceTemplate
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Parse the URI template after unmarshaling
+	if t.URITemplate != "" {
+		template, err := uritemplate.New(t.URITemplate)
+		if err != nil {
+			return err
+		}
+		t.URITemplateParsed = template
+	}
+	return nil
+}
+
+func (t *ResourceTemplate) ParseURITemplate() error {
+	template, err := uritemplate.New(t.URITemplate)
+	if err != nil {
+		return err
+	}
+	t.URITemplateParsed = template
+	return nil
+}
+
+func (t *ResourceTemplate) GetURITemplate() *uritemplate.Template {
+	return t.URITemplateParsed
 }
 
 // Annotated represents base objects that include optional annotations

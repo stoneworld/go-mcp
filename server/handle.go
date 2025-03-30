@@ -6,6 +6,8 @@ import (
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
+
+	"github.com/yosida95/uritemplate/v3"
 )
 
 func (server *Server) handleRequestWithPing() (*protocol.PingResult, error) {
@@ -47,7 +49,6 @@ func (server *Server) handleRequestWithListPrompts(rawParams json.RawMessage) (*
 		return nil, err
 	}
 
-	// TODO: list prompt with cursor
 	prompts := make([]protocol.Prompt, 0)
 	server.prompts.Range(func(key string, entry *promptEntry) bool {
 		prompts = append(prompts, *entry.prompt)
@@ -86,7 +87,6 @@ func (server *Server) handleRequestWithListResources(rawParams json.RawMessage) 
 		return nil, err
 	}
 
-	// TODO: list resources with cursor
 	resources := make([]protocol.Resource, 0)
 	server.resources.Range(func(key string, entry *resourceEntry) bool {
 		resources = append(resources, *entry.resource)
@@ -108,7 +108,6 @@ func (server *Server) handleRequestWithListResourceTemplates(rawParams json.RawM
 		return nil, err
 	}
 
-	// TODO: list resource template with cursor
 	templates := make([]protocol.ResourceTemplate, 0)
 	server.resourceTemplates.Range(func(key string, entry *resourceTemplateEntry) bool {
 		templates = append(templates, *entry.resourceTemplate)
@@ -130,11 +129,32 @@ func (server *Server) handleRequestWithReadResource(rawParams json.RawMessage) (
 		return nil, err
 	}
 
-	entry, ok := server.resources.Load(request.URI)
-	if !ok {
-		return nil, fmt.Errorf("missing resource read handler, uri=%s", request.URI)
+	var handler ResourceHandlerFunc
+	if entry, ok := server.resources.Load(request.URI); ok {
+		handler = entry.handler
 	}
-	return entry.handler(request)
+
+	server.resourceTemplates.Range(func(key string, entry *resourceTemplateEntry) bool {
+		if !matchesTemplate(request.URI, entry.resourceTemplate.URITemplateParsed) {
+			return true
+		}
+		handler = entry.handler
+		matchedVars := entry.resourceTemplate.URITemplateParsed.Match(request.URI)
+		request.Arguments = make(map[string]interface{})
+		for name, value := range matchedVars {
+			request.Arguments[name] = value.V
+		}
+		return false
+	})
+
+	if handler == nil {
+		return nil, fmt.Errorf("missing resource, resourceName=%s", request.URI)
+	}
+	return handler(request)
+}
+
+func matchesTemplate(uri string, template *uritemplate.Template) bool {
+	return template.Regexp().MatchString(uri)
 }
 
 func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
@@ -182,7 +202,7 @@ func (server *Server) handleRequestWithListTools(rawParams json.RawMessage) (*pr
 	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
 		return nil, err
 	}
-	// TODO: 需要处理request.Cursor的翻页操作
+
 	tools := make([]*protocol.Tool, 0)
 	server.tools.Range(func(key string, entry *toolEntry) bool {
 		tools = append(tools, entry.tool)

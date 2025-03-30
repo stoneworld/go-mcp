@@ -45,9 +45,6 @@ func TestServer(t *testing.T) {
 			Name:    "ExampleServer",
 			Version: "1.0.0",
 		}))
-
-	// TODO: add mock session id auto
-	server.sessionID2session.Store("mock", newSession())
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
@@ -82,11 +79,11 @@ func TestServer(t *testing.T) {
 			},
 		},
 	}
-	testPromtGetResponse := &protocol.GetPromptResult{
+	testPromptGetResponse := &protocol.GetPromptResult{
 		Description: "test_prompt_description",
 	}
 	server.RegisterPrompt(testPrompt, func(*protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
-		return testPromtGetResponse, nil
+		return testPromptGetResponse, nil
 	})
 
 	// add resource
@@ -109,17 +106,20 @@ func TestServer(t *testing.T) {
 	})
 
 	// add resource template
-	testReourceTemplate := &protocol.ResourceTemplate{
+	testResourceTemplate := &protocol.ResourceTemplate{
 		URITemplate: "file:///{path}",
 		Name:        "test",
 	}
-	server.RegisterResourceTemplate(testReourceTemplate, func(*protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+	if err := server.RegisterResourceTemplate(testResourceTemplate, func(*protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
 		return &protocol.ReadResourceResult{
 			Contents: []protocol.ResourceContents{
 				testResourceContent,
 			},
 		}, nil
-	})
+	}); err != nil {
+		t.Fatalf("RegisterResourceTemplate: %+v", err)
+		return
+	}
 
 	go func() {
 		if err := server.Start(); err != nil {
@@ -181,7 +181,7 @@ func TestServer(t *testing.T) {
 			request: protocol.GetPromptRequest{
 				Name: testPrompt.Name,
 			},
-			expectedResponse: testPromtGetResponse,
+			expectedResponse: testPromptGetResponse,
 		},
 		{
 			name:    "test_list_resource",
@@ -206,7 +206,7 @@ func TestServer(t *testing.T) {
 			method:  protocol.ResourceListTemplates,
 			request: protocol.ListResourceTemplatesRequest{},
 			expectedResponse: protocol.ListResourceTemplatesResult{
-				ResourceTemplates: []protocol.ResourceTemplate{*testReourceTemplate},
+				ResourceTemplates: []protocol.ResourceTemplate{*testResourceTemplate},
 			},
 		},
 		{

@@ -35,7 +35,7 @@ func (server *Server) sendNotification4ToolListChanges(ctx context.Context) erro
 	}
 
 	var errList error
-	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, protocol.NewToolListChangedNotification()); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
@@ -50,7 +50,7 @@ func (server *Server) sendNotification4PromptListChanges(ctx context.Context) er
 	}
 
 	var errList error
-	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationPromptsListChanged, protocol.NewPromptListChangedNotification()); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
@@ -65,7 +65,7 @@ func (server *Server) sendNotification4ResourceListChanges(ctx context.Context) 
 	}
 
 	var errList error
-	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
+	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesListChanged, protocol.NewResourceListChangedNotification()); err != nil {
 			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
@@ -74,14 +74,14 @@ func (server *Server) sendNotification4ResourceListChanges(ctx context.Context) 
 	return errList
 }
 
-func (server *Server) sendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
+func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
 	if server.capabilities.Resources == nil || !server.capabilities.Resources.Subscribe {
 		return pkg.ErrServerNotSupport
 	}
 
 	var errList error
-	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
-		if _, ok := value.(*session).subscribedResources.Get(notify.URI); !ok {
+	server.sessionID2session.Range(func(sessionID string, s *session) bool {
+		if _, ok := s.subscribedResources.Get(notify.URI); !ok {
 			return true
 		}
 

@@ -60,6 +60,7 @@ type sseServerTransport struct {
 
 	messageEndpointFullURL string // 自动生成
 
+	// TODO：需要定期清理无效session
 	sessionStore pkg.SyncMap[chan []byte]
 
 	inFlySend sync.WaitGroup

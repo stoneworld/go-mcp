@@ -195,14 +195,18 @@ type resourceTemplateEntry struct {
 	handler          ResourceHandlerFunc
 }
 
-func (server *Server) RegisterResourceTemplate(resource *protocol.ResourceTemplate, resourceHandler ResourceHandlerFunc) {
+func (server *Server) RegisterResourceTemplate(resource *protocol.ResourceTemplate, resourceHandler ResourceHandlerFunc) error {
+	if err := resource.ParseURITemplate(); err != nil {
+		return err
+	}
 	server.resourceTemplates.Store(resource.URITemplate, &resourceTemplateEntry{resourceTemplate: resource, handler: resourceHandler})
 	if !server.sessionID2session.IsEmpty() {
 		if err := server.sendNotification4ResourceListChanges(context.Background()); err != nil {
 			server.logger.Warnf("send notification resource list changes fail: %v", err)
-			return
+			return nil
 		}
 	}
+	return nil
 }
 
 func (server *Server) UnregisterResourceTemplate(uriTemplate string) {
