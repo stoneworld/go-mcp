@@ -9,68 +9,39 @@ import (
 	"go-mcp/protocol"
 	"go-mcp/transport"
 
+	"github.com/bytedance/sonic"
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
-type Client struct {
-	transport transport.ClientTransport
-
-	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
-
-	roots []protocol.Root
-
-	createMessagesSampleHandler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)
-
-	cancelledNotifyHandler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error
-
-	requestID atomic.Int64
-
-	initialized atomic.Bool
-
-	ClientInfo         *protocol.Implementation
-	ClientCapabilities *protocol.ClientCapabilities
-
-	ServerCapabilities *protocol.ServerCapabilities
-	ServerInfo         *protocol.Implementation
-	ServerInstructions string
-
-	logger pkg.Logger
-}
-
-func NewClient(t transport.ClientTransport, request *protocol.InitializeRequest, opts ...Option) (*Client, error) {
-	client := &Client{
-		transport:      t,
-		logger:         pkg.DefaultLogger,
-		reqID2respChan: cmap.New[chan *protocol.JSONRPCResponse](),
-	}
-	t.SetReceiver(client)
-
-	for _, opt := range opts {
-		opt(client)
-	}
-
-	if err := client.transport.Start(); err != nil {
-		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
-	}
-
-	if _, err := client.initialization(context.Background(), request); err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
 type Option func(*Client)
 
-func WithCreateMessagesSampleHandler(handler func(ctx context.Context, request *protocol.CreateMessageRequest) (*protocol.CreateMessageResult, error)) Option {
+func WithToolsListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.ToolListChangedNotification) error) Option {
 	return func(s *Client) {
-		s.createMessagesSampleHandler = handler
+		s.notifyHandlerWithToolsListChanged = handler
 	}
 }
 
-func WithCancelNotifyHandler(handler func(ctx context.Context, notifyParam *protocol.CancelledNotification) error) Option {
+func WithPromptListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.PromptListChangedNotification) error) Option {
 	return func(s *Client) {
-		s.cancelledNotifyHandler = handler
+		s.notifyHandlerWithPromptListChanged = handler
+	}
+}
+
+func WithResourceListChangedNotifyHandler(handler func(ctx context.Context, request *protocol.ResourceListChangedNotification) error) Option {
+	return func(s *Client) {
+		s.notifyHandlerWithResourceListChanged = handler
+	}
+}
+
+func WithResourcesUpdatedNotifyHandler(handler func(ctx context.Context, request *protocol.ResourceUpdatedNotification) error) Option {
+	return func(s *Client) {
+		s.notifyHandlerWithResourcesUpdated = handler
+	}
+}
+
+func WithClientInfo(info protocol.Implementation) Option {
+	return func(s *Client) {
+		s.clientInfo = &info
 	}
 }
 
@@ -80,9 +51,103 @@ func WithLogger(logger pkg.Logger) Option {
 	}
 }
 
+type Client struct {
+	transport transport.ClientTransport
+
+	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
+
+	notifyHandlerWithToolsListChanged    func(ctx context.Context, request *protocol.ToolListChangedNotification) error
+	notifyHandlerWithPromptListChanged   func(ctx context.Context, request *protocol.PromptListChangedNotification) error
+	notifyHandlerWithResourceListChanged func(ctx context.Context, request *protocol.ResourceListChangedNotification) error
+	notifyHandlerWithResourcesUpdated    func(ctx context.Context, request *protocol.ResourceUpdatedNotification) error
+
+	requestID atomic.Int64
+
+	ready atomic.Bool
+
+	clientInfo         *protocol.Implementation
+	clientCapabilities *protocol.ClientCapabilities
+
+	serverCapabilities *protocol.ServerCapabilities
+	serverInfo         *protocol.Implementation
+	serverInstructions string
+
+	logger pkg.Logger
+}
+
+func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
+	client := &Client{
+		transport:          t,
+		reqID2respChan:     cmap.New[chan *protocol.JSONRPCResponse](),
+		clientInfo:         &protocol.Implementation{},
+		clientCapabilities: &protocol.ClientCapabilities{},
+		logger:             pkg.DefaultLogger,
+	}
+	t.SetReceiver(client)
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	if client.notifyHandlerWithToolsListChanged == nil {
+		client.notifyHandlerWithToolsListChanged = func(ctx context.Context, notify *protocol.ToolListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithPromptListChanged == nil {
+		client.notifyHandlerWithPromptListChanged = func(ctx context.Context, notify *protocol.PromptListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithResourceListChanged == nil {
+		client.notifyHandlerWithResourceListChanged = func(ctx context.Context, notify *protocol.ResourceListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithResourcesUpdated == nil {
+		client.notifyHandlerWithResourcesUpdated = func(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if err := client.transport.Start(); err != nil {
+		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
+	}
+
+	if _, err := client.initialization(context.Background(), protocol.NewInitializeRequest(*client.clientInfo, *client.clientCapabilities)); err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (client *Client) GetServerCapabilities() protocol.ServerCapabilities {
+	return *client.serverCapabilities
+}
+
+func (client *Client) GetServerInfo() protocol.Implementation {
+	return *client.serverInfo
+}
+
+func (client *Client) GetServerInstructions() string {
+	return client.serverInstructions
+}
+
 func (client *Client) Close() error {
 	if err := client.transport.Close(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func defaultNotifyHandler(logger pkg.Logger, notify interface{}) error {
+	b, err := sonic.Marshal(notify)
+	if err != nil {
+		return err
+	}
+	logger.Infof("receive notify: %+v", b)
 	return nil
 }

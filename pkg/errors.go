@@ -5,21 +5,16 @@ import (
 	"fmt"
 )
 
-var ErrServerNotSupport = errors.New("this feature serve not support")
-
-var ErrLackResponseChan = errors.New("lack response chan")
-
-type LackSessionError struct {
-	SessionID string
-}
-
-func NewLackSessionError(sessionID string) *LackSessionError {
-	return &LackSessionError{SessionID: sessionID}
-}
-
-func (e *LackSessionError) Error() string {
-	return fmt.Sprintf("lack session, sessionID=%+v", e.SessionID)
-}
+var (
+	ErrServerNotSupport          = errors.New("this feature server not support")
+	ErrRequestInvalid            = errors.New("request invalid")
+	ErrLackResponseChan          = errors.New("lack response chan")
+	ErrDuplicateResponseReceived = errors.New("duplicate response received")
+	ErrMethodNotSupport          = errors.New("method not support")
+	ErrJsonUnmarshal             = errors.New("json unmarshal error")
+	ErrSessionHasNotInitialized  = errors.New("the session has not been initialized")
+	ErrLackSession               = errors.New("lack session")
+)
 
 type ResponseError struct {
 	Code    int

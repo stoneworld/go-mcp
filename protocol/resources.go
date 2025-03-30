@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"go-mcp/pkg"
+
+	"github.com/yosida95/uritemplate/v3"
 )
 
 // ListResourcesRequest represents a request to list available resources
-type ListResourcesRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListResourcesRequest struct{}
 
 // ListResourcesResult represents the response to a list resources request
 type ListResourcesResult struct {
@@ -19,9 +19,7 @@ type ListResourcesResult struct {
 }
 
 // ListResourceTemplatesRequest represents a request to list resource templates
-type ListResourceTemplatesRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListResourceTemplatesRequest struct{}
 
 // ListResourceTemplatesResult represents the response to a list resource templates request
 type ListResourceTemplatesResult struct {
@@ -31,7 +29,8 @@ type ListResourceTemplatesResult struct {
 
 // ReadResourceRequest represents a request to read a specific resource
 type ReadResourceRequest struct {
-	URI string `json:"uri"`
+	URI       string                 `json:"uri"`
+	Arguments map[string]interface{} `json:"-"`
 }
 
 // ReadResourceResult represents the response to a read resource request
@@ -86,10 +85,46 @@ type Resource struct {
 
 type ResourceTemplate struct {
 	Annotated
-	Name        string `json:"name"`
-	URITemplate string `json:"uriTemplate"`
-	Description string `json:"description,omitempty"`
-	MimeType    string `json:"mimeType,omitempty"`
+	Name              string                `json:"name"`
+	URITemplate       string                `json:"uriTemplate"`
+	URITemplateParsed *uritemplate.Template `json:"-"`
+	Description       string                `json:"description,omitempty"`
+	MimeType          string                `json:"mimeType,omitempty"`
+}
+
+func (t *ResourceTemplate) UnmarshalJSON(data []byte) error {
+	type Alias ResourceTemplate
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Parse the URI template after unmarshaling
+	if t.URITemplate != "" {
+		template, err := uritemplate.New(t.URITemplate)
+		if err != nil {
+			return err
+		}
+		t.URITemplateParsed = template
+	}
+	return nil
+}
+
+func (t *ResourceTemplate) ParseURITemplate() error {
+	template, err := uritemplate.New(t.URITemplate)
+	if err != nil {
+		return err
+	}
+	t.URITemplateParsed = template
+	return nil
+}
+
+func (t *ResourceTemplate) GetURITemplate() *uritemplate.Template {
+	return t.URITemplateParsed
 }
 
 // Annotated represents base objects that include optional annotations
@@ -221,8 +256,8 @@ type ResourceUpdatedNotification struct {
 }
 
 // NewListResourcesRequest creates a new list resources request
-func NewListResourcesRequest(cursor string) *ListResourcesRequest {
-	return &ListResourcesRequest{Cursor: cursor}
+func NewListResourcesRequest() *ListResourcesRequest {
+	return &ListResourcesRequest{}
 }
 
 // NewListResourcesResponse creates a new list resources response
@@ -234,8 +269,8 @@ func NewListResourcesResponse(resources []Resource, nextCursor string) *ListReso
 }
 
 // NewListResourceTemplatesRequest creates a new list resource templates request
-func NewListResourceTemplatesRequest(cursor string) *ListResourceTemplatesRequest {
-	return &ListResourceTemplatesRequest{Cursor: cursor}
+func NewListResourceTemplatesRequest() *ListResourceTemplatesRequest {
+	return &ListResourceTemplatesRequest{}
 }
 
 // NewListResourceTemplatesResponse creates a new list resource templates response
@@ -266,6 +301,14 @@ func NewSubscribeRequest(uri string) *SubscribeRequest {
 // NewUnsubscribeRequest creates a new unsubscribe request
 func NewUnsubscribeRequest(uri string) *UnsubscribeRequest {
 	return &UnsubscribeRequest{URI: uri}
+}
+
+func NewSubscribeResponse() *SubscribeResult {
+	return &SubscribeResult{}
+}
+
+func NewUnsubscribeResponse() *UnsubscribeResult {
+	return &UnsubscribeResult{}
 }
 
 // NewResourceListChangedNotification creates a new resource list changed notification

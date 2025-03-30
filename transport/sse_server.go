@@ -60,7 +60,8 @@ type sseServerTransport struct {
 
 	messageEndpointFullURL string // 自动生成
 
-	sessionStore pkg.SessionStore
+	// TODO：需要定期清理无效session
+	sessionStore pkg.SyncMap[chan []byte]
 
 	inFlySend sync.WaitGroup
 
@@ -97,13 +98,12 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 	ctx, cancel := context.WithCancel(context.Background())
 
 	t := &sseServerTransport{
-		ctx:          ctx,
-		cancel:       cancel,
-		sessionStore: pkg.NewMemorySessionStore(),
-		logger:       pkg.DefaultLogger,
-		ssePath:      "/sse",
-		messagePath:  "/message",
-		urlPrefix:    "http://" + addr,
+		ctx:         ctx,
+		cancel:      cancel,
+		logger:      pkg.DefaultLogger,
+		ssePath:     "/sse",
+		messagePath: "/message",
+		urlPrefix:   "http://" + addr,
 	}
 	for _, opt := range opts {
 		opt(t)
@@ -135,7 +135,6 @@ func NewSSEServerTransportAndHandler(messageEndpointFullURL string, opts ...SSES
 		ctx:                    ctx,
 		cancel:                 cancel,
 		messageEndpointFullURL: messageEndpointFullURL,
-		sessionStore:           pkg.NewMemorySessionStore(),
 		logger:                 pkg.DefaultLogger,
 	}
 	for _, opt := range opts {
@@ -169,15 +168,11 @@ func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 
 	conn, ok := t.sessionStore.Load(sessionID)
 	if !ok {
-		return pkg.NewLackSessionError(sessionID)
-	}
-	c, ok := conn.(chan []byte)
-	if !ok {
-		return fmt.Errorf("sessionID=%s invalid connection type: %T", sessionID, conn)
+		return pkg.ErrLackSession
 	}
 
 	select {
-	case c <- msg:
+	case conn <- msg:
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -295,10 +290,8 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 
 		t.inFlySend.Wait()
 
-		t.sessionStore.Range(func(key string, value interface{}) bool {
-			if c, ok := value.(chan []byte); ok {
-				close(c)
-			}
+		t.sessionStore.Range(func(key string, ch chan []byte) bool {
+			close(ch)
 			return true
 		})
 

@@ -1,194 +1,249 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"go-mcp/pkg"
 	"go-mcp/protocol"
+
+	"github.com/yosida95/uritemplate/v3"
 )
 
-func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
-	var request protocol.InitializeRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
-	}
-
-	// TODO: validate client initialize request
-
-	// cache client information to session
-	sessionID, _ := getSessionIDFromCtx(ctx)
-	value, ok := server.sessionID2session.Load(sessionID)
-	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
-	}
-	session := value.(*session)
-	session.clientInitializeRequest = &request
-
-	result := protocol.InitializeResult{
-		ProtocolVersion: server.protocolVersion,
-		Capabilities:    server.capabilities,
-		ServerInfo:      server.serverInfo,
-	}
-	return &result, nil
-}
-
-func (server *Server) handleRequestWithPing(ctx context.Context, rawParams json.RawMessage) (*protocol.PingResult, error) {
+func (server *Server) handleRequestWithPing() (*protocol.PingResult, error) {
 	return protocol.NewPingResponse(), nil
 }
 
-func (server *Server) handleRequestWithListPrompts(ctx context.Context, rawParams json.RawMessage) (*protocol.ListPromptsResult, error) {
-	var request protocol.ListPromptsRequest
+func (server *Server) handleRequestWithInitialize(sessionID string, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
+	var request *protocol.InitializeRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	// TODO: list prompt with cursor
+	if request.ProtocolVersion != protocol.Version {
+		return nil, fmt.Errorf("protocol version not supported, supported version is %v", protocol.Version)
+	}
+
+	s := newSession()
+	s.clientInfo = &request.ClientInfo
+	s.clientCapabilities = &request.Capabilities
+	s.receiveInitRequest.Store(true)
+
+	server.sessionID2session.Store(sessionID, s)
+
+	return &protocol.InitializeResult{
+		ServerInfo:      *server.serverInfo,
+		Capabilities:    *server.capabilities,
+		ProtocolVersion: protocol.Version,
+		Instructions:    server.instructions,
+	}, nil
+}
+
+func (server *Server) handleRequestWithListPrompts(rawParams json.RawMessage) (*protocol.ListPromptsResult, error) {
+	if server.capabilities.Prompts == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.ListPromptsRequest
+	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+		return nil, err
+	}
+
+	prompts := make([]protocol.Prompt, 0)
+	server.prompts.Range(func(key string, entry *promptEntry) bool {
+		prompts = append(prompts, *entry.prompt)
+		return true
+	})
+
 	return &protocol.ListPromptsResult{
-		Prompts: server.prompts,
+		Prompts: prompts,
 	}, nil
 }
 
-func (server *Server) handleRequestWithGetPrompt(ctx context.Context, rawParams json.RawMessage) (*protocol.GetPromptResult, error) {
-	var request protocol.GetPromptRequest
+func (server *Server) handleRequestWithGetPrompt(rawParams json.RawMessage) (*protocol.GetPromptResult, error) {
+	if server.capabilities.Prompts == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.GetPromptRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	// TODO: validate request's arguments
-	handlerFunc, ok := server.promptHandlers[request.Name]
+	entry, ok := server.prompts.Load(request.Name)
 	if !ok {
-		return nil, fmt.Errorf("missing prompt handler, promptName=%s", request.Name)
+		return nil, fmt.Errorf("missing prompt, promptName=%s", request.Name)
 	}
-	return handlerFunc(request)
+	return entry.handler(request)
 }
 
-func (server *Server) handleRequestWithListResources(ctx context.Context, rawParams json.RawMessage) (*protocol.ListResourcesResult, error) {
-	var request protocol.ListResourcesRequest
+func (server *Server) handleRequestWithListResources(rawParams json.RawMessage) (*protocol.ListResourcesResult, error) {
+	if server.capabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.ListResourcesRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	// TODO: list resources with cursor
+	resources := make([]protocol.Resource, 0)
+	server.resources.Range(func(key string, entry *resourceEntry) bool {
+		resources = append(resources, *entry.resource)
+		return true
+	})
+
 	return &protocol.ListResourcesResult{
-		Resources: server.resources,
+		Resources: resources,
 	}, nil
 }
 
-func (server *Server) handleRequestWithReadResource(ctx context.Context, rawParams json.RawMessage) (*protocol.ReadResourceResult, error) {
-	var request protocol.ReadResourceRequest
+func (server *Server) handleRequestWithListResourceTemplates(rawParams json.RawMessage) (*protocol.ListResourceTemplatesResult, error) {
+	if server.capabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.ListResourceTemplatesRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	handlerFunc, ok := server.resourceHandlers[request.URI]
-	if !ok {
-		return nil, fmt.Errorf("missing resource read handler, uri=%s", request.URI)
-	}
-	return handlerFunc(request)
-}
+	templates := make([]protocol.ResourceTemplate, 0)
+	server.resourceTemplates.Range(func(key string, entry *resourceTemplateEntry) bool {
+		templates = append(templates, *entry.resourceTemplate)
+		return true
+	})
 
-func (server *Server) handleRequestWitListResourceTemplates(ctx context.Context, rawParams json.RawMessage) (*protocol.ListResourceTemplatesResult, error) {
-	var request protocol.ListResourceTemplatesRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
-	}
-
-	// TODO: list resource template with cursor
 	return &protocol.ListResourceTemplatesResult{
-		ResourceTemplates: server.resourceTemplates,
+		ResourceTemplates: templates,
 	}, nil
 }
 
-func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
-	var request protocol.SubscribeRequest
+func (server *Server) handleRequestWithReadResource(rawParams json.RawMessage) (*protocol.ReadResourceResult, error) {
+	if server.capabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.ReadResourceRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	sessionID, _ := getSessionIDFromCtx(ctx)
-	value, ok := server.sessionID2session.Load(sessionID)
-	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
+	var handler ResourceHandlerFunc
+	if entry, ok := server.resources.Load(request.URI); ok {
+		handler = entry.handler
 	}
-	session := value.(*session)
-	session.subscribedResources.Set(request.URI, struct{}{})
-	return &protocol.SubscribeResult{}, nil
+
+	server.resourceTemplates.Range(func(key string, entry *resourceTemplateEntry) bool {
+		if !matchesTemplate(request.URI, entry.resourceTemplate.URITemplateParsed) {
+			return true
+		}
+		handler = entry.handler
+		matchedVars := entry.resourceTemplate.URITemplateParsed.Match(request.URI)
+		request.Arguments = make(map[string]interface{})
+		for name, value := range matchedVars {
+			request.Arguments[name] = value.V
+		}
+		return false
+	})
+
+	if handler == nil {
+		return nil, fmt.Errorf("missing resource, resourceName=%s", request.URI)
+	}
+	return handler(request)
 }
 
-func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Context, rawParams json.RawMessage) (*protocol.UnsubscribeResult, error) {
-	var request protocol.UnsubscribeRequest
+func matchesTemplate(uri string, template *uritemplate.Template) bool {
+	return template.Regexp().MatchString(uri)
+}
+
+func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
+	if server.capabilities.Resources == nil && !server.capabilities.Resources.Subscribe {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.SubscribeRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	sessionID, _ := getSessionIDFromCtx(ctx)
-	value, ok := server.sessionID2session.Load(sessionID)
+	s, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
+		return nil, pkg.ErrLackSession
 	}
-	session := value.(*session)
-	session.subscribedResources.Remove(request.URI)
-	return &protocol.UnsubscribeResult{}, nil
+	s.subscribedResources.Set(request.URI, struct{}{})
+	return protocol.NewSubscribeResponse(), nil
 }
 
-func (server *Server) handleRequestWithListTools(ctx context.Context, rawParams json.RawMessage) (*protocol.ListToolsResult, error) {
+func (server *Server) handleRequestWithUnSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.UnsubscribeResult, error) {
+	if server.capabilities.Resources == nil && !server.capabilities.Resources.Subscribe {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.UnsubscribeRequest
+	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+		return nil, err
+	}
+
+	s, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.ErrLackSession
+	}
+	s.subscribedResources.Remove(request.URI)
+	return protocol.NewUnsubscribeResponse(), nil
+}
+
+func (server *Server) handleRequestWithListTools(rawParams json.RawMessage) (*protocol.ListToolsResult, error) {
+	if server.capabilities.Tools == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
 	request := &protocol.ListToolsRequest{}
 	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
 		return nil, err
 	}
-	// TODO: 需要处理request.Cursor的翻页操作
-	return &protocol.ListToolsResult{Tools: server.tools}, nil
+
+	tools := make([]*protocol.Tool, 0)
+	server.tools.Range(func(key string, entry *toolEntry) bool {
+		tools = append(tools, entry.tool)
+		return true
+	})
+
+	return &protocol.ListToolsResult{Tools: tools}, nil
 }
 
-func (server *Server) handleRequestWithCallTool(ctx context.Context, rawParams json.RawMessage) (*protocol.CallToolResult, error) {
-	var request protocol.CallToolRequest
+func (server *Server) handleRequestWithCallTool(rawParams json.RawMessage) (*protocol.CallToolResult, error) {
+	if server.capabilities.Tools == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.CallToolRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
 	}
 
-	// TODO: validate request params
-	handlerFunc, ok := server.toolHandlers[request.Name]
+	entry, ok := server.tools.Load(request.Name)
 	if !ok {
-		return nil, fmt.Errorf("missing tool call handler, toolName=%s", request.Name)
+		return nil, fmt.Errorf("missing tool, toolName=%s", request.Name)
 	}
 
-	return handlerFunc(request)
+	return entry.handler(request)
 }
 
-func (server *Server) handleRequestWithCompleteRequest(ctx context.Context, rawParams json.RawMessage) (*protocol.CompleteResult, error) {
-	var request protocol.CompleteRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
-	}
-
-	var handerName string
-	switch v := request.Ref.(type) {
-	case protocol.PromptReference:
-		handerName = fmt.Sprintf("%s/%s", v.Type, v.Name)
-	case protocol.ResourceReference:
-		handerName = fmt.Sprintf("%s/%s", v.Type, v.URI)
-	default:
-		return nil, errors.New("invalid complete request")
-	}
-
-	handlerFunc, ok := server.completionHandlers[handerName]
-	if !ok {
-		return nil, fmt.Errorf("missing complete handler, name=%s", handerName)
-	}
-	return handlerFunc(request)
-}
-
-func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParams json.RawMessage) (*protocol.SetLoggingLevelResult, error) {
-	return nil, nil
-}
-
-func (server *Server) handleNotifyWithCancelled(ctx context.Context, rawParams json.RawMessage) error {
-	param := &protocol.CancelledNotification{}
+func (server *Server) handleNotifyWithInitialized(sessionID string, rawParams json.RawMessage) error {
+	param := &protocol.InitializedNotification{}
 	if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
 		return err
 	}
-	return server.cancelledNotifyHandler(ctx, param)
+
+	s, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return pkg.ErrLackSession
+	}
+
+	if !s.receiveInitRequest.Load() {
+		return fmt.Errorf("the server has not received the client's initialization request")
+	}
+	s.ready.Store(true)
+	return nil
 }

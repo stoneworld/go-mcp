@@ -1,7 +1,5 @@
 package protocol
 
-const Version = "2024-11-05"
-
 // InitializeRequest represents the initialize request sent from client to server
 type InitializeRequest struct {
 	ClientInfo      Implementation     `json:"clientInfo"`
@@ -23,7 +21,7 @@ type Implementation struct {
 	Version string `json:"version"`
 }
 
-// ClientCapabilities Capabilities
+// ClientCapabilities capabilities
 type ClientCapabilities struct {
 	// Experimental map[string]interface{} `json:"experimental,omitempty"`
 	// Roots        *RootsCapability       `json:"roots,omitempty"`
@@ -35,11 +33,11 @@ type RootsCapability struct {
 }
 
 type ServerCapabilities struct {
-	Experimental map[string]interface{} `json:"experimental,omitempty"`
-	Logging      interface{}            `json:"logging,omitempty"`
-	Prompts      *PromptsCapability     `json:"prompts,omitempty"`
-	Resources    *ResourcesCapability   `json:"resources,omitempty"`
-	Tools        *ToolsCapability       `json:"tools,omitempty"`
+	// Experimental map[string]interface{} `json:"experimental,omitempty"`
+	// Logging      interface{}            `json:"logging,omitempty"`
+	Prompts   *PromptsCapability   `json:"prompts,omitempty"`
+	Resources *ResourcesCapability `json:"resources,omitempty"`
+	Tools     *ToolsCapability     `json:"tools,omitempty"`
 }
 
 type PromptsCapability struct {

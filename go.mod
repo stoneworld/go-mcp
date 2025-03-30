@@ -10,6 +10,7 @@ require (
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
+	github.com/yosida95/uritemplate/v3 v3.0.2
 )
 
 require (

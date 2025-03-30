@@ -30,14 +30,14 @@ func (client *Client) initialization(ctx context.Context, request *protocol.Init
 		return nil, fmt.Errorf("failed to send InitializedNotification: %w", err)
 	}
 
-	client.ClientInfo = &request.ClientInfo
-	client.ClientCapabilities = &request.Capabilities
+	client.clientInfo = &request.ClientInfo
+	client.clientCapabilities = &request.Capabilities
 
-	client.ServerInfo = &result.ServerInfo
-	client.ServerCapabilities = &result.Capabilities
-	client.ServerInstructions = result.Instructions
+	client.serverInfo = &result.ServerInfo
+	client.serverCapabilities = &result.Capabilities
+	client.serverInstructions = result.Instructions
 
-	client.initialized.Store(true)
+	client.ready.Store(true)
 	return &result, nil
 }
 
@@ -54,12 +54,12 @@ func (client *Client) Ping(ctx context.Context, request *protocol.PingRequest) (
 	return &result, nil
 }
 
-func (client *Client) ListPrompts(ctx context.Context, request *protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
-	if client.ServerCapabilities.Prompts == nil {
+func (client *Client) ListPrompts(ctx context.Context) (*protocol.ListPromptsResult, error) {
+	if client.serverCapabilities.Prompts == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.PromptsList, request)
+	response, err := client.callServer(ctx, protocol.PromptsList, protocol.NewListPromptsRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (client *Client) ListPrompts(ctx context.Context, request *protocol.ListPro
 }
 
 func (client *Client) GetPrompt(ctx context.Context, request *protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
-	if client.ServerCapabilities.Prompts == nil {
+	if client.serverCapabilities.Prompts == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -89,12 +89,12 @@ func (client *Client) GetPrompt(ctx context.Context, request *protocol.GetPrompt
 	return &result, nil
 }
 
-func (client *Client) ListResources(ctx context.Context, request *protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
-	if client.ServerCapabilities.Resources == nil {
+func (client *Client) ListResources(ctx context.Context) (*protocol.ListResourcesResult, error) {
+	if client.serverCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ResourcesList, request)
+	response, err := client.callServer(ctx, protocol.ResourcesList, protocol.NewListResourcesRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +106,25 @@ func (client *Client) ListResources(ctx context.Context, request *protocol.ListR
 	return &result, err
 }
 
+func (client *Client) ListResourceTemplates(ctx context.Context) (*protocol.ListResourceTemplatesResult, error) {
+	if client.serverCapabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	response, err := client.callServer(ctx, protocol.ResourceListTemplates, protocol.NewListResourceTemplatesRequest())
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListResourceTemplatesResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
+}
+
 func (client *Client) ReadResource(ctx context.Context, request *protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
-	if client.ServerCapabilities.Resources == nil {
+	if client.serverCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -123,25 +140,8 @@ func (client *Client) ReadResource(ctx context.Context, request *protocol.ReadRe
 	return &result, nil
 }
 
-func (client *Client) ListResourceTemplates(ctx context.Context, request *protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
-	if client.ServerCapabilities.Resources == nil {
-		return nil, pkg.ErrServerNotSupport
-	}
-
-	response, err := client.callServer(ctx, protocol.ResourceListTemplates, request)
-	if err != nil {
-		return nil, err
-	}
-
-	var result protocol.ListResourceTemplatesResult
-	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return &result, nil
-}
-
 func (client *Client) SubscribeResourceChange(ctx context.Context, request *protocol.SubscribeRequest) (*protocol.SubscribeResult, error) {
-	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
+	if client.serverCapabilities.Resources == nil || !client.serverCapabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -158,7 +158,7 @@ func (client *Client) SubscribeResourceChange(ctx context.Context, request *prot
 }
 
 func (client *Client) UnSubscribeResourceChange(ctx context.Context, request *protocol.UnsubscribeRequest) (*protocol.UnsubscribeResult, error) {
-	if client.ServerCapabilities.Resources == nil || !client.ServerCapabilities.Resources.Subscribe {
+	if client.serverCapabilities.Resources == nil || !client.serverCapabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -174,12 +174,12 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context, request *pr
 	return &result, nil
 }
 
-func (client *Client) ListTools(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
-	if client.ServerCapabilities.Tools == nil {
+func (client *Client) ListTools(ctx context.Context) (*protocol.ListToolsResult, error) {
+	if client.serverCapabilities.Tools == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ToolsList, request)
+	response, err := client.callServer(ctx, protocol.ToolsList, protocol.NewListToolsRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (client *Client) ListTools(ctx context.Context, request *protocol.ListTools
 }
 
 func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	if client.ServerCapabilities.Tools == nil {
+	if client.serverCapabilities.Tools == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -208,64 +208,14 @@ func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRe
 	return &result, nil
 }
 
-// func (client *Client) CompleteRequest(ctx context.Context, request *protocol.CompleteRequest) (*protocol.CompleteResult, error) {
-// 	response, err := client.callServer(ctx, protocol.CompletionComplete, request)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	var result protocol.CompleteResult
-// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-// 	}
-// 	return &result, nil
-// }
-//
-// func (client *Client) SetLogLevel(ctx context.Context, request *protocol.SetLoggingLevelRequest) (*protocol.SetLoggingLevelResult, error) {
-// 	response, err := client.callServer(ctx, protocol.LoggingSetLevel, request)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var result protocol.SetLoggingLevelResult
-// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-// 	}
-// 	return &result, nil
-// }
-
-// 通知
-// 1. 构造通知结构体
-// 2. 发送通知 client.sendMsgWithNotification(ctx)
-
 func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, protocol.NewInitializedNotification())
 }
 
-// func (client *Client) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationCancelled, notify)
-// }
-
-// func (client *Client) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationProgress, notify)
-// }
-
-// func (client *Client) SendNotification4RootListChanges(ctx context.Context) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, protocol.NewRootsListChangedNotification())
-// }
-
-func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request *protocol.ClientRequest, result protocol.ServerResponse) error {
-	rawResult, err := client.callServer(ctx, method, request)
-	if err != nil {
-		return err
-	}
-
-	return pkg.JsonUnmarshal(rawResult, &result)
-}
-
 // 负责request和response的拼接
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
-	if !client.initialized.Load() && (method != protocol.Initialize && method != protocol.Ping) {
-		return nil, fmt.Errorf("client not initialized")
+	if !client.ready.Load() && (method != protocol.Initialize && method != protocol.Ping) {
+		return nil, fmt.Errorf("client not ready")
 	}
 
 	requestID := strconv.FormatInt(client.requestID.Add(1), 10)

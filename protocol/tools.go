@@ -8,9 +8,7 @@ import (
 )
 
 // ListToolsRequest represents a request to list available tools
-type ListToolsRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListToolsRequest struct{}
 
 // ListToolsResult represents the response to a list tools request
 type ListToolsResult struct {
@@ -85,10 +83,8 @@ type ToolListChangedNotification struct {
 }
 
 // NewListToolsRequest creates a new list tools request
-func NewListToolsRequest(cursor string) *ListToolsRequest {
-	return &ListToolsRequest{
-		Cursor: cursor,
-	}
+func NewListToolsRequest() *ListToolsRequest {
+	return &ListToolsRequest{}
 }
 
 // NewListToolsResponse creates a new list tools response

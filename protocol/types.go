@@ -1,5 +1,7 @@
 package protocol
 
+const Version = "2024-11-05"
+
 // Method represents the JSON-RPC method name
 type Method string
 
@@ -53,10 +55,6 @@ type Role string
 const (
 	RoleUser      Role = "user"
 	RoleAssistant Role = "assistant"
-)
-
-const (
-	PROTOCOL_VERSION = "2024-11-05"
 )
 
 type ClientRequest interface{}

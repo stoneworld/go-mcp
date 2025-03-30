@@ -55,7 +55,7 @@ func (r *JSONRPCRequest) UnmarshalJSON(data []byte) error {
 
 // IsValid checks if the request is valid according to JSON-RPC 2.0 spec
 func (r *JSONRPCRequest) IsValid() bool {
-	return r.JSONRPC == jsonrpcVersion && r.Method != ""
+	return r.JSONRPC == jsonrpcVersion && r.Method != "" && r.ID != nil
 }
 
 // JSONRPCResponse represents a response to a request.

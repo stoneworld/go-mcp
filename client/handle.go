@@ -12,29 +12,34 @@ func (client *Client) handleRequestWithPing() (*protocol.PingResult, error) {
 	return protocol.NewPingResponse(), nil
 }
 
-func (client *Client) handleRequestWithListRoots(ctx context.Context, rawParams json.RawMessage) (*protocol.ListRootsResult, error) {
-	request := &protocol.ListRootsRequest{}
-	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
-		return nil, err
-	}
-	// TODO: 需要处理request.Cursor的翻页操作
-	return &protocol.ListRootsResult{
-		Roots: client.roots,
-	}, nil
-}
-
-func (client *Client) handleRequestWithCreateMessagesSampling(ctx context.Context, rawParams json.RawMessage) (*protocol.CreateMessageResult, error) {
-	request := &protocol.CreateMessageRequest{}
-	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
-		return nil, err
-	}
-	return client.createMessagesSampleHandler(ctx, request)
-}
-
-func (client *Client) handleNotifyWithCancelled(ctx context.Context, rawParams json.RawMessage) error {
-	param := &protocol.CancelledNotification{}
-	if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
+func (client *Client) handleNotifyWithToolsListChanged(ctx context.Context, rawParams json.RawMessage) error {
+	notify := &protocol.ToolListChangedNotification{}
+	if err := pkg.JsonUnmarshal(rawParams, notify); err != nil {
 		return err
 	}
-	return client.cancelledNotifyHandler(ctx, param)
+	return client.notifyHandlerWithToolsListChanged(ctx, notify)
+}
+
+func (client *Client) handleNotifyWithPromptsListChanged(ctx context.Context, rawParams json.RawMessage) error {
+	notify := &protocol.PromptListChangedNotification{}
+	if err := pkg.JsonUnmarshal(rawParams, notify); err != nil {
+		return err
+	}
+	return client.notifyHandlerWithPromptListChanged(ctx, notify)
+}
+
+func (client *Client) handleNotifyWithResourcesListChanged(ctx context.Context, rawParams json.RawMessage) error {
+	notify := &protocol.ResourceListChangedNotification{}
+	if err := pkg.JsonUnmarshal(rawParams, notify); err != nil {
+		return err
+	}
+	return client.notifyHandlerWithResourceListChanged(ctx, notify)
+}
+
+func (client *Client) handleNotifyWithResourcesUpdated(ctx context.Context, rawParams json.RawMessage) error {
+	notify := &protocol.ResourceUpdatedNotification{}
+	if err := pkg.JsonUnmarshal(rawParams, notify); err != nil {
+		return err
+	}
+	return client.notifyHandlerWithResourcesUpdated(ctx, notify)
 }

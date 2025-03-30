@@ -10,7 +10,7 @@ var sonicAPI = sonic.Config{UseInt64: false}.Froze() // 可有效防止整型溢
 
 func JsonUnmarshal(data []byte, v interface{}) error {
 	if err := sonicAPI.Unmarshal(data, v); err != nil {
-		return fmt.Errorf("json unmarshal: data=%s, err=%w", data, err)
+		return fmt.Errorf("%w: data=%s, err=%w", ErrJsonUnmarshal, data, err)
 	}
 	return nil
 }

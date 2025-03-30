@@ -1,9 +1,7 @@
 package protocol
 
 // ListRootsRequest represents a request to list root directories
-type ListRootsRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListRootsRequest struct{}
 
 // ListRootsResult represents the response to a list roots request
 type ListRootsResult struct {
