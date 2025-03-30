@@ -211,6 +211,8 @@ func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *
 		ProtocolVersion: protocol.Version,
 	}
 
+	ch := make(chan struct{})
+
 	go func() {
 		var reqBytes []byte
 		if outScan.Scan() { // 读取 initialization 请求
@@ -287,11 +289,13 @@ func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *
 			t.Errorf("outScan: %+v", err)
 			return
 		}
+		ch <- struct{}{}
 	}()
 
 	client, err := NewClient(transport.NewMockClientTransport(in, out), WithClientInfo(req.ClientInfo))
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}
+	<-ch
 	return client
 }

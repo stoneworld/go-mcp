@@ -503,5 +503,4 @@ func testServerInit(t *testing.T, server *Server, in io.ReadWriter, outScan *buf
 	if _, err := in.Write(append(notifyBytes, "\n"...)); err != nil {
 		t.Fatalf("in Write: %+v", err)
 	}
-	return
 }

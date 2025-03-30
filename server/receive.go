@@ -19,6 +19,12 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {
 			return err
 		}
+		if notify.Method == protocol.NotificationInitialized {
+			if err := server.receiveNotify(sessionID, notify); err != nil {
+				server.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
+			}
+			return nil
+		}
 		go func() {
 			defer pkg.Recover()
 
