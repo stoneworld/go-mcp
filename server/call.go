@@ -29,7 +29,11 @@ func (server *Server) ping(ctx context.Context) error {
 	return nil
 }
 
-func (server *Server) SendNotification4ToolListChanges(ctx context.Context) error {
+func (server *Server) sendNotification4ToolListChanges(ctx context.Context) error {
+	if server.capabilities.Tools == nil || !server.capabilities.Tools.ListChanged {
+		return pkg.ErrServerNotSupport
+	}
+
 	var errList error
 	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, protocol.NewToolListChangedNotification()); err != nil {
@@ -40,7 +44,11 @@ func (server *Server) SendNotification4ToolListChanges(ctx context.Context) erro
 	return errList
 }
 
-func (server *Server) SendNotification4PromptListChanges(ctx context.Context) error {
+func (server *Server) sendNotification4PromptListChanges(ctx context.Context) error {
+	if server.capabilities.Prompts == nil || !server.capabilities.Prompts.ListChanged {
+		return pkg.ErrServerNotSupport
+	}
+
 	var errList error
 	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationPromptsListChanged, protocol.NewPromptListChangedNotification()); err != nil {
@@ -51,7 +59,11 @@ func (server *Server) SendNotification4PromptListChanges(ctx context.Context) er
 	return errList
 }
 
-func (server *Server) SendNotification4ResourceListChanges(ctx context.Context) error {
+func (server *Server) sendNotification4ResourceListChanges(ctx context.Context) error {
+	if server.capabilities.Resources == nil || !server.capabilities.Resources.ListChanged {
+		return pkg.ErrServerNotSupport
+	}
+
 	var errList error
 	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesListChanged, protocol.NewResourceListChangedNotification()); err != nil {
@@ -62,15 +74,14 @@ func (server *Server) SendNotification4ResourceListChanges(ctx context.Context) 
 	return errList
 }
 
-func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
+func (server *Server) sendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
+	if server.capabilities.Resources == nil || !server.capabilities.Resources.Subscribe {
+		return pkg.ErrServerNotSupport
+	}
+
 	var errList error
 	server.sessionID2session.Range(func(sessionID string, value interface{}) bool {
-		s, ok := value.(*session)
-		if !ok {
-			return true
-		}
-
-		if _, ok := s.subscribedResources.Get(notify.URI); !ok {
+		if _, ok := value.(*session).subscribedResources.Get(notify.URI); !ok {
 			return true
 		}
 

@@ -38,6 +38,12 @@ func WithResourcesUpdatedNotifyHandler(handler func(ctx context.Context, request
 	}
 }
 
+func WithClientInfo(info protocol.Implementation) Option {
+	return func(s *Client) {
+		s.clientInfo = &info
+	}
+}
+
 func WithLogger(logger pkg.Logger) Option {
 	return func(s *Client) {
 		s.logger = logger
@@ -58,21 +64,23 @@ type Client struct {
 
 	ready atomic.Bool
 
-	ClientInfo         *protocol.Implementation
-	ClientCapabilities *protocol.ClientCapabilities
+	clientInfo         *protocol.Implementation
+	clientCapabilities *protocol.ClientCapabilities
 
-	ServerCapabilities *protocol.ServerCapabilities
-	ServerInfo         *protocol.Implementation
-	ServerInstructions string
+	serverCapabilities *protocol.ServerCapabilities
+	serverInfo         *protocol.Implementation
+	serverInstructions string
 
 	logger pkg.Logger
 }
 
-func NewClient(t transport.ClientTransport, initialize *protocol.InitializeRequest, opts ...Option) (*Client, error) {
+func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
-		transport:      t,
-		logger:         pkg.DefaultLogger,
-		reqID2respChan: cmap.New[chan *protocol.JSONRPCResponse](),
+		transport:          t,
+		logger:             pkg.DefaultLogger,
+		reqID2respChan:     cmap.New[chan *protocol.JSONRPCResponse](),
+		clientInfo:         &protocol.Implementation{},
+		clientCapabilities: &protocol.ClientCapabilities{},
 	}
 	t.SetReceiver(client)
 
@@ -84,11 +92,23 @@ func NewClient(t transport.ClientTransport, initialize *protocol.InitializeReque
 		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
 	}
 
-	if _, err := client.initialization(context.Background(), initialize); err != nil {
+	if _, err := client.initialization(context.Background(), protocol.NewInitializeRequest(*client.clientInfo, *client.clientCapabilities)); err != nil {
 		return nil, err
 	}
 
 	return client, nil
+}
+
+func (client *Client) GetServerCapabilities() protocol.ServerCapabilities {
+	return *client.serverCapabilities
+}
+
+func (client *Client) GetServerInfo() protocol.Implementation {
+	return *client.serverInfo
+}
+
+func (client *Client) GetServerInstructions() string {
+	return client.serverInstructions
 }
 
 func (client *Client) Close() error {

@@ -21,7 +21,7 @@ type Implementation struct {
 	Version string `json:"version"`
 }
 
-// ClientCapabilities Capabilities
+// ClientCapabilities capabilities
 type ClientCapabilities struct {
 	// Experimental map[string]interface{} `json:"experimental,omitempty"`
 	// Roots        *RootsCapability       `json:"roots,omitempty"`
@@ -33,11 +33,11 @@ type RootsCapability struct {
 }
 
 type ServerCapabilities struct {
-	Experimental map[string]interface{} `json:"experimental,omitempty"`
-	Logging      interface{}            `json:"logging,omitempty"`
-	Prompts      *PromptsCapability     `json:"prompts,omitempty"`
-	Resources    *ResourcesCapability   `json:"resources,omitempty"`
-	Tools        *ToolsCapability       `json:"tools,omitempty"`
+	// Experimental map[string]interface{} `json:"experimental,omitempty"`
+	// Logging      interface{}            `json:"logging,omitempty"`
+	Prompts   *PromptsCapability   `json:"prompts,omitempty"`
+	Resources *ResourcesCapability `json:"resources,omitempty"`
+	Tools     *ToolsCapability     `json:"tools,omitempty"`
 }
 
 type PromptsCapability struct {

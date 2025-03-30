@@ -22,7 +22,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		go func() {
 			defer pkg.Recover()
 
-			if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
+			if err := server.receiveNotify(sessionID, notify); err != nil {
 				server.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
@@ -39,7 +39,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		go func() {
 			defer pkg.Recover()
 
-			if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
+			if err := server.receiveResponse(sessionID, resp); err != nil {
 				server.logger.Errorf("receive response:%+v error: %s", resp, err.Error())
 				return
 			}
@@ -73,14 +73,12 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 }
 
 func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) error {
-	val, ok := server.sessionID2session.Load(sessionID)
-	if !ok {
-		return pkg.ErrLackSession
-	}
-	s := val.(*session)
-
-	if !s.ready.Load() && (request.Method != protocol.Initialize && request.Method != protocol.Ping) {
-		return pkg.ErrSessionHasNotInitialized
+	if request.Method != protocol.Initialize && request.Method != protocol.Ping {
+		if val, ok := server.sessionID2session.Load(sessionID); !ok {
+			return pkg.ErrLackSession
+		} else if s := val.(*session); !s.ready.Load() {
+			return pkg.ErrSessionHasNotInitialized
+		}
 	}
 
 	var (
@@ -90,27 +88,27 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 
 	switch request.Method {
 	case protocol.Ping:
-		result, err = server.handleRequestWithPing(ctx, request.RawParams)
+		result, err = server.handleRequestWithPing()
 	case protocol.Initialize:
-		result, err = server.handleRequestWithInitialize(ctx, sessionID, request.RawParams)
+		result, err = server.handleRequestWithInitialize(sessionID, request.RawParams)
 	case protocol.PromptsList:
-		result, err = server.handleRequestWithListPrompts(ctx, request.RawParams)
+		result, err = server.handleRequestWithListPrompts(request.RawParams)
 	case protocol.PromptsGet:
-		result, err = server.handleRequestWithGetPrompt(ctx, request.RawParams)
+		result, err = server.handleRequestWithGetPrompt(request.RawParams)
 	case protocol.ResourcesList:
-		result, err = server.handleRequestWithListResources(ctx, request.RawParams)
+		result, err = server.handleRequestWithListResources(request.RawParams)
 	case protocol.ResourceListTemplates:
-		result, err = server.handleRequestWitListResourceTemplates(ctx, request.RawParams)
+		result, err = server.handleRequestWitListResourceTemplates(request.RawParams)
 	case protocol.ResourcesRead:
-		result, err = server.handleRequestWithReadResource(ctx, request.RawParams)
+		result, err = server.handleRequestWithReadResource(request.RawParams)
 	case protocol.ResourcesSubscribe:
-		result, err = server.handleRequestWithSubscribeResourceChange(ctx, request.RawParams)
+		result, err = server.handleRequestWithSubscribeResourceChange(sessionID, request.RawParams)
 	case protocol.ResourcesUnsubscribe:
-		result, err = server.handleRequestWithUnSubscribeResourceChange(ctx, request.RawParams)
+		result, err = server.handleRequestWithUnSubscribeResourceChange(sessionID, request.RawParams)
 	case protocol.ToolsList:
-		result, err = server.handleRequestWithListTools(ctx, request.RawParams)
+		result, err = server.handleRequestWithListTools(request.RawParams)
 	case protocol.ToolsCall:
-		result, err = server.handleRequestWithCallTool(ctx, request.RawParams)
+		result, err = server.handleRequestWithCallTool(request.RawParams)
 	default:
 		err = fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, request.Method)
 	}
@@ -128,31 +126,28 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 	return server.sendMsgWithResponse(ctx, sessionID, request.ID, result)
 }
 
-func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
+func (server *Server) receiveNotify(sessionID string, notify *protocol.JSONRPCNotification) error {
 	val, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return pkg.ErrLackSession
-	}
-	s := val.(*session)
-	if !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
+	} else if s := val.(*session); !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
 		return pkg.ErrSessionHasNotInitialized
 	}
 
 	switch notify.Method {
 	case protocol.NotificationInitialized:
-		return server.handleNotifyWithInitialized(ctx, sessionID, notify.RawParams)
+		return server.handleNotifyWithInitialized(sessionID, notify.RawParams)
 	default:
 		return fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, notify.Method)
 	}
 }
 
-func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
+func (server *Server) receiveResponse(sessionID string, response *protocol.JSONRPCResponse) error {
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return pkg.ErrLackSession
 	}
 	s := value.(*session)
-
 	if !s.ready.Load() {
 		return pkg.ErrSessionHasNotInitialized
 	}

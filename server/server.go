@@ -15,6 +15,24 @@ import (
 
 type Option func(*Server)
 
+func WithCapabilities(capabilities protocol.ServerCapabilities) Option {
+	return func(s *Server) {
+		s.capabilities = &capabilities
+	}
+}
+
+func WithServerInfo(serverInfo protocol.Implementation) Option {
+	return func(s *Server) {
+		s.serverInfo = &serverInfo
+	}
+}
+
+func WithInstructions(instructions string) Option {
+	return func(s *Server) {
+		s.instructions = instructions
+	}
+}
+
 func WithLogger(logger pkg.Logger) Option {
 	return func(s *Server) {
 		s.logger = logger
@@ -38,9 +56,9 @@ type Server struct {
 	inShutdown   atomic.Bool // true when server is in shutdown
 	inFlyRequest sync.WaitGroup
 
-	ServerCapabilities *protocol.ServerCapabilities
-	ServerInfo         *protocol.Implementation
-	ServerInstructions string
+	capabilities *protocol.ServerCapabilities
+	serverInfo   *protocol.Implementation
+	instructions string
 
 	logger pkg.Logger
 }
@@ -68,17 +86,20 @@ func newSession() *session {
 	}
 }
 
-func NewServer(t transport.ServerTransport, initialize *protocol.InitializeResult, opts ...Option) (*Server, error) {
+func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 	server := &Server{
-		transport:          t,
-		logger:             pkg.DefaultLogger,
-		sessionID2session:  pkg.NewMemorySessionStore(),
-		ServerCapabilities: &initialize.Capabilities,
-		ServerInfo:         &initialize.ServerInfo,
-		ServerInstructions: initialize.Instructions,
-		toolHandlers:       make(map[string]ToolHandlerFunc),
-		promptHandlers:     make(map[string]PromptHandlerFunc),
-		resourceHandlers:   make(map[string]ResourceHandlerFunc),
+		transport:         t,
+		toolHandlers:      make(map[string]ToolHandlerFunc),
+		promptHandlers:    make(map[string]PromptHandlerFunc),
+		resourceHandlers:  make(map[string]ResourceHandlerFunc),
+		sessionID2session: pkg.NewMemorySessionStore(),
+		capabilities: &protocol.ServerCapabilities{
+			Prompts:   &protocol.PromptsCapability{ListChanged: true},
+			Resources: &protocol.ResourcesCapability{ListChanged: true, Subscribe: true},
+			Tools:     &protocol.ToolsCapability{ListChanged: true},
+		},
+		serverInfo: &protocol.Implementation{},
+		logger:     pkg.DefaultLogger,
 	}
 	t.SetReceiver(server)
 

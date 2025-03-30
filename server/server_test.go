@@ -41,7 +41,7 @@ func TestServer(t *testing.T) {
 
 	server, err := NewServer(
 		transport.NewMockServerTransport(in, out),
-		WithInfo(protocol.Implementation{
+		WithServerInfo(protocol.Implementation{
 			Name:    "ExampleServer",
 			Version: "1.0.0",
 		}))

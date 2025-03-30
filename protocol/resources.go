@@ -268,6 +268,14 @@ func NewUnsubscribeRequest(uri string) *UnsubscribeRequest {
 	return &UnsubscribeRequest{URI: uri}
 }
 
+func NewSubscribeResponse() *SubscribeResult {
+	return &SubscribeResult{}
+}
+
+func NewUnsubscribeResponse() *UnsubscribeResult {
+	return &UnsubscribeResult{}
+}
+
 // NewResourceListChangedNotification creates a new resource list changed notification
 func NewResourceListChangedNotification() *ResourceListChangedNotification {
 	return &ResourceListChangedNotification{}
