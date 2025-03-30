@@ -8,9 +8,7 @@ import (
 )
 
 // ListResourcesRequest represents a request to list available resources
-type ListResourcesRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListResourcesRequest struct{}
 
 // ListResourcesResult represents the response to a list resources request
 type ListResourcesResult struct {
@@ -19,9 +17,7 @@ type ListResourcesResult struct {
 }
 
 // ListResourceTemplatesRequest represents a request to list resource templates
-type ListResourceTemplatesRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListResourceTemplatesRequest struct{}
 
 // ListResourceTemplatesResult represents the response to a list resource templates request
 type ListResourceTemplatesResult struct {
@@ -221,8 +217,8 @@ type ResourceUpdatedNotification struct {
 }
 
 // NewListResourcesRequest creates a new list resources request
-func NewListResourcesRequest(cursor string) *ListResourcesRequest {
-	return &ListResourcesRequest{Cursor: cursor}
+func NewListResourcesRequest() *ListResourcesRequest {
+	return &ListResourcesRequest{}
 }
 
 // NewListResourcesResponse creates a new list resources response
@@ -234,8 +230,8 @@ func NewListResourcesResponse(resources []Resource, nextCursor string) *ListReso
 }
 
 // NewListResourceTemplatesRequest creates a new list resource templates request
-func NewListResourceTemplatesRequest(cursor string) *ListResourceTemplatesRequest {
-	return &ListResourceTemplatesRequest{Cursor: cursor}
+func NewListResourceTemplatesRequest() *ListResourceTemplatesRequest {
+	return &ListResourceTemplatesRequest{}
 }
 
 // NewListResourceTemplatesResponse creates a new list resource templates response

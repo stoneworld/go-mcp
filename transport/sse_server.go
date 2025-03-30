@@ -289,10 +289,8 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 
 		t.inFlySend.Wait()
 
-		t.sessionStore.Range(func(key string, value interface{}) bool {
-			if c, ok := value.(chan []byte); ok {
-				close(c)
-			}
+		t.sessionStore.Range(func(key string, ch chan []byte) bool {
+			close(ch)
 			return true
 		})
 

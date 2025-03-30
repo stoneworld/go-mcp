@@ -59,7 +59,7 @@ func (client *Client) ListPrompts(ctx context.Context) (*protocol.ListPromptsRes
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.PromptsList, protocol.NewListPromptsRequest(""))
+	response, err := client.callServer(ctx, protocol.PromptsList, protocol.NewListPromptsRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (client *Client) ListResources(ctx context.Context) (*protocol.ListResource
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ResourcesList, protocol.NewListResourcesRequest(""))
+	response, err := client.callServer(ctx, protocol.ResourcesList, protocol.NewListResourcesRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (client *Client) ListResourceTemplates(ctx context.Context) (*protocol.List
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ResourceListTemplates, protocol.NewListResourceTemplatesRequest(""))
+	response, err := client.callServer(ctx, protocol.ResourceListTemplates, protocol.NewListResourceTemplatesRequest())
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (client *Client) ListTools(ctx context.Context) (*protocol.ListToolsResult,
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ToolsList, protocol.NewListToolsRequest(""))
+	response, err := client.callServer(ctx, protocol.ToolsList, protocol.NewListToolsRequest())
 	if err != nil {
 		return nil, err
 	}

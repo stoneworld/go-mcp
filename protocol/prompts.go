@@ -8,9 +8,7 @@ import (
 )
 
 // ListPromptsRequest represents a request to list available prompts
-type ListPromptsRequest struct {
-	Cursor string `json:"cursor,omitempty"`
-}
+type ListPromptsRequest struct{}
 
 // ListPromptsResult represents the response to a list prompts request
 type ListPromptsResult struct {
@@ -91,8 +89,8 @@ type PromptListChangedNotification struct {
 }
 
 // NewListPromptsRequest creates a new list prompts request
-func NewListPromptsRequest(cursor string) *ListPromptsRequest {
-	return &ListPromptsRequest{Cursor: cursor}
+func NewListPromptsRequest() *ListPromptsRequest {
+	return &ListPromptsRequest{}
 }
 
 // NewListPromptsResponse creates a new list prompts response

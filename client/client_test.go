@@ -61,7 +61,7 @@ func TestClientCall(t *testing.T) {
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
 				return client.ListPrompts(context.Background())
 			},
-			request:          protocol.NewListPromptsRequest(""),
+			request:          protocol.NewListPromptsRequest(),
 			expectedResponse: protocol.NewListPromptsResponse([]protocol.Prompt{{Name: "prompt1"}, {Name: "prompt2"}}, ""),
 		},
 		{
@@ -77,7 +77,7 @@ func TestClientCall(t *testing.T) {
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
 				return client.ListResources(context.Background())
 			},
-			request:          protocol.NewListResourcesRequest(""),
+			request:          protocol.NewListResourcesRequest(),
 			expectedResponse: protocol.NewListResourcesResponse([]protocol.Resource{{Name: "resource1"}, {Name: "resource2"}}, ""),
 		},
 		{
@@ -93,7 +93,7 @@ func TestClientCall(t *testing.T) {
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
 				return client.ListResourceTemplates(context.Background())
 			},
-			request:          protocol.NewListResourceTemplatesRequest(""),
+			request:          protocol.NewListResourceTemplatesRequest(),
 			expectedResponse: protocol.NewListResourceTemplatesResponse([]protocol.ResourceTemplate{{Name: "template1"}, {Name: "template2"}}, ""),
 		},
 		{
@@ -117,7 +117,7 @@ func TestClientCall(t *testing.T) {
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
 				return client.ListTools(context.Background())
 			},
-			request: protocol.NewListToolsRequest(""),
+			request: protocol.NewListToolsRequest(),
 			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{{
 				Name:        "test_tool",
 				Description: "test_tool",

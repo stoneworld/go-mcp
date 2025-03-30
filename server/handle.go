@@ -138,7 +138,7 @@ func (server *Server) handleRequestWithReadResource(rawParams json.RawMessage) (
 }
 
 func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
-	if server.capabilities.Resources == nil {
+	if server.capabilities.Resources == nil && !server.capabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
 
@@ -156,7 +156,7 @@ func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string,
 }
 
 func (server *Server) handleRequestWithUnSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.UnsubscribeResult, error) {
-	if server.capabilities.Resources == nil {
+	if server.capabilities.Resources == nil && !server.capabilities.Resources.Subscribe {
 		return nil, pkg.ErrServerNotSupport
 	}
 
