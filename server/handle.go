@@ -48,8 +48,14 @@ func (server *Server) handleRequestWithListPrompts(rawParams json.RawMessage) (*
 	}
 
 	// TODO: list prompt with cursor
+	prompts := make([]protocol.Prompt, 0)
+	server.prompts.Range(func(key string, entry *promptEntry) bool {
+		prompts = append(prompts, *entry.prompt)
+		return true
+	})
+
 	return &protocol.ListPromptsResult{
-		Prompts: server.prompts,
+		Prompts: prompts,
 	}, nil
 }
 
@@ -81,8 +87,36 @@ func (server *Server) handleRequestWithListResources(rawParams json.RawMessage) 
 	}
 
 	// TODO: list resources with cursor
+	resources := make([]protocol.Resource, 0)
+	server.resources.Range(func(key string, entry *resourceEntry) bool {
+		resources = append(resources, *entry.resource)
+		return true
+	})
+
 	return &protocol.ListResourcesResult{
-		Resources: server.resources,
+		Resources: resources,
+	}, nil
+}
+
+func (server *Server) handleRequestWithListResourceTemplates(rawParams json.RawMessage) (*protocol.ListResourceTemplatesResult, error) {
+	if server.capabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	var request *protocol.ListResourceTemplatesRequest
+	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+		return nil, err
+	}
+
+	// TODO: list resource template with cursor
+	templates := make([]protocol.ResourceTemplate, 0)
+	server.resourceTemplates.Range(func(key string, entry *resourceTemplateEntry) bool {
+		templates = append(templates, *entry.resourceTemplate)
+		return true
+	})
+
+	return &protocol.ListResourceTemplatesResult{
+		ResourceTemplates: templates,
 	}, nil
 }
 
@@ -96,27 +130,11 @@ func (server *Server) handleRequestWithReadResource(rawParams json.RawMessage) (
 		return nil, err
 	}
 
-	handlerFunc, ok := server.resourceHandlers[request.URI]
+	entry, ok := server.resources.Load(request.URI)
 	if !ok {
 		return nil, fmt.Errorf("missing resource read handler, uri=%s", request.URI)
 	}
-	return handlerFunc(request)
-}
-
-func (server *Server) handleRequestWitListResourceTemplates(rawParams json.RawMessage) (*protocol.ListResourceTemplatesResult, error) {
-	if server.capabilities.Resources == nil {
-		return nil, pkg.ErrServerNotSupport
-	}
-
-	var request *protocol.ListResourceTemplatesRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
-	}
-
-	// TODO: list resource template with cursor
-	return &protocol.ListResourceTemplatesResult{
-		ResourceTemplates: server.resourceTemplates,
-	}, nil
+	return entry.handler(request)
 }
 
 func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.SubscribeResult, error) {
@@ -165,7 +183,13 @@ func (server *Server) handleRequestWithListTools(rawParams json.RawMessage) (*pr
 		return nil, err
 	}
 	// TODO: 需要处理request.Cursor的翻页操作
-	return &protocol.ListToolsResult{Tools: server.tools}, nil
+	tools := make([]*protocol.Tool, 0)
+	server.tools.Range(func(key string, entry *toolEntry) bool {
+		tools = append(tools, entry.tool)
+		return true
+	})
+
+	return &protocol.ListToolsResult{Tools: tools}, nil
 }
 
 func (server *Server) handleRequestWithCallTool(rawParams json.RawMessage) (*protocol.CallToolResult, error) {

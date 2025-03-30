@@ -31,7 +31,7 @@ func (m *SyncMap[V]) LoadOrStore(key string, value V) (actual V, loaded bool) {
 	return a.(V), loaded
 }
 
-func (m *SyncMap[V]) Range(f func(key string, value interface{}) bool) {
+func (m *SyncMap[V]) Range(f func(key string, value V) bool) {
 	m.m.Range(func(key, value any) bool { return f(key.(string), value.(V)) })
 }
 
