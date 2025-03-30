@@ -11,9 +11,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// 对来自客户端的 message(request、response、notification)进行接收处理
-// 如果是 request、notification 路由到对应的handler处理，如果是 response 则传递给对应 reqID 的 chan
-
 func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) error {
 	ctx = setSessionIDToCtx(ctx, sessionID)
 
@@ -26,7 +23,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			defer pkg.Recover()
 
 			if err := server.receiveNotify(ctx, sessionID, notify); err != nil {
-				// TODO: 打印日志
+				server.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
 		}()
@@ -43,7 +40,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			defer pkg.Recover()
 
 			if err := server.receiveResponse(ctx, sessionID, resp); err != nil {
-				// TODO: 打印日志
+				server.logger.Errorf("receive response:%+v error: %s", resp, err.Error())
 				return
 			}
 		}()
@@ -54,7 +51,9 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	if err := pkg.JsonUnmarshal(msg, &req); err != nil {
 		return err
 	}
-
+	if !req.IsValid() {
+		return pkg.ErrRequestInvalid
+	}
 	server.inFlyRequest.Add(1)
 	if server.inShutdown.Load() {
 		defer server.inFlyRequest.Done()
@@ -64,10 +63,8 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		defer pkg.Recover()
 		defer server.inFlyRequest.Done()
 
-		resp := server.receiveRequest(ctx, req)
-
-		if err := server.sendMsgWithResponse(ctx, sessionID, resp); err != nil {
-			// TODO: 打印日志
+		if err := server.receiveRequest(ctx, sessionID, req); err != nil {
+			server.logger.Errorf("receive request:%+v error: %s", req, err.Error())
 			return
 		}
 	}()
@@ -75,9 +72,15 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 	return nil
 }
 
-func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSONRPCRequest) *protocol.JSONRPCResponse {
-	if !request.IsValid() {
-		return protocol.NewJSONRPCErrorResponse(request.ID, protocol.INVALID_REQUEST, fmt.Sprintf("invalid request: %v", request))
+func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) error {
+	val, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return pkg.ErrLackSession
+	}
+	s := val.(*session)
+
+	if !s.ready.Load() && (request.Method != protocol.Initialize && request.Method != protocol.Ping) {
+		return pkg.ErrSessionHasNotInitialized
 	}
 
 	var (
@@ -85,13 +88,11 @@ func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSON
 		err    error
 	)
 
-	// TODO：此处需要根据 request.Method 判断服务端是否声明此能力，如果未声明则报错返回。
-
 	switch request.Method {
 	case protocol.Ping:
 		result, err = server.handleRequestWithPing(ctx, request.RawParams)
 	case protocol.Initialize:
-		result, err = server.handleRequestWithInitialize(ctx, request.RawParams)
+		result, err = server.handleRequestWithInitialize(ctx, sessionID, request.RawParams)
 	case protocol.PromptsList:
 		result, err = server.handleRequestWithListPrompts(ctx, request.RawParams)
 	case protocol.PromptsGet:
@@ -110,46 +111,53 @@ func (server *Server) receiveRequest(ctx context.Context, request *protocol.JSON
 		result, err = server.handleRequestWithListTools(ctx, request.RawParams)
 	case protocol.ToolsCall:
 		result, err = server.handleRequestWithCallTool(ctx, request.RawParams)
-	case protocol.CompletionComplete:
-		result, err = server.handleRequestWithCompleteRequest(ctx, request.RawParams)
-	case protocol.LoggingSetLevel:
-		result, err = server.handleRequestWithSetLogLevel(ctx, request.RawParams)
 	default:
-		err = fmt.Errorf("request method=%s not supoort", request.Method)
+		err = fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, request.Method)
 	}
 
 	if err != nil {
-		// TODO: 此处需要根据err的类型传入不同的错误码
-		return protocol.NewJSONRPCErrorResponse(request.ID, protocol.INVALID_REQUEST, err.Error())
+		if errors.Is(err, pkg.ErrMethodNotSupport) {
+			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.METHOD_NOT_FOUND, err.Error())
+		} else if errors.Is(err, pkg.ErrRequestInvalid) {
+			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, err.Error())
+		} else if errors.Is(err, pkg.ErrJsonUnmarshal) {
+			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.PARSE_ERROR, err.Error())
+		}
+		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INTERNAL_ERROR, err.Error())
 	}
-	return protocol.NewJSONRPCSuccessResponse(request.ID, result)
+	return server.sendMsgWithResponse(ctx, sessionID, request.ID, result)
 }
 
 func (server *Server) receiveNotify(ctx context.Context, sessionID string, notify *protocol.JSONRPCNotification) error {
+	val, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return pkg.ErrLackSession
+	}
+	s := val.(*session)
+	if !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
+		return pkg.ErrSessionHasNotInitialized
+	}
+
 	switch notify.Method {
 	case protocol.NotificationInitialized:
-		// TODO
-	case protocol.NotificationCancelled:
-		return server.handleNotifyWithCancelled(ctx, notify.RawParams)
-	case protocol.NotificationProgress:
-		// TODO
-	case protocol.NotificationRootsListChanged:
-		// TODO
+		return server.handleNotifyWithInitialized(ctx, sessionID, notify.RawParams)
 	default:
-		// TODO: return pkg.errors
-		return nil
+		return fmt.Errorf("%w: method=%s", pkg.ErrMethodNotSupport, notify.Method)
 	}
-	return nil
 }
 
 func (server *Server) receiveResponse(ctx context.Context, sessionID string, response *protocol.JSONRPCResponse) error {
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
-		return pkg.NewLackSessionError(sessionID)
+		return pkg.ErrLackSession
 	}
-	session := value.(*session)
+	s := value.(*session)
 
-	respChan, ok := session.reqID2respChan.Get(fmt.Sprint(response.ID))
+	if !s.ready.Load() {
+		return pkg.ErrSessionHasNotInitialized
+	}
+
+	respChan, ok := s.reqID2respChan.Get(fmt.Sprint(response.ID))
 	if !ok {
 		return fmt.Errorf("%w: sessionID=%+v, requestID=%+v", pkg.ErrLackResponseChan, sessionID, response.ID)
 	}

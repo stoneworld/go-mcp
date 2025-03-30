@@ -10,7 +10,7 @@ import (
 	"go-mcp/protocol"
 )
 
-func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
+func (server *Server) handleRequestWithInitialize(ctx context.Context, sessionID string, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
 	var request protocol.InitializeRequest
 	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams
 	sessionID, _ := getSessionIDFromCtx(ctx)
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
+		return nil, pkg.ErrLackSession
 	}
 	session := value.(*session)
 	session.clientInitializeRequest = &request
@@ -32,6 +32,14 @@ func (server *Server) handleRequestWithInitialize(ctx context.Context, rawParams
 		Capabilities:    server.capabilities,
 		ServerInfo:      server.serverInfo,
 	}
+
+	val, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.ErrLackSession
+	}
+	s := val.(*session)
+	s.receiveInitRequest.Store(true)
+
 	return &result, nil
 }
 
@@ -111,7 +119,7 @@ func (server *Server) handleRequestWithSubscribeResourceChange(ctx context.Conte
 	sessionID, _ := getSessionIDFromCtx(ctx)
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
+		return nil, pkg.ErrLackSession
 	}
 	session := value.(*session)
 	session.subscribedResources.Set(request.URI, struct{}{})
@@ -127,7 +135,7 @@ func (server *Server) handleRequestWithUnSubscribeResourceChange(ctx context.Con
 	sessionID, _ := getSessionIDFromCtx(ctx)
 	value, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
-		return nil, pkg.NewLackSessionError(sessionID)
+		return nil, pkg.ErrLackSession
 	}
 	session := value.(*session)
 	session.subscribedResources.Remove(request.URI)
@@ -181,14 +189,25 @@ func (server *Server) handleRequestWithCompleteRequest(ctx context.Context, rawP
 	return handlerFunc(request)
 }
 
-func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, rawParams json.RawMessage) (*protocol.SetLoggingLevelResult, error) {
+func (server *Server) handleRequestWithSetLogLevel(ctx context.Context, sessionID string, rawParams json.RawMessage) (*protocol.SetLoggingLevelResult, error) {
 	return nil, nil
 }
 
-func (server *Server) handleNotifyWithCancelled(ctx context.Context, rawParams json.RawMessage) error {
-	param := &protocol.CancelledNotification{}
+func (server *Server) handleNotifyWithInitialized(ctx context.Context, sessionID string, rawParams json.RawMessage) error {
+	param := &protocol.InitializedNotification{}
 	if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
 		return err
 	}
-	return server.cancelledNotifyHandler(ctx, param)
+
+	val, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return pkg.ErrLackSession
+	}
+	s := val.(*session)
+
+	if !s.receiveInitRequest.Load() {
+		return fmt.Errorf("the server has not received the client's initialization request")
+	}
+	s.ready.Store(true)
+	return nil
 }

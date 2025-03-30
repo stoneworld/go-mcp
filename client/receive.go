@@ -97,12 +97,6 @@ func (client *Client) receiveRequest(ctx context.Context, request *protocol.JSON
 
 func (client *Client) receiveNotify(ctx context.Context, notify *protocol.JSONRPCNotification) error {
 	switch notify.Method {
-	// case protocol.NotificationCancelled:
-	// 	return client.handleNotifyWithCancelled(ctx, notify.RawParams)
-	// case protocol.NotificationProgress:
-	// 	return nil
-	// case protocol.NotificationLogMessage:
-	//	return nil
 	case protocol.NotificationToolsListChanged:
 		return client.handleNotifyWithToolsListChanged(ctx, notify.RawParams)
 	case protocol.NotificationPromptsListChanged:

@@ -37,7 +37,7 @@ func (client *Client) initialization(ctx context.Context, request *protocol.Init
 	client.ServerCapabilities = &result.Capabilities
 	client.ServerInstructions = result.Instructions
 
-	client.initialized.Store(true)
+	client.ready.Store(true)
 	return &result, nil
 }
 
@@ -208,64 +208,14 @@ func (client *Client) CallTool(ctx context.Context, request *protocol.CallToolRe
 	return &result, nil
 }
 
-// func (client *Client) CompleteRequest(ctx context.Context, request *protocol.CompleteRequest) (*protocol.CompleteResult, error) {
-// 	response, err := client.callServer(ctx, protocol.CompletionComplete, request)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	var result protocol.CompleteResult
-// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-// 	}
-// 	return &result, nil
-// }
-//
-// func (client *Client) SetLogLevel(ctx context.Context, request *protocol.SetLoggingLevelRequest) (*protocol.SetLoggingLevelResult, error) {
-// 	response, err := client.callServer(ctx, protocol.LoggingSetLevel, request)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var result protocol.SetLoggingLevelResult
-// 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-// 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-// 	}
-// 	return &result, nil
-// }
-
-// 通知
-// 1. 构造通知结构体
-// 2. 发送通知 client.sendMsgWithNotification(ctx)
-
 func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, protocol.NewInitializedNotification())
 }
 
-// func (client *Client) SendNotification4Cancelled(ctx context.Context, notify *protocol.CancelledNotification) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationCancelled, notify)
-// }
-
-// func (client *Client) SendNotification4Progress(ctx context.Context, notify *protocol.ProgressNotification) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationProgress, notify)
-// }
-
-// func (client *Client) SendNotification4RootListChanges(ctx context.Context) error {
-// 	return client.sendMsgWithNotification(ctx, protocol.NotificationRootsListChanged, protocol.NewRootsListChangedNotification())
-// }
-
-func (client *Client) callAndParse(ctx context.Context, method protocol.Method, request *protocol.ClientRequest, result protocol.ServerResponse) error {
-	rawResult, err := client.callServer(ctx, method, request)
-	if err != nil {
-		return err
-	}
-
-	return pkg.JsonUnmarshal(rawResult, &result)
-}
-
 // 负责request和response的拼接
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
-	if !client.initialized.Load() && (method != protocol.Initialize && method != protocol.Ping) {
-		return nil, fmt.Errorf("client not initialized")
+	if !client.ready.Load() && (method != protocol.Initialize && method != protocol.Ping) {
+		return nil, fmt.Errorf("client not ready")
 	}
 
 	requestID := strconv.FormatInt(client.requestID.Add(1), 10)

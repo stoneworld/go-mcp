@@ -169,7 +169,7 @@ func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 
 	conn, ok := t.sessionStore.Load(sessionID)
 	if !ok {
-		return pkg.NewLackSessionError(sessionID)
+		return pkg.ErrLackSession
 	}
 	c, ok := conn.(chan []byte)
 	if !ok {
