@@ -64,14 +64,14 @@ func TestServer(t *testing.T) {
 		Type: "text",
 		Text: "pong",
 	}
-	server.AddTool(testTool, func(ctr protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+	server.RegisterTool(testTool, func(ctr *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		return &protocol.CallToolResult{
 			Content: []protocol.Content{testToolCallContent},
 		}, nil
 	})
 
 	// add prompt
-	testPrompt := protocol.Prompt{
+	testPrompt := &protocol.Prompt{
 		Name:        "test_prompt",
 		Description: "test_prompt_description",
 		Arguments: []protocol.PromptArgument{
@@ -85,12 +85,12 @@ func TestServer(t *testing.T) {
 	testPromtGetResponse := &protocol.GetPromptResult{
 		Description: "test_prompt_description",
 	}
-	server.AddPrompt(testPrompt, func(protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
+	server.RegisterPrompt(testPrompt, func(*protocol.GetPromptRequest) (*protocol.GetPromptResult, error) {
 		return testPromtGetResponse, nil
 	})
 
 	// add resource
-	testResource := protocol.Resource{
+	testResource := &protocol.Resource{
 		URI:      "file:///test.txt",
 		Name:     "test.txt",
 		MimeType: "text/plain-txt",
@@ -100,7 +100,7 @@ func TestServer(t *testing.T) {
 		MimeType: testResource.MimeType,
 		Text:     "test",
 	}
-	server.AddResource(testResource, func(protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+	server.RegisterResource(testResource, func(*protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
 		return &protocol.ReadResourceResult{
 			Contents: []protocol.ResourceContents{
 				testResourceContent,
@@ -109,11 +109,17 @@ func TestServer(t *testing.T) {
 	})
 
 	// add resource template
-	testReourceTemplate := protocol.ResourceTemplate{
+	testReourceTemplate := &protocol.ResourceTemplate{
 		URITemplate: "file:///{path}",
 		Name:        "test",
 	}
-	server.AddResourceTemplate(testReourceTemplate)
+	server.RegisterResourceTemplate(testReourceTemplate, func(*protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
+		return &protocol.ReadResourceResult{
+			Contents: []protocol.ResourceContents{
+				testResourceContent,
+			},
+		}, nil
+	})
 
 	go func() {
 		if err := server.Start(); err != nil {
@@ -151,8 +157,8 @@ func TestServer(t *testing.T) {
 			request: protocol.InitializeRequest{},
 			expectedResponse: protocol.InitializeResult{
 				ProtocolVersion: protocol.Version,
-				Capabilities:    server.capabilities,
-				ServerInfo:      server.serverInfo,
+				Capabilities:    *server.capabilities,
+				ServerInfo:      *server.serverInfo,
 			},
 		},
 		{
@@ -166,7 +172,7 @@ func TestServer(t *testing.T) {
 			method:  protocol.PromptsList,
 			request: protocol.ListPromptsRequest{},
 			expectedResponse: protocol.ListPromptsResult{
-				Prompts: []protocol.Prompt{testPrompt},
+				Prompts: []protocol.Prompt{*testPrompt},
 			},
 		},
 		{
@@ -182,7 +188,7 @@ func TestServer(t *testing.T) {
 			method:  protocol.ResourcesList,
 			request: protocol.ListResourcesRequest{},
 			expectedResponse: protocol.ListResourcesResult{
-				Resources: []protocol.Resource{testResource},
+				Resources: []protocol.Resource{*testResource},
 			},
 		},
 		{
@@ -200,7 +206,7 @@ func TestServer(t *testing.T) {
 			method:  protocol.ResourceListTemplates,
 			request: protocol.ListResourceTemplatesRequest{},
 			expectedResponse: protocol.ListResourceTemplatesResult{
-				ResourceTemplates: []protocol.ResourceTemplate{testReourceTemplate},
+				ResourceTemplates: []protocol.ResourceTemplate{*testReourceTemplate},
 			},
 		},
 		{

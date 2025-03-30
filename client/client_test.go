@@ -59,7 +59,7 @@ func TestClientCall(t *testing.T) {
 		{
 			name: "test_list_prompts",
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
-				return client.ListPrompts(context.Background(), request.(*protocol.ListPromptsRequest))
+				return client.ListPrompts(context.Background())
 			},
 			request:          protocol.NewListPromptsRequest(""),
 			expectedResponse: protocol.NewListPromptsResponse([]protocol.Prompt{{Name: "prompt1"}, {Name: "prompt2"}}, ""),
@@ -75,7 +75,7 @@ func TestClientCall(t *testing.T) {
 		{
 			name: "test_list_resources",
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
-				return client.ListResources(context.Background(), request.(*protocol.ListResourcesRequest))
+				return client.ListResources(context.Background())
 			},
 			request:          protocol.NewListResourcesRequest(""),
 			expectedResponse: protocol.NewListResourcesResponse([]protocol.Resource{{Name: "resource1"}, {Name: "resource2"}}, ""),
@@ -91,7 +91,7 @@ func TestClientCall(t *testing.T) {
 		{
 			name: "test_list_resource_templates",
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
-				return client.ListResourceTemplates(context.Background(), request.(*protocol.ListResourceTemplatesRequest))
+				return client.ListResourceTemplates(context.Background())
 			},
 			request:          protocol.NewListResourceTemplatesRequest(""),
 			expectedResponse: protocol.NewListResourceTemplatesResponse([]protocol.ResourceTemplate{{Name: "template1"}, {Name: "template2"}}, ""),
@@ -115,7 +115,7 @@ func TestClientCall(t *testing.T) {
 		{
 			name: "test_list_tool",
 			f: func(client *Client, request protocol.ClientRequest) (protocol.ServerResponse, error) {
-				return client.ListTools(context.Background(), request.(*protocol.ListToolsRequest))
+				return client.ListTools(context.Background())
 			},
 			request: protocol.NewListToolsRequest(""),
 			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{{
@@ -289,7 +289,7 @@ func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *
 		}
 	}()
 
-	client, err := NewClient(transport.NewMockClientTransport(in, out), &req)
+	client, err := NewClient(transport.NewMockClientTransport(in, out), WithClientInfo(req.ClientInfo))
 	if err != nil {
 		t.Fatalf("NewServer: %+v", err)
 	}

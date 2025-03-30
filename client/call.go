@@ -54,12 +54,12 @@ func (client *Client) Ping(ctx context.Context, request *protocol.PingRequest) (
 	return &result, nil
 }
 
-func (client *Client) ListPrompts(ctx context.Context, request *protocol.ListPromptsRequest) (*protocol.ListPromptsResult, error) {
+func (client *Client) ListPrompts(ctx context.Context) (*protocol.ListPromptsResult, error) {
 	if client.serverCapabilities.Prompts == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.PromptsList, request)
+	response, err := client.callServer(ctx, protocol.PromptsList, protocol.NewListPromptsRequest(""))
 	if err != nil {
 		return nil, err
 	}
@@ -89,12 +89,12 @@ func (client *Client) GetPrompt(ctx context.Context, request *protocol.GetPrompt
 	return &result, nil
 }
 
-func (client *Client) ListResources(ctx context.Context, request *protocol.ListResourcesRequest) (*protocol.ListResourcesResult, error) {
+func (client *Client) ListResources(ctx context.Context) (*protocol.ListResourcesResult, error) {
 	if client.serverCapabilities.Resources == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ResourcesList, request)
+	response, err := client.callServer(ctx, protocol.ResourcesList, protocol.NewListResourcesRequest(""))
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +104,23 @@ func (client *Client) ListResources(ctx context.Context, request *protocol.ListR
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return &result, err
+}
+
+func (client *Client) ListResourceTemplates(ctx context.Context) (*protocol.ListResourceTemplatesResult, error) {
+	if client.serverCapabilities.Resources == nil {
+		return nil, pkg.ErrServerNotSupport
+	}
+
+	response, err := client.callServer(ctx, protocol.ResourceListTemplates, protocol.NewListResourceTemplatesRequest(""))
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.ListResourceTemplatesResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
 }
 
 func (client *Client) ReadResource(ctx context.Context, request *protocol.ReadResourceRequest) (*protocol.ReadResourceResult, error) {
@@ -117,23 +134,6 @@ func (client *Client) ReadResource(ctx context.Context, request *protocol.ReadRe
 	}
 
 	var result protocol.ReadResourceResult
-	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return &result, nil
-}
-
-func (client *Client) ListResourceTemplates(ctx context.Context, request *protocol.ListResourceTemplatesRequest) (*protocol.ListResourceTemplatesResult, error) {
-	if client.serverCapabilities.Resources == nil {
-		return nil, pkg.ErrServerNotSupport
-	}
-
-	response, err := client.callServer(ctx, protocol.ResourceListTemplates, request)
-	if err != nil {
-		return nil, err
-	}
-
-	var result protocol.ListResourceTemplatesResult
 	if err := pkg.JsonUnmarshal(response, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
@@ -174,12 +174,12 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context, request *pr
 	return &result, nil
 }
 
-func (client *Client) ListTools(ctx context.Context, request *protocol.ListToolsRequest) (*protocol.ListToolsResult, error) {
+func (client *Client) ListTools(ctx context.Context) (*protocol.ListToolsResult, error) {
 	if client.serverCapabilities.Tools == nil {
 		return nil, pkg.ErrServerNotSupport
 	}
 
-	response, err := client.callServer(ctx, protocol.ToolsList, request)
+	response, err := client.callServer(ctx, protocol.ToolsList, protocol.NewListToolsRequest(""))
 	if err != nil {
 		return nil, err
 	}

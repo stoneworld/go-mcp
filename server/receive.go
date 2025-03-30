@@ -74,9 +74,9 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 
 func (server *Server) receiveRequest(ctx context.Context, sessionID string, request *protocol.JSONRPCRequest) error {
 	if request.Method != protocol.Initialize && request.Method != protocol.Ping {
-		if val, ok := server.sessionID2session.Load(sessionID); !ok {
+		if s, ok := server.sessionID2session.Load(sessionID); !ok {
 			return pkg.ErrLackSession
-		} else if s := val.(*session); !s.ready.Load() {
+		} else if !s.ready.Load() {
 			return pkg.ErrSessionHasNotInitialized
 		}
 	}
@@ -127,10 +127,9 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 }
 
 func (server *Server) receiveNotify(sessionID string, notify *protocol.JSONRPCNotification) error {
-	val, ok := server.sessionID2session.Load(sessionID)
-	if !ok {
+	if s, ok := server.sessionID2session.Load(sessionID); !ok {
 		return pkg.ErrLackSession
-	} else if s := val.(*session); !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
+	} else if !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
 		return pkg.ErrSessionHasNotInitialized
 	}
 
@@ -143,11 +142,10 @@ func (server *Server) receiveNotify(sessionID string, notify *protocol.JSONRPCNo
 }
 
 func (server *Server) receiveResponse(sessionID string, response *protocol.JSONRPCResponse) error {
-	value, ok := server.sessionID2session.Load(sessionID)
+	s, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return pkg.ErrLackSession
 	}
-	s := value.(*session)
 	if !s.ready.Load() {
 		return pkg.ErrSessionHasNotInitialized
 	}

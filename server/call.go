@@ -95,11 +95,10 @@ func (server *Server) sendNotification4ResourcesUpdated(ctx context.Context, not
 
 // 负责request和response的拼接
 func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
-	value, ok := server.sessionID2session.Load(sessionID)
+	session, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return nil, pkg.ErrLackSession
 	}
-	session := value.(*session)
 
 	requestID := strconv.FormatInt(session.requestID.Add(1), 10)
 

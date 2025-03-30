@@ -63,12 +63,11 @@ func (server *Server) handleRequestWithGetPrompt(rawParams json.RawMessage) (*pr
 		return nil, err
 	}
 
-	// TODO: validate request's arguments
-	handlerFunc, ok := server.promptHandlers[request.Name]
+	entry, ok := server.prompts.Load(request.Name)
 	if !ok {
-		return nil, fmt.Errorf("missing prompt handler, promptName=%s", request.Name)
+		return nil, fmt.Errorf("missing prompt, promptName=%s", request.Name)
 	}
-	return handlerFunc(request)
+	return entry.handler(request)
 }
 
 func (server *Server) handleRequestWithListResources(rawParams json.RawMessage) (*protocol.ListResourcesResult, error) {
@@ -130,11 +129,11 @@ func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string,
 		return nil, err
 	}
 
-	value, ok := server.sessionID2session.Load(sessionID)
+	s, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return nil, pkg.ErrLackSession
 	}
-	value.(*session).subscribedResources.Set(request.URI, struct{}{})
+	s.subscribedResources.Set(request.URI, struct{}{})
 	return protocol.NewSubscribeResponse(), nil
 }
 
@@ -148,11 +147,11 @@ func (server *Server) handleRequestWithUnSubscribeResourceChange(sessionID strin
 		return nil, err
 	}
 
-	value, ok := server.sessionID2session.Load(sessionID)
+	s, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return nil, pkg.ErrLackSession
 	}
-	value.(*session).subscribedResources.Remove(request.URI)
+	s.subscribedResources.Remove(request.URI)
 	return protocol.NewUnsubscribeResponse(), nil
 }
 
@@ -179,13 +178,12 @@ func (server *Server) handleRequestWithCallTool(rawParams json.RawMessage) (*pro
 		return nil, err
 	}
 
-	// TODO: validate request params
-	handlerFunc, ok := server.toolHandlers[request.Name]
+	entry, ok := server.tools.Load(request.Name)
 	if !ok {
-		return nil, fmt.Errorf("missing tool call handler, toolName=%s", request.Name)
+		return nil, fmt.Errorf("missing tool, toolName=%s", request.Name)
 	}
 
-	return handlerFunc(request)
+	return entry.handler(request)
 }
 
 func (server *Server) handleNotifyWithInitialized(sessionID string, rawParams json.RawMessage) error {
@@ -194,11 +192,10 @@ func (server *Server) handleNotifyWithInitialized(sessionID string, rawParams js
 		return err
 	}
 
-	val, ok := server.sessionID2session.Load(sessionID)
+	s, ok := server.sessionID2session.Load(sessionID)
 	if !ok {
 		return pkg.ErrLackSession
 	}
-	s := val.(*session)
 
 	if !s.receiveInitRequest.Load() {
 		return fmt.Errorf("the server has not received the client's initialization request")
