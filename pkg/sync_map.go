@@ -40,6 +40,10 @@ func (m *SyncMap[V]) Store(key string, value V) {
 }
 
 func (m *SyncMap[V]) IsEmpty() bool {
-	m.m.Range(func(key, value any) bool { return false })
-	return true
+	isEmpty := true
+	m.m.Range(func(key, value any) bool {
+		isEmpty = false
+		return false
+	})
+	return isEmpty
 }

@@ -10,6 +10,7 @@ require (
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
+	github.com/yosida95/uritemplate/v3 v3.0.2
 )
 
 require (
@@ -21,7 +22,6 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/arch v0.15.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

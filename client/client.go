@@ -9,6 +9,7 @@ import (
 	"go-mcp/protocol"
 	"go-mcp/transport"
 
+	"github.com/bytedance/sonic"
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
@@ -77,15 +78,39 @@ type Client struct {
 func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport:          t,
-		logger:             pkg.DefaultLogger,
 		reqID2respChan:     cmap.New[chan *protocol.JSONRPCResponse](),
 		clientInfo:         &protocol.Implementation{},
 		clientCapabilities: &protocol.ClientCapabilities{},
+		logger:             pkg.DefaultLogger,
 	}
 	t.SetReceiver(client)
 
 	for _, opt := range opts {
 		opt(client)
+	}
+
+	if client.notifyHandlerWithToolsListChanged == nil {
+		client.notifyHandlerWithToolsListChanged = func(ctx context.Context, notify *protocol.ToolListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithPromptListChanged == nil {
+		client.notifyHandlerWithPromptListChanged = func(ctx context.Context, notify *protocol.PromptListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithResourceListChanged == nil {
+		client.notifyHandlerWithResourceListChanged = func(ctx context.Context, notify *protocol.ResourceListChangedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
+	}
+
+	if client.notifyHandlerWithResourcesUpdated == nil {
+		client.notifyHandlerWithResourcesUpdated = func(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
+			return defaultNotifyHandler(client.logger, notify)
+		}
 	}
 
 	if err := client.transport.Start(); err != nil {
@@ -115,5 +140,14 @@ func (client *Client) Close() error {
 	if err := client.transport.Close(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func defaultNotifyHandler(logger pkg.Logger, notify interface{}) error {
+	b, err := sonic.Marshal(notify)
+	if err != nil {
+		return err
+	}
+	logger.Infof("receive notify: %+v", b)
 	return nil
 }
