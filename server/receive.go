@@ -98,7 +98,7 @@ func (server *Server) receiveRequest(ctx context.Context, sessionID string, requ
 	case protocol.ResourcesList:
 		result, err = server.handleRequestWithListResources(request.RawParams)
 	case protocol.ResourceListTemplates:
-		result, err = server.handleRequestWithListPrompts(request.RawParams)
+		result, err = server.handleRequestWithListResourceTemplates(request.RawParams)
 	case protocol.ResourcesRead:
 		result, err = server.handleRequestWithReadResource(request.RawParams)
 	case protocol.ResourcesSubscribe:

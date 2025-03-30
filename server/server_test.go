@@ -134,6 +134,18 @@ func TestServer(t *testing.T) {
 		expectedResponse protocol.ServerResponse
 	}{
 		{
+			name:   "test_initialize",
+			method: protocol.Initialize,
+			request: protocol.InitializeRequest{
+				ProtocolVersion: protocol.Version,
+			},
+			expectedResponse: protocol.InitializeResult{
+				ProtocolVersion: protocol.Version,
+				Capabilities:    *server.capabilities,
+				ServerInfo:      *server.serverInfo,
+			},
+		},
+		{
 			name:             "test_list_tool",
 			method:           protocol.ToolsList,
 			request:          protocol.ListToolsRequest{},
@@ -149,16 +161,6 @@ func TestServer(t *testing.T) {
 				Content: []protocol.Content{
 					testToolCallContent,
 				},
-			},
-		},
-		{
-			name:    "test_initialize",
-			method:  protocol.Initialize,
-			request: protocol.InitializeRequest{},
-			expectedResponse: protocol.InitializeResult{
-				ProtocolVersion: protocol.Version,
-				Capabilities:    *server.capabilities,
-				ServerInfo:      *server.serverInfo,
 			},
 		},
 		{
@@ -264,6 +266,17 @@ func TestServer(t *testing.T) {
 
 			if !reflect.DeepEqual(respMap, expectedRespMap) {
 				t.Fatalf("response not as expected.\ngot  = %v\nwant = %v", respMap, expectedRespMap)
+			}
+
+			if tt.method == protocol.Initialize {
+				notify := protocol.NewJSONRPCNotification(protocol.NotificationInitialized, protocol.NewInitializedNotification())
+				notifyBytes, err := sonic.Marshal(notify)
+				if err != nil {
+					t.Fatalf("json Marshal: %+v", err)
+				}
+				if _, err := in.Write(append(notifyBytes, "\n"...)); err != nil {
+					t.Fatalf("in Write: %+v", err)
+				}
 			}
 		})
 	}
