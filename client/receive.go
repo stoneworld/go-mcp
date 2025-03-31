@@ -22,7 +22,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 		go func() {
 			defer pkg.Recover()
 
-			if err := client.receiveNotify(ctx, notify); err != nil {
+			if err := client.receiveNotify(context.Background(), notify); err != nil {
 				client.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
@@ -57,7 +57,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 	go func() {
 		defer pkg.Recover()
 
-		if err := client.receiveRequest(ctx, req); err != nil {
+		if err := client.receiveRequest(context.Background(), req); err != nil {
 			client.logger.Errorf("receive request:%+v error: %s", req, err.Error())
 			return
 		}
