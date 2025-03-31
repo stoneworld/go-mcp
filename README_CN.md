@@ -2,6 +2,8 @@
 
 MCP Go SDK 是一个功能强大且易于使用的 Go 语言客户端库，专为与 Management Control Panel API 进行交互而设计。该 SDK 提供了完整的 API 覆盖，包括资源管理、配置、监控和自动化操作等核心功能。
 
+详细的设计文档请参见[设计文档](docs/design_cn.md)。
+
 ## 为什么要做 Go-MCP 以及 Go-MCP 的前景与发展方向
 
 Go SDK 的 MCP 具有以下几个潜在的增长点和优势：
