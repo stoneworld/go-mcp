@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"go-mcp/pkg"
-	"go-mcp/protocol"
-	"go-mcp/transport"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/transport"
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"

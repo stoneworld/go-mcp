@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"go-mcp/pkg"
-	"go-mcp/protocol"
-	"go-mcp/transport"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/transport"
 
 	"github.com/bytedance/sonic"
 	cmap "github.com/orcaman/concurrent-map/v2"

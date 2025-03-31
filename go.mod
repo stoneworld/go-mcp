@@ -1,4 +1,4 @@
-module go-mcp
+module github.com/ThinkInAIXYZ/go-mcp
 
 go 1.23.0
 

@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 const stdioSessionID = "stdio"

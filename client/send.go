@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 
 	"github.com/bytedance/sonic"
 )

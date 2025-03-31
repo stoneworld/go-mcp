@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"go-mcp/pkg"
-	"go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
 func (server *Server) ping(ctx context.Context) error {
