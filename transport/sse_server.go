@@ -58,9 +58,9 @@ type sseServerTransport struct {
 
 	httpSvr *http.Server
 
-	messageEndpointFullURL string // 自动生成
+	messageEndpointFullURL string // Auto-generated
 
-	// TODO：需要定期清理无效session
+	// TODO: Need to periodically clean up invalid sessions
 	sessionStore pkg.SyncMap[chan []byte]
 
 	inFlySend sync.WaitGroup
@@ -93,7 +93,7 @@ func (h *SSEHandler) HandleMessage() http.Handler {
 	})
 }
 
-// NewSSEServerTransport 返回会启动 http 的 transport
+// NewSSEServerTransport returns a transport that will start an HTTP server
 func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (ServerTransport, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -127,7 +127,7 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 	return t, nil
 }
 
-// NewSSEServerTransportAndHandler 返回不启动 http 的 transport + Handler 让用户自行启动
+// NewSSEServerTransportAndHandler returns a transport without starting the HTTP server, and returns a Handler for users to start their own HTTP server externally
 func NewSSEServerTransportAndHandler(messageEndpointFullURL string, opts ...SSEServerTransportAndHandlerOption) (ServerTransport, *SSEHandler, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 

@@ -212,14 +212,13 @@ func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 	return client.sendMsgWithNotification(ctx, protocol.NotificationInitialized, protocol.NewInitializedNotification())
 }
 
-// 负责request和response的拼接
+// Responsible for request and response assembly
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
 	if !client.ready.Load() && (method != protocol.Initialize && method != protocol.Ping) {
 		return nil, fmt.Errorf("client not ready")
 	}
 
 	requestID := strconv.FormatInt(client.requestID.Add(1), 10)
-	// 发送请求
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {
 		return nil, fmt.Errorf("callServer: %w", err)
 	}

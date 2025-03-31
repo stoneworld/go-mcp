@@ -40,14 +40,14 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 		errCh <- server.Run()
 	}()
 
-	// 使用 select 来处理可能的错误
+	// Use select to handle potential errors
 	select {
 	case err := <-errCh:
 		if err != nil {
 			t.Fatalf("server.Run() failed: %v", err)
 		}
 	case <-time.After(time.Second):
-		// 服务器正常启动
+		// Server started normally
 	}
 
 	defer func() {

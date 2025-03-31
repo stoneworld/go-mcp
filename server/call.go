@@ -93,7 +93,7 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 	return errList
 }
 
-// 负责request和response的拼接
+// Responsible for request and response assembly
 func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
 	session, ok := server.sessionID2session.Load(sessionID)
 	if !ok {

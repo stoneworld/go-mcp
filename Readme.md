@@ -1,27 +1,36 @@
-MCP Go SDK 是一个功能强大且易于使用 Go 语言客户端库 ，专为与 Management Control Panel API 进行交互而设计。该 SDK 提供了完整的 API 覆盖，包括资源管理、配置、监控和自动化操作等核心功能。
+# MCP Go SDK
 
-## 为什么要做 Go-MCP 以及 Go-MCP 的前景与发展方向
+[中文文档](README_zh.md)
 
-Go SDK 的 MCP 具有以下几个潜在的增长点和优势：
+MCP Go SDK is a powerful and easy-to-use Go client library designed for interacting with the Management Control Panel API. This SDK provides complete API coverage, including core functionalities such as resource management, configuration, monitoring, and automation operations.
 
-1. 终端设备的 AI 集成  
-    随着物联网(IoT)和边缘计算的发展，终端设备对 AI 的需求日益增长。  
-    Go 语言因其高效的性能和并发处理能力，非常适合在资源受限的终端设备上运行 AI 模型。  
-    Go SDK 的 MCP，可以更好地支持终端设备的 AI 集成，提供低延迟、高效率的服务。
-2. 本地应用和服务  
-    对于需要高性能和低延迟的应用，本地部署的解决方案越来越受欢迎。  
-    而 Go 编译成二进制文件，相比 Python 等语言，在本地应用中部署更为简单高效。  
-3. 微服务和 Serverless 架构  
-    微服务和 Serverless 架构的流行，为 MCP 协议提供了新的应用场景。  
-    而 Go 语言在构建微服务和 Serverless 函数方面表现出色，可以轻松处理并发请求。
-4. 社区和生态系统的支持  
-    Go 语言拥有强大的社区支持和丰富的生态系统，这为 MCP 协议的开发和应用提供了坚实的基础。  
-    随着更多的开发者了解和使用 Go SDK 的 MCP，市场应用潜力将进一步扩大。
-5. 数据安全和隐私  
-    在数据安全和隐私日益受到关注的今天，本地化处理和终端设备上的 AI 集成变得尤为重要。  
-    Go SDK 的 MCP 可以在本地设备上处理数据，减少数据传输的需求，从而降低数据泄露的风险。
-6. 跨平台和兼容性
-    Go 语言具有良好的跨平台能力，可以在多种操作系统和硬件平台上运行。  
-    MCP 协议通过 Go SDK 实现，可以确保在不同平台之间的一致性和兼容性。  
+## Why Go-MCP and Its Future Prospects & Development Direction
 
-因此，Go SDK 的 MCP 在市场应用潜力方面具有显著的优势，有望在终端设备的 AI 集成、本地应用和服务、微服务和 Serverless 架构等领域发挥重要作用。
+The MCP Go SDK has several potential growth points and advantages:
+
+1. AI Integration for Edge Devices  
+    With the development of IoT and edge computing, there is a growing demand for AI on edge devices.  
+    Go language, with its efficient performance and concurrent processing capabilities, is particularly well-suited for running AI models on resource-constrained edge devices.  
+    The MCP Go SDK can better support AI integration for edge devices, providing low-latency, high-efficiency services.
+
+2. Local Applications and Services  
+    Local deployment solutions are becoming increasingly popular for applications requiring high performance and low latency.  
+    Go compiles to binary files, making deployment simpler and more efficient compared to languages like Python.
+
+3. Microservices and Serverless Architecture  
+    The popularity of microservices and serverless architectures provides new application scenarios for the MCP protocol.  
+    Go language excels in building microservices and serverless functions, easily handling concurrent requests.
+
+4. Community and Ecosystem Support  
+    Go language has strong community support and a rich ecosystem, providing a solid foundation for MCP protocol development and application.  
+    As more developers learn about and use the MCP Go SDK, its market application potential will further expand.
+
+5. Data Security and Privacy  
+    In today's environment of increasing focus on data security and privacy, local processing and AI integration on edge devices become particularly important.  
+    The MCP Go SDK can process data on local devices, reducing the need for data transmission and thus lowering the risk of data leakage.
+
+6. Cross-platform and Compatibility  
+    Go language has excellent cross-platform capabilities and can run on various operating systems and hardware platforms.  
+    The MCP protocol implemented through Go SDK ensures consistency and compatibility across different platforms.
+
+Therefore, the MCP Go SDK has significant advantages in terms of market application potential and is expected to play an important role in areas such as AI integration for edge devices, local applications and services, and microservices and serverless architectures.
