@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"go-mcp/pkg"
-	"go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
 func (client *Client) handleRequestWithPing() (*protocol.PingResult, error) {

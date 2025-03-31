@@ -3,7 +3,7 @@ package transport
 import (
 	"context"
 
-	"go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 /*

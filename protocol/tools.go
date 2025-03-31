@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 // ListToolsRequest represents a request to list available tools

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"go-mcp/pkg"
-	"go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 
 	"github.com/yosida95/uritemplate/v3"
 )

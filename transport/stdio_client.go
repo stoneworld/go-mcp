@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 
-	"go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 type StdioClientTransportOption func(*stdioClientTransport)

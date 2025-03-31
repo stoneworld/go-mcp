@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"go-mcp/pkg"
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 
 	"github.com/google/uuid"
 )
