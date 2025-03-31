@@ -19,6 +19,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		}
 		if notify.Method == protocol.NotificationInitialized {
 			if err := server.receiveNotify(sessionID, notify); err != nil {
+				notify.RawParams = nil // simplified log
 				server.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 			}
 			return nil
@@ -27,6 +28,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			defer pkg.Recover()
 
 			if err := server.receiveNotify(sessionID, notify); err != nil {
+				notify.RawParams = nil // simplified log
 				server.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
@@ -44,6 +46,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 			defer pkg.Recover()
 
 			if err := server.receiveResponse(sessionID, resp); err != nil {
+				resp.RawResult = nil // simplified log
 				server.logger.Errorf("receive response:%+v error: %s", resp, err.Error())
 				return
 			}
@@ -68,6 +71,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		defer server.inFlyRequest.Done()
 
 		if err := server.receiveRequest(sessionID, req); err != nil {
+			req.RawParams = nil // simplified log
 			server.logger.Errorf("receive request:%+v error: %s", req, err.Error())
 			return
 		}
