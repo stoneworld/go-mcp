@@ -23,6 +23,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 			defer pkg.Recover()
 
 			if err := client.receiveNotify(context.Background(), notify); err != nil {
+				notify.RawParams = nil // simplified log
 				client.logger.Errorf("receive notify:%+v error: %s", notify, err.Error())
 				return
 			}
@@ -40,6 +41,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 			defer pkg.Recover()
 
 			if err := client.receiveResponse(resp); err != nil {
+				resp.RawResult = nil // simplified log
 				client.logger.Errorf("receive response:%+v error: %s", resp, err.Error())
 				return
 			}
@@ -58,6 +60,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 		defer pkg.Recover()
 
 		if err := client.receiveRequest(context.Background(), req); err != nil {
+			req.RawParams = nil // simplified log
 			client.logger.Errorf("receive request:%+v error: %s", req, err.Error())
 			return
 		}
