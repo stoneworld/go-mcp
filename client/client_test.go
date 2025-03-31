@@ -215,7 +215,7 @@ func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *
 
 	go func() {
 		var reqBytes []byte
-		if outScan.Scan() { // 读取 initialization 请求
+		if outScan.Scan() { // Read initialization request
 			reqBytes = outScan.Bytes()
 		}
 		if err := outScan.Err(); err != nil {
@@ -281,7 +281,7 @@ func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *
 			return
 		}
 
-		if outScan.Scan() { // 读取 initialization 通知
+		if outScan.Scan() { // Read initialization notification
 			notifyBytes := outScan.Bytes()
 			fmt.Println("initialization notify: " + string(notifyBytes))
 		}

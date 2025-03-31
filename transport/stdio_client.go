@@ -131,7 +131,7 @@ func (t *stdioClientTransport) receive(ctx context.Context) {
 	}
 
 	if err := s.Err(); err != nil {
-		if !errors.Is(err, io.ErrClosedPipe) { // 单测时会保这个错，在这里屏蔽掉
+		if !errors.Is(err, io.ErrClosedPipe) { // This error occurs during unit tests, suppressing it here
 			t.logger.Errorf("client receive unexpected error reading input: %v", err)
 		}
 		return

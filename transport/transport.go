@@ -7,11 +7,11 @@ import (
 )
 
 /*
-* Transport 是对底层传输层的抽象。
-* GO-MCP 需要能够在 server/client 间传递 JSON-RPC 消息。
+* Transport is an abstraction of the underlying transport layer.
+* GO-MCP needs to be able to transmit JSON-RPC messages between server and client.
  */
 
-// Message 定义基础消息接口
+// Message defines the basic message interface
 type Message []byte
 
 func (msg Message) String() string {
@@ -19,16 +19,16 @@ func (msg Message) String() string {
 }
 
 type ClientTransport interface {
-	// Start 启动传输连接
+	// Start initiates the transport connection
 	Start() error
 
-	// Send 发送消息
+	// Send transmits a message
 	Send(ctx context.Context, msg Message) error
 
-	// SetReceiver 设置对对端消息的处理器
+	// SetReceiver sets the handler for messages from the peer
 	SetReceiver(receiver ClientReceiver)
 
-	// Close 关闭传输连接
+	// Close terminates the transport connection
 	Close() error
 }
 
@@ -37,16 +37,16 @@ type ClientReceiver interface {
 }
 
 type ServerTransport interface {
-	// Run 开始监听请求, 这是同步的, 在 Shutdown 之前, 不能返回
+	// Run starts listening for requests, this is synchronous, and cannot return before Shutdown is called
 	Run() error
 
-	// Send 发送消息
+	// Send transmits a message
 	Send(ctx context.Context, sessionID string, msg Message) error
 
-	// SetReceiver 设置对对端消息的处理器
+	// SetReceiver sets the handler for messages from the peer
 	SetReceiver(ServerReceiver)
 
-	// Shutdown 优雅关闭, 内部实现时需要先停止对消息的接收，再等待 serverCtx 被 cancel，同时使用 userCtx 控制超时。
+	// Shutdown gracefully closes, the internal implementation needs to stop receiving messages first, then wait for serverCtx to be canceled, while using userCtx to control timeout.
 	// userCtx is used to control the timeout of the server shutdown.
 	// serverCtx is used to coordinate the internal cleanup sequence:
 	// 1. turn off message listen

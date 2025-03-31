@@ -30,7 +30,7 @@ func (client *Client) Receive(ctx context.Context, msg []byte) error {
 		return nil
 	}
 
-	// 判断 request和response
+	// Determine if it's a request or response
 	if !gjson.GetBytes(msg, "method").Exists() {
 		resp := &protocol.JSONRPCResponse{}
 		if err := pkg.JsonUnmarshal(msg, &resp); err != nil {
