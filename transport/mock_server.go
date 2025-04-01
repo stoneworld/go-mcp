@@ -3,6 +3,7 @@ package transport
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -13,20 +14,22 @@ const mockSessionID = "mock"
 
 type MockServerTransport struct {
 	receiver ServerReceiver
-
-	in  io.Reader
-	out io.Writer
+	in       io.ReadCloser
+	out      io.Writer
 
 	logger pkg.Logger
 
-	cancel context.CancelFunc
+	cancel          context.CancelFunc
+	receiveShutDone chan struct{}
 }
 
-func NewMockServerTransport(in io.Reader, out io.Writer) ServerTransport {
+func NewMockServerTransport(in io.ReadCloser, out io.Writer) ServerTransport {
 	return &MockServerTransport{
 		in:     in,
 		out:    out,
 		logger: pkg.DefaultLogger,
+
+		receiveShutDone: make(chan struct{}),
 	}
 }
 
@@ -34,12 +37,9 @@ func (t *MockServerTransport) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
-	go func() {
-		defer pkg.Recover()
+	t.receive(ctx)
 
-		t.receive(ctx)
-	}()
-
+	close(t.receiveShutDone)
 	return nil
 }
 
@@ -56,21 +56,40 @@ func (t *MockServerTransport) SetReceiver(receiver ServerReceiver) {
 
 func (t *MockServerTransport) Shutdown(userCtx context.Context, serverCtx context.Context) error {
 	t.cancel()
-	return nil
+
+	if err := t.in.Close(); err != nil {
+		return err
+	}
+
+	<-t.receiveShutDone
+
+	select {
+	case <-serverCtx.Done():
+		return nil
+	case <-userCtx.Done():
+		return userCtx.Err()
+	}
 }
 
 func (t *MockServerTransport) receive(ctx context.Context) {
 	s := bufio.NewScanner(t.in)
 
 	for s.Scan() {
-		if err := t.receiver.Receive(ctx, mockSessionID, s.Bytes()); err != nil {
-			t.logger.Errorf("receiver failed: %v", err)
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			if err := t.receiver.Receive(ctx, mockSessionID, s.Bytes()); err != nil {
+				t.logger.Errorf("receiver failed: %v", err)
+				return
+			}
 		}
 	}
 
 	if err := s.Err(); err != nil {
-		t.logger.Errorf("unexpected error reading input: %v", err)
+		if !errors.Is(err, io.ErrClosedPipe) { // This error occurs during unit tests, suppressing it here
+			t.logger.Errorf("server server unexpected error reading input: %v", err)
+		}
 		return
 	}
 }

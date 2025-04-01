@@ -43,9 +43,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	// Use select to handle potential errors
 	select {
 	case err := <-errCh:
-		if err != nil {
-			t.Fatalf("server.Run() failed: %v", err)
-		}
+		t.Fatalf("server.Run() failed: %v", err)
 	case <-time.After(time.Second):
 		// Server started normally
 	}
