@@ -2,6 +2,8 @@ package transport
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"testing"
 )
 
@@ -12,13 +14,34 @@ func TestSSE(t *testing.T) {
 		client ClientTransport
 	)
 
-	if svr, err = NewSSEServerTransport("0.0.0.0:8181"); err != nil {
+	// Get an available port
+	port, err := getAvailablePort()
+	if err != nil {
+		t.Fatalf("Failed to get available port: %v", err)
+	}
+
+	serverAddr := fmt.Sprintf("127.0.0.1:%d", port)
+	clientURL := fmt.Sprintf("http://%s/sse", serverAddr)
+
+	if svr, err = NewSSEServerTransport(serverAddr); err != nil {
 		t.Fatalf("NewSSEServerTransport failed: %v", err)
 	}
 
-	if client, err = NewSSEClientTransport(context.Background(), "http://127.0.0.1:8181/sse"); err != nil {
+	if client, err = NewSSEClientTransport(context.Background(), clientURL); err != nil {
 		t.Fatalf("NewSSEClientTransport failed: %v", err)
 	}
 
 	testTransport(t, client, svr)
+}
+
+// getAvailablePort returns a port that is available for use
+func getAvailablePort() (int, error) {
+	addr, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return 0, fmt.Errorf("failed to get available port: %v", err)
+	}
+	defer addr.Close()
+
+	port := addr.Addr().(*net.TCPAddr).Port
+	return port, nil
 }

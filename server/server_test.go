@@ -20,27 +20,27 @@ func TestServerHandle(t *testing.T) {
 	reader2, writer2 := io.Pipe()
 
 	var (
-		in io.ReadWriter = struct {
-			io.Reader
-			io.Writer
+		in = struct {
+			reader io.ReadCloser
+			writer io.WriteCloser
 		}{
-			Reader: reader1,
-			Writer: writer1,
+			reader: reader1,
+			writer: writer1,
 		}
 
-		out io.ReadWriter = struct {
-			io.Reader
-			io.Writer
+		out = struct {
+			reader io.ReadCloser
+			writer io.WriteCloser
 		}{
-			Reader: reader2,
-			Writer: writer2,
+			reader: reader2,
+			writer: writer2,
 		}
 
-		outScan = bufio.NewScanner(out)
+		outScan = bufio.NewScanner(out.reader)
 	)
 
 	server, err := NewServer(
-		transport.NewMockServerTransport(in, out),
+		transport.NewMockServerTransport(in.reader, out.writer),
 		WithServerInfo(protocol.Implementation{
 			Name:    "ExampleServer",
 			Version: "1.0.0",
@@ -127,7 +127,7 @@ func TestServerHandle(t *testing.T) {
 		}
 	}()
 
-	testServerInit(t, server, in, outScan)
+	testServerInit(t, server, in.writer, outScan)
 
 	tests := []struct {
 		name             string
@@ -227,7 +227,7 @@ func TestServerHandle(t *testing.T) {
 			if err != nil {
 				t.Fatalf("json Marshal: %+v", err)
 			}
-			if _, err := in.Write(append(reqBytes, "\n"...)); err != nil {
+			if _, err := in.writer.Write(append(reqBytes, "\n"...)); err != nil {
 				t.Fatalf("in Write: %+v", err)
 			}
 
@@ -266,27 +266,27 @@ func TestServerNotify(t *testing.T) {
 	reader2, writer2 := io.Pipe()
 
 	var (
-		in io.ReadWriter = struct {
-			io.Reader
-			io.Writer
+		in = struct {
+			reader io.ReadCloser
+			writer io.WriteCloser
 		}{
-			Reader: reader1,
-			Writer: writer1,
+			reader: reader1,
+			writer: writer1,
 		}
 
-		out io.ReadWriter = struct {
-			io.Reader
-			io.Writer
+		out = struct {
+			reader io.ReadCloser
+			writer io.WriteCloser
 		}{
-			Reader: reader2,
-			Writer: writer2,
+			reader: reader2,
+			writer: writer2,
 		}
 
-		outScan = bufio.NewScanner(out)
+		outScan = bufio.NewScanner(out.reader)
 	)
 
 	server, err := NewServer(
-		transport.NewMockServerTransport(in, out),
+		transport.NewMockServerTransport(in.reader, out.writer),
 		WithServerInfo(protocol.Implementation{
 			Name:    "ExampleServer",
 			Version: "1.0.0",
@@ -348,7 +348,7 @@ func TestServerNotify(t *testing.T) {
 		}
 	}()
 
-	testServerInit(t, server, in, outScan)
+	testServerInit(t, server, in.writer, outScan)
 
 	tests := []struct {
 		name           string
@@ -453,7 +453,7 @@ func TestServerNotify(t *testing.T) {
 	}
 }
 
-func testServerInit(t *testing.T, server *Server, in io.ReadWriter, outScan *bufio.Scanner) {
+func testServerInit(t *testing.T, server *Server, in io.Writer, outScan *bufio.Scanner) {
 	uuid, _ := uuid.NewUUID()
 	req := protocol.NewJSONRPCRequest(uuid, protocol.Initialize, protocol.InitializeRequest{ProtocolVersion: protocol.Version})
 	reqBytes, err := sonic.Marshal(req)

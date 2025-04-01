@@ -3,6 +3,8 @@ package transport
 import (
 	"bufio"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -21,7 +23,7 @@ func WithStdioServerOptionLogger(log pkg.Logger) StdioServerTransportOption {
 
 type stdioServerTransport struct {
 	receiver ServerReceiver
-	reader   io.Reader
+	reader   io.ReadCloser
 	writer   io.Writer
 
 	logger pkg.Logger
@@ -49,18 +51,17 @@ func (t *stdioServerTransport) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
-	go func() {
-		defer pkg.Recover()
+	t.receive(ctx)
 
-		t.receive(ctx)
-		close(t.receiveShutDone)
-	}()
+	close(t.receiveShutDone)
 	return nil
 }
 
 func (t *stdioServerTransport) Send(ctx context.Context, sessionID string, msg Message) error {
-	_, err := t.writer.Write(append(msg, mcpMessageDelimiter))
-	return err
+	if _, err := t.writer.Write(append(msg, mcpMessageDelimiter)); err != nil {
+		return fmt.Errorf("failed to write: %w", err)
+	}
+	return nil
 }
 
 func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
@@ -69,6 +70,10 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 
 func (t *stdioServerTransport) Shutdown(userCtx context.Context, serverCtx context.Context) error {
 	t.cancel()
+
+	if err := t.reader.Close(); err != nil {
+		return err
+	}
 
 	<-t.receiveShutDone
 
@@ -96,7 +101,9 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 	}
 
 	if err := s.Err(); err != nil {
-		t.logger.Errorf("server server unexpected error reading input: %v", err)
+		if !errors.Is(err, io.ErrClosedPipe) { // This error occurs during unit tests, suppressing it here
+			t.logger.Errorf("server server unexpected error reading input: %v", err)
+		}
 		return
 	}
 }

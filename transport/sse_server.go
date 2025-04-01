@@ -93,7 +93,7 @@ func (h *SSEHandler) HandleMessage() http.Handler {
 	})
 }
 
-// NewSSEServerTransport returns a transport that will start an HTTP server
+// NewSSEServerTransport returns transport that will start an HTTP server
 func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (ServerTransport, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
