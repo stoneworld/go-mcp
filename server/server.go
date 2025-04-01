@@ -61,7 +61,7 @@ type Server struct {
 }
 
 type session struct {
-	requestID atomic.Int64
+	// requestID atomic.Int64
 
 	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
 

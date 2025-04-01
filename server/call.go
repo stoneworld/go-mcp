@@ -2,10 +2,8 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
@@ -76,29 +74,29 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 }
 
 // Responsible for request and response assembly
-func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
-	session, ok := server.sessionID2session.Load(sessionID)
-	if !ok {
-		return nil, pkg.ErrLackSession
-	}
-
-	requestID := strconv.FormatInt(session.requestID.Add(1), 10)
-
-	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
-		return nil, err
-	}
-
-	respChan := make(chan *protocol.JSONRPCResponse)
-	session.reqID2respChan.Set(requestID, respChan)
-
-	select {
-	case <-ctx.Done():
-		session.reqID2respChan.Remove(requestID)
-		return nil, ctx.Err()
-	case response := <-respChan:
-		if err := response.Error; err != nil {
-			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
-		}
-		return response.RawResult, nil
-	}
-}
+// func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
+// 	session, ok := server.sessionID2session.Load(sessionID)
+// 	if !ok {
+// 		return nil, pkg.ErrLackSession
+// 	}
+//
+// 	requestID := strconv.FormatInt(session.requestID.Add(1), 10)
+//
+// 	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
+// 		return nil, err
+// 	}
+//
+// 	respChan := make(chan *protocol.JSONRPCResponse)
+// 	session.reqID2respChan.Set(requestID, respChan)
+//
+// 	select {
+// 	case <-ctx.Done():
+// 		session.reqID2respChan.Remove(requestID)
+// 		return nil, ctx.Err()
+// 	case response := <-respChan:
+// 		if err := response.Error; err != nil {
+// 			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
+// 		}
+// 		return response.RawResult, nil
+// 	}
+// }

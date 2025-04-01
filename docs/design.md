@@ -5,7 +5,7 @@ MCP Go SDK is a powerful and easy-to-use Go client library designed for interact
 # Design Philosophy
 
 - MCP Protocol Messages
-  
+
   | Capability Provider | Capability      | Protocol Messages (Client Send)                                                                        | Protocol Messages (Server Send)                               |
   | ------------------ | --------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
   | Client&Server      | Initialization  | • Initialize <br>• Initialized notifications                                                            | (None)                                                       |
@@ -71,4 +71,4 @@ MCP Go SDK is a powerful and easy-to-use Go client library designed for interact
       - call.go // send messages (request, notification) to server
       - handle.go // handle messages (request, notification) from server, return response or not
       - send.go // send messages (request, response, notification) to server
-      - receive.go // receive messages (request, response, notification) from server 
+      - receive.go // receive messages (request, response, notification) from server

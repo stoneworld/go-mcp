@@ -124,14 +124,16 @@ func (server *Server) receiveRequest(sessionID string, request *protocol.JSONRPC
 	ctx := context.Background()
 
 	if err != nil {
-		if errors.Is(err, pkg.ErrMethodNotSupport) {
+		switch {
+		case errors.Is(err, pkg.ErrMethodNotSupport):
 			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.METHOD_NOT_FOUND, err.Error())
-		} else if errors.Is(err, pkg.ErrRequestInvalid) {
+		case errors.Is(err, pkg.ErrRequestInvalid):
 			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INVALID_REQUEST, err.Error())
-		} else if errors.Is(err, pkg.ErrJsonUnmarshal) {
+		case errors.Is(err, pkg.ErrJsonUnmarshal):
 			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.PARSE_ERROR, err.Error())
+		default:
+			return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INTERNAL_ERROR, err.Error())
 		}
-		return server.sendMsgWithError(ctx, sessionID, request.ID, protocol.INTERNAL_ERROR, err.Error())
 	}
 	return server.sendMsgWithResponse(ctx, sessionID, request.ID, result)
 }
