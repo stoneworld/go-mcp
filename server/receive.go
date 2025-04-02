@@ -62,7 +62,7 @@ func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte)
 		return pkg.ErrRequestInvalid
 	}
 	server.inFlyRequest.Add(1)
-	if server.inShutdown.Load() {
+	if server.inShutdown.Load().(bool) {
 		defer server.inFlyRequest.Done()
 		return errors.New("server already shutdown")
 	}
@@ -84,7 +84,7 @@ func (server *Server) receiveRequest(sessionID string, request *protocol.JSONRPC
 	if request.Method != protocol.Initialize && request.Method != protocol.Ping {
 		if s, ok := server.sessionID2session.Load(sessionID); !ok {
 			return pkg.ErrLackSession
-		} else if !s.ready.Load() {
+		} else if !s.ready.Load().(bool) {
 			return pkg.ErrSessionHasNotInitialized
 		}
 	}
@@ -141,7 +141,7 @@ func (server *Server) receiveRequest(sessionID string, request *protocol.JSONRPC
 func (server *Server) receiveNotify(sessionID string, notify *protocol.JSONRPCNotification) error {
 	if s, ok := server.sessionID2session.Load(sessionID); !ok {
 		return pkg.ErrLackSession
-	} else if !s.ready.Load() && notify.Method != protocol.NotificationInitialized {
+	} else if !s.ready.Load().(bool) && notify.Method != protocol.NotificationInitialized {
 		return pkg.ErrSessionHasNotInitialized
 	}
 
@@ -158,7 +158,7 @@ func (server *Server) receiveResponse(sessionID string, response *protocol.JSONR
 	if !ok {
 		return pkg.ErrLackSession
 	}
-	if !s.ready.Load() {
+	if !s.ready.Load().(bool) {
 		return pkg.ErrSessionHasNotInitialized
 	}
 

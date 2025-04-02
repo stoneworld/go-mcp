@@ -50,7 +50,7 @@ type Server struct {
 	// TODO：需要定期清理无效session
 	sessionID2session pkg.SyncMap[*session]
 
-	inShutdown   atomic.Bool // true when server is in shutdown
+	inShutdown   atomic.Value // true when server is in shutdown
 	inFlyRequest sync.WaitGroup
 
 	capabilities *protocol.ServerCapabilities
@@ -72,14 +72,16 @@ type session struct {
 	// subscribed resources
 	subscribedResources cmap.ConcurrentMap[string, struct{}]
 
-	receiveInitRequest atomic.Bool
-	ready              atomic.Bool
+	receiveInitRequest atomic.Value
+	ready              atomic.Value
 }
 
 func newSession() *session {
 	return &session{
 		reqID2respChan:      cmap.New[chan *protocol.JSONRPCResponse](),
 		subscribedResources: cmap.New[struct{}](),
+		receiveInitRequest:  *pkg.NewBoolAtomic(),
+		ready:               *pkg.NewBoolAtomic(),
 	}
 }
 
@@ -91,6 +93,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 			Resources: &protocol.ResourcesCapability{ListChanged: true, Subscribe: true},
 			Tools:     &protocol.ToolsCapability{ListChanged: true},
 		},
+		inShutdown: *pkg.NewBoolAtomic(),
 		serverInfo: &protocol.Implementation{},
 		logger:     pkg.DefaultLogger,
 	}

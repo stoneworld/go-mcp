@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/bytedance/sonic"
+	cmap "github.com/orcaman/concurrent-map/v2"
+
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
-
-	"github.com/bytedance/sonic"
-	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Option func(*Client)
@@ -61,9 +61,9 @@ type Client struct {
 	notifyHandlerWithResourceListChanged func(ctx context.Context, request *protocol.ResourceListChangedNotification) error
 	notifyHandlerWithResourcesUpdated    func(ctx context.Context, request *protocol.ResourceUpdatedNotification) error
 
-	requestID atomic.Int64
+	requestID int64
 
-	ready atomic.Bool
+	ready atomic.Value
 
 	clientInfo         *protocol.Implementation
 	clientCapabilities *protocol.ClientCapabilities
@@ -79,6 +79,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	client := &Client{
 		transport:          t,
 		reqID2respChan:     cmap.New[chan *protocol.JSONRPCResponse](),
+		ready:              *pkg.NewBoolAtomic(),
 		clientInfo:         &protocol.Implementation{},
 		clientCapabilities: &protocol.ClientCapabilities{},
 		logger:             pkg.DefaultLogger,

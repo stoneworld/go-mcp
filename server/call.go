@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
@@ -14,14 +13,14 @@ func (server *Server) sendNotification4ToolListChanges(ctx context.Context) erro
 		return pkg.ErrServerNotSupport
 	}
 
-	var errList error
+	var errList []error
 	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationToolsListChanged, protocol.NewToolListChangedNotification()); err != nil {
-			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
+			errList = append(errList, fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
 		return true
 	})
-	return errList
+	return pkg.JoinErrors(errList)
 }
 
 func (server *Server) sendNotification4PromptListChanges(ctx context.Context) error {
@@ -29,14 +28,14 @@ func (server *Server) sendNotification4PromptListChanges(ctx context.Context) er
 		return pkg.ErrServerNotSupport
 	}
 
-	var errList error
+	var errList []error
 	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationPromptsListChanged, protocol.NewPromptListChangedNotification()); err != nil {
-			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
+			errList = append(errList, fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
 		return true
 	})
-	return errList
+	return pkg.JoinErrors(errList)
 }
 
 func (server *Server) sendNotification4ResourceListChanges(ctx context.Context) error {
@@ -44,14 +43,14 @@ func (server *Server) sendNotification4ResourceListChanges(ctx context.Context) 
 		return pkg.ErrServerNotSupport
 	}
 
-	var errList error
+	var errList []error
 	server.sessionID2session.Range(func(sessionID string, value *session) bool {
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesListChanged, protocol.NewResourceListChangedNotification()); err != nil {
-			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
+			errList = append(errList, fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
 		return true
 	})
-	return errList
+	return pkg.JoinErrors(errList)
 }
 
 func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, notify *protocol.ResourceUpdatedNotification) error {
@@ -59,18 +58,18 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 		return pkg.ErrServerNotSupport
 	}
 
-	var errList error
+	var errList []error
 	server.sessionID2session.Range(func(sessionID string, s *session) bool {
 		if _, ok := s.subscribedResources.Get(notify.URI); !ok {
 			return true
 		}
 
 		if err := server.sendMsgWithNotification(ctx, sessionID, protocol.NotificationResourcesUpdated, notify); err != nil {
-			errList = errors.Join(fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
+			errList = append(errList, fmt.Errorf("sessionID=%s, err: %w", sessionID, err))
 		}
 		return true
 	})
-	return errList
+	return pkg.JoinErrors(errList)
 }
 
 // Responsible for request and response assembly
