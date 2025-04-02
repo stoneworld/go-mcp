@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync/atomic"
 
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
@@ -214,11 +215,11 @@ func (client *Client) sendNotification4Initialized(ctx context.Context) error {
 
 // Responsible for request and response assembly
 func (client *Client) callServer(ctx context.Context, method protocol.Method, params protocol.ClientRequest) (json.RawMessage, error) {
-	if !client.ready.Load() && (method != protocol.Initialize && method != protocol.Ping) {
+	if !client.ready.Load().(bool) && (method != protocol.Initialize && method != protocol.Ping) {
 		return nil, fmt.Errorf("client not ready")
 	}
 
-	requestID := strconv.FormatInt(client.requestID.Add(1), 10)
+	requestID := strconv.FormatInt(atomic.AddInt64(&client.requestID, 1), 10)
 	if err := client.sendMsgWithRequest(ctx, requestID, method, params); err != nil {
 		return nil, fmt.Errorf("callServer: %w", err)
 	}

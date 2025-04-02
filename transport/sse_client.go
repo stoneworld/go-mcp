@@ -205,7 +205,7 @@ func (t *sseClientTransport) Send(ctx context.Context, msg Message) error {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
-	if !(resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices) {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return fmt.Errorf("unexpected status code: %d, status: %s", resp.StatusCode, resp.Status)
 	}
 

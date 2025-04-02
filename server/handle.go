@@ -241,7 +241,7 @@ func (server *Server) handleNotifyWithInitialized(sessionID string, rawParams js
 		return pkg.ErrLackSession
 	}
 
-	if !s.receiveInitRequest.Load() {
+	if !s.receiveInitRequest.Load().(bool) {
 		return fmt.Errorf("the server has not received the client's initialization request")
 	}
 	s.ready.Store(true)

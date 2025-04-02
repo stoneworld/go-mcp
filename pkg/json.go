@@ -10,7 +10,7 @@ var sonicAPI = sonic.Config{UseInt64: false}.Froze() // Effectively prevents int
 
 func JsonUnmarshal(data []byte, v interface{}) error {
 	if err := sonicAPI.Unmarshal(data, v); err != nil {
-		return fmt.Errorf("%w: data=%s, err=%w", ErrJsonUnmarshal, data, err)
+		return fmt.Errorf("%w: data=%s, error: %+v", ErrJsonUnmarshal, data, err)
 	}
 	return nil
 }

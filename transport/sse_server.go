@@ -108,11 +108,11 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 	for _, opt := range opts {
 		opt(t)
 	}
-	var err error
-	t.messageEndpointFullURL, err = url.JoinPath(t.urlPrefix + t.messagePath)
+	messageEndpointFullURL, err := completeMessagePath(t.urlPrefix, t.messagePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to join URL: %w", err)
+		return nil, fmt.Errorf("NewSSEServerTransport failed: completeMessagePath %v", err)
 	}
+	t.messageEndpointFullURL = messageEndpointFullURL
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(t.ssePath, t.handleSSE)
@@ -309,4 +309,12 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 	}
 
 	return nil
+}
+
+func completeMessagePath(urlPrefix string, messagePath string) (string, error) {
+	parse, err := url.Parse(urlPrefix + messagePath)
+	if err != nil {
+		return "", err
+	}
+	return parse.String(), nil
 }

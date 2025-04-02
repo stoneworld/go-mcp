@@ -40,7 +40,11 @@ func getAvailablePort() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to get available port: %v", err)
 	}
-	defer addr.Close()
+	defer func() {
+		if err = addr.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	port := addr.Addr().(*net.TCPAddr).Port
 	return port, nil
