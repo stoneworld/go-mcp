@@ -9,7 +9,7 @@ import (
 )
 
 func (client *Client) handleRequestWithPing() (*protocol.PingResult, error) {
-	return protocol.NewPingResponse(), nil
+	return protocol.NewPingResult(), nil
 }
 
 func (client *Client) handleNotifyWithToolsListChanged(ctx context.Context, rawParams json.RawMessage) error {

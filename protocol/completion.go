@@ -45,8 +45,8 @@ func NewCompleteRequest(argName string, argValue string, ref interface{}) *Compl
 	}
 }
 
-// NewCompleteResponse creates a new completion response
-func NewCompleteResponse(values []string, hasMore bool, total int) *CompleteResult {
+// NewCompleteResult creates a new completion response
+func NewCompleteResult(values []string, hasMore bool, total int) *CompleteResult {
 	return &CompleteResult{
 		Completion: struct {
 			Values  []string `json:"values"`

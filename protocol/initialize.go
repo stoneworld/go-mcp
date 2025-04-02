@@ -67,8 +67,8 @@ func NewInitializeRequest(clientInfo Implementation, capabilities ClientCapabili
 	}
 }
 
-// NewInitializeResponse creates a new initialize response
-func NewInitializeResponse(serverInfo Implementation, capabilities ServerCapabilities, instructions string) *InitializeResult {
+// NewInitializeResult creates a new initialize response
+func NewInitializeResult(serverInfo Implementation, capabilities ServerCapabilities, instructions string) *InitializeResult {
 	return &InitializeResult{
 		ServerInfo:      serverInfo,
 		Capabilities:    capabilities,

@@ -87,8 +87,8 @@ func NewListToolsRequest() *ListToolsRequest {
 	return &ListToolsRequest{}
 }
 
-// NewListToolsResponse creates a new list tools response
-func NewListToolsResponse(tools []*Tool, nextCursor string) *ListToolsResult {
+// NewListToolsResult creates a new list tools response
+func NewListToolsResult(tools []*Tool, nextCursor string) *ListToolsResult {
 	return &ListToolsResult{
 		Tools:      tools,
 		NextCursor: nextCursor,
@@ -103,8 +103,8 @@ func NewCallToolRequest(name string, arguments map[string]interface{}) *CallTool
 	}
 }
 
-// NewCallToolResponse creates a new call tool response
-func NewCallToolResponse(content []Content, isError bool) *CallToolResult {
+// NewCallToolResult creates a new call tool response
+func NewCallToolResult(content []Content, isError bool) *CallToolResult {
 	return &CallToolResult{
 		Content: content,
 		IsError: isError,

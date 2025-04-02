@@ -38,8 +38,8 @@ func NewSetLoggingLevelRequest(level LoggingLevel) *SetLoggingLevelRequest {
 	}
 }
 
-// NewSetLoggingLevelResponse creates a new set logging level response
-func NewSetLoggingLevelResponse(success bool) *SetLoggingLevelResult {
+// NewSetLoggingLevelResult creates a new set logging level response
+func NewSetLoggingLevelResult(success bool) *SetLoggingLevelResult {
 	return &SetLoggingLevelResult{
 		Success: success,
 	}
