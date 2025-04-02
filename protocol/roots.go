@@ -24,8 +24,8 @@ func NewListRootsRequest() *ListRootsRequest {
 	return &ListRootsRequest{}
 }
 
-// NewListRootsResponse creates a new list roots response
-func NewListRootsResponse(roots []Root) *ListRootsResult {
+// NewListRootsResult creates a new list roots response
+func NewListRootsResult(roots []Root) *ListRootsResult {
 	return &ListRootsResult{
 		Roots: roots,
 	}

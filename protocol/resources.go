@@ -260,8 +260,8 @@ func NewListResourcesRequest() *ListResourcesRequest {
 	return &ListResourcesRequest{}
 }
 
-// NewListResourcesResponse creates a new list resources response
-func NewListResourcesResponse(resources []Resource, nextCursor string) *ListResourcesResult {
+// NewListResourcesResult creates a new list resources response
+func NewListResourcesResult(resources []Resource, nextCursor string) *ListResourcesResult {
 	return &ListResourcesResult{
 		Resources:  resources,
 		NextCursor: nextCursor,
@@ -273,8 +273,8 @@ func NewListResourceTemplatesRequest() *ListResourceTemplatesRequest {
 	return &ListResourceTemplatesRequest{}
 }
 
-// NewListResourceTemplatesResponse creates a new list resource templates response
-func NewListResourceTemplatesResponse(templates []ResourceTemplate, nextCursor string) *ListResourceTemplatesResult {
+// NewListResourceTemplatesResult creates a new list resource templates response
+func NewListResourceTemplatesResult(templates []ResourceTemplate, nextCursor string) *ListResourceTemplatesResult {
 	return &ListResourceTemplatesResult{
 		ResourceTemplates: templates,
 		NextCursor:        nextCursor,
@@ -286,8 +286,8 @@ func NewReadResourceRequest(uri string) *ReadResourceRequest {
 	return &ReadResourceRequest{URI: uri}
 }
 
-// NewReadResourceResponse creates a new read resource response
-func NewReadResourceResponse(contents []ResourceContents) *ReadResourceResult {
+// NewReadResourceResult creates a new read resource response
+func NewReadResourceResult(contents []ResourceContents) *ReadResourceResult {
 	return &ReadResourceResult{
 		Contents: contents,
 	}
@@ -303,11 +303,11 @@ func NewUnsubscribeRequest(uri string) *UnsubscribeRequest {
 	return &UnsubscribeRequest{URI: uri}
 }
 
-func NewSubscribeResponse() *SubscribeResult {
+func NewSubscribeResult() *SubscribeResult {
 	return &SubscribeResult{}
 }
 
-func NewUnsubscribeResponse() *UnsubscribeResult {
+func NewUnsubscribeResult() *UnsubscribeResult {
 	return &UnsubscribeResult{}
 }
 

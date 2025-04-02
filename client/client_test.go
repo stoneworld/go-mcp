@@ -54,7 +54,7 @@ func TestClientCall(t *testing.T) {
 				return client.Ping(context.Background(), request.(*protocol.PingRequest))
 			},
 			request:          protocol.NewPingRequest(),
-			expectedResponse: protocol.NewPingResponse(),
+			expectedResponse: protocol.NewPingResult(),
 		},
 		{
 			name: "test_list_prompts",
@@ -62,7 +62,7 @@ func TestClientCall(t *testing.T) {
 				return client.ListPrompts(context.Background())
 			},
 			request:          protocol.NewListPromptsRequest(),
-			expectedResponse: protocol.NewListPromptsResponse([]protocol.Prompt{{Name: "prompt1"}, {Name: "prompt2"}}, ""),
+			expectedResponse: protocol.NewListPromptsResult([]protocol.Prompt{{Name: "prompt1"}, {Name: "prompt2"}}, ""),
 		},
 		{
 			name: "test_get_prompt",
@@ -70,7 +70,7 @@ func TestClientCall(t *testing.T) {
 				return client.GetPrompt(context.Background(), request.(*protocol.GetPromptRequest))
 			},
 			request:          protocol.NewGetPromptRequest("prompt1", map[string]string{}),
-			expectedResponse: protocol.NewGetPromptResponse([]protocol.PromptMessage{{Role: protocol.RoleUser, Content: protocol.TextContent{Type: "text", Text: "prompt content"}}}, "test description"),
+			expectedResponse: protocol.NewGetPromptResult([]protocol.PromptMessage{{Role: protocol.RoleUser, Content: protocol.TextContent{Type: "text", Text: "prompt content"}}}, "test description"),
 		},
 		{
 			name: "test_list_resources",
@@ -78,7 +78,7 @@ func TestClientCall(t *testing.T) {
 				return client.ListResources(context.Background())
 			},
 			request:          protocol.NewListResourcesRequest(),
-			expectedResponse: protocol.NewListResourcesResponse([]protocol.Resource{{Name: "resource1"}, {Name: "resource2"}}, ""),
+			expectedResponse: protocol.NewListResourcesResult([]protocol.Resource{{Name: "resource1"}, {Name: "resource2"}}, ""),
 		},
 		{
 			name: "test_read_resource",
@@ -86,7 +86,7 @@ func TestClientCall(t *testing.T) {
 				return client.ReadResource(context.Background(), request.(*protocol.ReadResourceRequest))
 			},
 			request:          protocol.NewReadResourceRequest("resource1"),
-			expectedResponse: protocol.NewReadResourceResponse([]protocol.ResourceContents{protocol.TextResourceContents{URI: "resource1", Text: "resource content", MimeType: "text/plain"}}),
+			expectedResponse: protocol.NewReadResourceResult([]protocol.ResourceContents{protocol.TextResourceContents{URI: "resource1", Text: "resource content", MimeType: "text/plain"}}),
 		},
 		{
 			name: "test_list_resource_templates",
@@ -94,7 +94,7 @@ func TestClientCall(t *testing.T) {
 				return client.ListResourceTemplates(context.Background())
 			},
 			request:          protocol.NewListResourceTemplatesRequest(),
-			expectedResponse: protocol.NewListResourceTemplatesResponse([]protocol.ResourceTemplate{{Name: "template1"}, {Name: "template2"}}, ""),
+			expectedResponse: protocol.NewListResourceTemplatesResult([]protocol.ResourceTemplate{{Name: "template1"}, {Name: "template2"}}, ""),
 		},
 		{
 			name: "test_subscribe_resource_change",
@@ -118,7 +118,7 @@ func TestClientCall(t *testing.T) {
 				return client.ListTools(context.Background())
 			},
 			request: protocol.NewListToolsRequest(),
-			expectedResponse: protocol.NewListToolsResponse([]*protocol.Tool{{
+			expectedResponse: protocol.NewListToolsResult([]*protocol.Tool{{
 				Name:        "test_tool",
 				Description: "test_tool",
 				InputSchema: map[string]interface{}{
@@ -134,7 +134,7 @@ func TestClientCall(t *testing.T) {
 			request: protocol.NewCallToolRequest("test_tool", map[string]interface{}{
 				"a": 1,
 			}),
-			expectedResponse: protocol.NewCallToolResponse([]protocol.Content{protocol.TextContent{Type: "text", Text: "success"}}, false),
+			expectedResponse: protocol.NewCallToolResult([]protocol.Content{protocol.TextContent{Type: "text", Text: "success"}}, false),
 		},
 	}
 

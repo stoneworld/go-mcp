@@ -39,8 +39,8 @@ func NewCreateMessageRequest(messages []SamplingMessage, maxTokens int, opts ...
 	return req
 }
 
-// NewCreateMessageResponse creates a new create message response
-func NewCreateMessageResponse(content Content, role Role, model string, stopReason string) *CreateMessageResult {
+// NewCreateMessageResult creates a new create message response
+func NewCreateMessageResult(content Content, role Role, model string, stopReason string) *CreateMessageResult {
 	return &CreateMessageResult{
 		Content:    content,
 		Role:       role,

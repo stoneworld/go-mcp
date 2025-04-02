@@ -11,7 +11,7 @@ import (
 )
 
 func (server *Server) handleRequestWithPing() (*protocol.PingResult, error) {
-	return protocol.NewPingResponse(), nil
+	return protocol.NewPingResult(), nil
 }
 
 func (server *Server) handleRequestWithInitialize(sessionID string, rawParams json.RawMessage) (*protocol.InitializeResult, error) {
@@ -172,7 +172,7 @@ func (server *Server) handleRequestWithSubscribeResourceChange(sessionID string,
 		return nil, pkg.ErrLackSession
 	}
 	s.subscribedResources.Set(request.URI, struct{}{})
-	return protocol.NewSubscribeResponse(), nil
+	return protocol.NewSubscribeResult(), nil
 }
 
 func (server *Server) handleRequestWithUnSubscribeResourceChange(sessionID string, rawParams json.RawMessage) (*protocol.UnsubscribeResult, error) {
@@ -190,7 +190,7 @@ func (server *Server) handleRequestWithUnSubscribeResourceChange(sessionID strin
 		return nil, pkg.ErrLackSession
 	}
 	s.subscribedResources.Remove(request.URI)
-	return protocol.NewUnsubscribeResponse(), nil
+	return protocol.NewUnsubscribeResult(), nil
 }
 
 func (server *Server) handleRequestWithListTools(rawParams json.RawMessage) (*protocol.ListToolsResult, error) {

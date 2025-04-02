@@ -171,7 +171,7 @@ func main() {
 		InputSchema: make(map[string]interface{}),
 	}, func(req *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		fmt.Printf("工具被调用，参数: %+v\n", req.Arguments)
-		return protocol.NewCallToolResponse([]protocol.Content{protocol.TextContent{
+		return protocol.NewCallToolResult([]protocol.Content{protocol.TextContent{
 			Annotated: protocol.Annotated{},
 			Type:      "text",
 			Text:      "测试",
