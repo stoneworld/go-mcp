@@ -11,7 +11,7 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
-func (client *Client) Receive(ctx context.Context, msg []byte) error {
+func (client *Client) receive(ctx context.Context, msg []byte) error {
 	defer pkg.Recover()
 
 	if !gjson.GetBytes(msg, "id").Exists() {

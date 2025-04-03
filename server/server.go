@@ -97,7 +97,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 		serverInfo: &protocol.Implementation{},
 		logger:     pkg.DefaultLogger,
 	}
-	t.SetReceiver(server)
+	t.SetReceiver(transport.ServerReceiverF(server.receive))
 
 	for _, opt := range opts {
 		opt(server)
@@ -105,7 +105,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 
 	return server, nil
 }
-func (server *Server) Start() error {
+func (server *Server) Run() error {
 	if err := server.transport.Run(); err != nil {
 		return fmt.Errorf("init mcp server transpor start fail: %w", err)
 	}

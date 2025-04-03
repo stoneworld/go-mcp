@@ -36,6 +36,12 @@ type ClientReceiver interface {
 	Receive(ctx context.Context, msg []byte) error
 }
 
+type ClientReceiverF func(ctx context.Context, msg []byte) error
+
+func (f ClientReceiverF) Receive(ctx context.Context, msg []byte) error {
+	return f(ctx, msg)
+}
+
 type ServerTransport interface {
 	// Run starts listening for requests, this is synchronous, and cannot return before Shutdown is called
 	Run() error
@@ -59,4 +65,10 @@ type ServerTransport interface {
 
 type ServerReceiver interface {
 	Receive(ctx context.Context, sessionID string, msg []byte) error
+}
+
+type ServerReceiverF func(ctx context.Context, sessionID string, msg []byte) error
+
+func (f ServerReceiverF) Receive(ctx context.Context, sessionID string, msg []byte) error {
+	return f(ctx, sessionID, msg)
 }
