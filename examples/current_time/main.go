@@ -72,6 +72,9 @@ func main() {
 
 	// register tool and start mcp server
 	srv.RegisterTool(tool, handler)
+	// srv.RegisterResource()
+	// srv.RegisterPrompt()
+	// srv.RegisterResourceTemplate()
 
 	errCh := make(chan error)
 	go func() {

@@ -84,7 +84,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 		clientCapabilities: &protocol.ClientCapabilities{},
 		logger:             pkg.DefaultLogger,
 	}
-	t.SetReceiver(client)
+	t.SetReceiver(transport.ClientReceiverF(client.receive))
 
 	for _, opt := range opts {
 		opt(client)

@@ -11,7 +11,7 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
-func (server *Server) Receive(ctx context.Context, sessionID string, msg []byte) error {
+func (server *Server) receive(ctx context.Context, sessionID string, msg []byte) error {
 	if !gjson.GetBytes(msg, "id").Exists() {
 		notify := &protocol.JSONRPCNotification{}
 		if err := pkg.JsonUnmarshal(msg, &notify); err != nil {

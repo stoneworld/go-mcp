@@ -97,7 +97,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 		serverInfo: &protocol.Implementation{},
 		logger:     pkg.DefaultLogger,
 	}
-	t.SetReceiver(server)
+	t.SetReceiver(transport.ServerReceiverF(server.receive))
 
 	for _, opt := range opts {
 		opt(server)
