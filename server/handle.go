@@ -45,8 +45,10 @@ func (server *Server) handleRequestWithListPrompts(rawParams json.RawMessage) (*
 	}
 
 	var request *protocol.ListPromptsRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
+	if len(rawParams) > 0 {
+		if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+			return nil, err
+		}
 	}
 
 	prompts := make([]protocol.Prompt, 0)
@@ -83,8 +85,10 @@ func (server *Server) handleRequestWithListResources(rawParams json.RawMessage) 
 	}
 
 	var request *protocol.ListResourcesRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
+	if len(rawParams) > 0 {
+		if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+			return nil, err
+		}
 	}
 
 	resources := make([]protocol.Resource, 0)
@@ -104,8 +108,10 @@ func (server *Server) handleRequestWithListResourceTemplates(rawParams json.RawM
 	}
 
 	var request *protocol.ListResourceTemplatesRequest
-	if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
-		return nil, err
+	if len(rawParams) > 0 {
+		if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+			return nil, err
+		}
 	}
 
 	templates := make([]protocol.ResourceTemplate, 0)
@@ -199,8 +205,10 @@ func (server *Server) handleRequestWithListTools(rawParams json.RawMessage) (*pr
 	}
 
 	request := &protocol.ListToolsRequest{}
-	if err := pkg.JsonUnmarshal(rawParams, request); err != nil {
-		return nil, err
+	if len(rawParams) > 0 {
+		if err := pkg.JsonUnmarshal(rawParams, &request); err != nil {
+			return nil, err
+		}
 	}
 
 	tools := make([]*protocol.Tool, 0)

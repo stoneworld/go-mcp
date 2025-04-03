@@ -152,8 +152,10 @@ func (client *Client) SubscribeResourceChange(ctx context.Context, request *prot
 	}
 
 	var result protocol.SubscribeResult
-	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	if len(response) > 0 {
+		if err = pkg.JsonUnmarshal(response, &result); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		}
 	}
 	return &result, nil
 }
@@ -169,8 +171,10 @@ func (client *Client) UnSubscribeResourceChange(ctx context.Context, request *pr
 	}
 
 	var result protocol.UnsubscribeResult
-	if err := pkg.JsonUnmarshal(response, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	if len(response) > 0 {
+		if err = pkg.JsonUnmarshal(response, &result); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		}
 	}
 	return &result, nil
 }
