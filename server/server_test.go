@@ -495,7 +495,7 @@ func testServerInit(t *testing.T, server *Server, in io.Writer, outScan *bufio.S
 		t.Fatalf("response not as expected.\ngot  = %v\nwant = %v", respMap, expectedRespMap)
 	}
 
-	notify := protocol.NewJSONRPCNotification(protocol.NotificationInitialized, protocol.NewInitializedNotification())
+	notify := protocol.NewJSONRPCNotification(protocol.NotificationInitialized, nil)
 	notifyBytes, err := sonic.Marshal(notify)
 	if err != nil {
 		t.Fatalf("json Marshal: %+v", err)
