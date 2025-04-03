@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/yosida95/uritemplate/v3"
+
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
-
-	"github.com/yosida95/uritemplate/v3"
 )
 
 func (server *Server) handleRequestWithPing() (*protocol.PingResult, error) {

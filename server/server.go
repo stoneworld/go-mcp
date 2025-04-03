@@ -6,11 +6,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
+
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
-
-	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Option func(*Server)

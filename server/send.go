@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ThinkInAIXYZ/go-mcp/protocol"
-
 	"github.com/bytedance/sonic"
+
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
 // func (server *Server) sendMsgWithRequest(ctx context.Context, sessionID string, requestID protocol.RequestID, method protocol.Method, params protocol.ServerRequest) error {

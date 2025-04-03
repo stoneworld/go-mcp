@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ThinkInAIXYZ/go-mcp/pkg"
-
 	"github.com/yosida95/uritemplate/v3"
+
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 // ListResourcesRequest represents a request to list available resources
