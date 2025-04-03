@@ -61,7 +61,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	}()
 
 	if err := client.Start(); err != nil {
-		t.Fatalf("client.Start() failed: %v", err)
+		t.Fatalf("client.Run() failed: %v", err)
 	}
 
 	defer func() {

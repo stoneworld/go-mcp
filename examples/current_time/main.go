@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
@@ -12,35 +16,20 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
-var (
-	mode string
-)
-
-func getTransport() (t transport.ServerTransport) {
-	flag.StringVar(&mode, "transport", "stdio", "The transport to use, should be \"stdio\" or \"sse\"")
-	flag.Parse()
-
-	if mode == "stdio" {
-		log.Println("start current time mcp server with stdio transport")
-		t = transport.NewStdioServerTransport()
-	} else {
-		addr := "localhost:8080"
-		log.Printf("start current time mcp server with sse transport, listen %s", addr)
-		t, _ = transport.NewSSEServerTransport(addr)
-	}
-
-	return t
-}
+var mode string
 
 func main() {
 	// new mcp server with stdio or sse transport
-	srv, _ := server.NewServer(
+	srv, err := server.NewServer(
 		getTransport(),
 		server.WithServerInfo(protocol.Implementation{
 			Name:    "current-time-v2-client",
 			Version: "1.0.0",
 		}),
 	)
+	if err != nil {
+		log.Fatalf("Failed to create server: %v", err)
+	}
 
 	// new protocal tool with name, descipriton and properties
 	tool := &protocol.Tool{
@@ -83,5 +72,62 @@ func main() {
 
 	// register tool and start mcp server
 	srv.RegisterTool(tool, handler)
-	srv.Start()
+
+	errCh := make(chan error)
+	go func() {
+		errCh <- srv.Run()
+	}()
+
+	if err = signalWaiter(errCh); err != nil {
+		log.Fatalf("signal waiter: %v", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Shutdown error: %v", err)
+	}
+}
+
+func getTransport() (t transport.ServerTransport) {
+	flag.StringVar(&mode, "transport", "stdio", "The transport to use, should be \"stdio\" or \"sse\"")
+	flag.Parse()
+
+	if mode == "stdio" {
+		log.Println("start current time mcp server with stdio transport")
+		t = transport.NewStdioServerTransport()
+	} else {
+		addr := "localhost:8080"
+		log.Printf("start current time mcp server with sse transport, listen %s", addr)
+		t, _ = transport.NewSSEServerTransport(addr)
+	}
+
+	return t
+}
+
+func signalWaiter(errCh chan error) error {
+	signalToNotify := []os.Signal{syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM}
+	if signal.Ignored(syscall.SIGHUP) {
+		signalToNotify = []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+	}
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, signalToNotify...)
+	<-signals
+
+	select {
+	case sig := <-signals:
+		switch sig {
+		case syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM:
+			log.Printf("Received signal: %s\n", sig)
+			// graceful shutdown
+			return nil
+		}
+	case err := <-errCh:
+		return err
+	}
+
+	return nil
 }

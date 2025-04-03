@@ -122,7 +122,7 @@ func TestServerHandle(t *testing.T) {
 	}
 
 	go func() {
-		if err := server.Start(); err != nil {
+		if err := server.Run(); err != nil {
 			t.Errorf("server start: %+v", err)
 		}
 	}()
@@ -343,7 +343,7 @@ func TestServerNotify(t *testing.T) {
 	}
 
 	go func() {
-		if err := server.Start(); err != nil {
+		if err := server.Run(); err != nil {
 			t.Errorf("server start: %+v", err)
 		}
 	}()

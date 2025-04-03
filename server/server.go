@@ -105,7 +105,7 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 
 	return server, nil
 }
-func (server *Server) Start() error {
+func (server *Server) Run() error {
 	if err := server.transport.Run(); err != nil {
 		return fmt.Errorf("init mcp server transpor start fail: %w", err)
 	}
