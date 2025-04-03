@@ -232,8 +232,10 @@ func (server *Server) handleRequestWithCallTool(rawParams json.RawMessage) (*pro
 
 func (server *Server) handleNotifyWithInitialized(sessionID string, rawParams json.RawMessage) error {
 	param := &protocol.InitializedNotification{}
-	if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
-		return err
+	if len(rawParams) > 0 {
+		if err := pkg.JsonUnmarshal(rawParams, param); err != nil {
+			return err
+		}
 	}
 
 	s, ok := server.sessionID2session.Load(sessionID)
