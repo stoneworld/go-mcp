@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
-
-	"github.com/tidwall/gjson"
 )
 
 func (client *Client) Receive(ctx context.Context, msg []byte) error {

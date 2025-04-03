@@ -366,6 +366,10 @@ For questions, suggestions, or issues, please contact us through:
 
 We welcome any form of feedback and contribution and are committed to building a friendly, inclusive community.
 
----
+## ✨ Contributors
 
-<p align="center">Made with ❤️ by ThinkInAI Team</p>
+Thank you for your contribution to Go-MCP!
+
+<a href="https://github.com/ThinkInAIXYZ/go-mcp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ThinkInAIXYZ/go-mcp" alt="Contributors" />
+</a>

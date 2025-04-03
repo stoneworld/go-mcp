@@ -362,6 +362,10 @@ Go-MCP 的设计遵循以下核心原则：
 
 我们欢迎任何形式的反馈和贡献，并致力于构建一个友好、包容的社区。
 
----
+## ✨ 贡献者
 
-<p align="center">由 ThinkInAI 团队用 ❤️ 制作</p>
+感谢您对 Go-MCP 作出的贡献！
+
+<a href="https://github.com/ThinkInAIXYZ/go-mcp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=ThinkInAIXYZ/go-mcp" alt="Contributors" />
+</a>

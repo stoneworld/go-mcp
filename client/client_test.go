@@ -9,11 +9,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bytedance/sonic"
+
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
-
-	"github.com/bytedance/sonic"
 )
 
 func TestClientCall(t *testing.T) {
