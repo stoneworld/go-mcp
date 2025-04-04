@@ -73,6 +73,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -89,7 +90,10 @@ func main() {
 	}
 
 	// Create MCP client using transport
-	mcpClient, err := client.NewClient(transportClient)
+	mcpClient, err := client.NewClient(transportClient, client.WithClientInfo(protocol.Implementation{
+		Name:    "example MCP client",
+		Version: "1.0.0",
+	}))
 	if err != nil {
 		log.Fatalf("Failed to create MCP client: %v", err)
 	}
@@ -100,7 +104,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to list tools: %v", err)
 	}
-	fmt.Printf("Available tools: %+v\n", toolsResult.Tools)
+	b, _ := json.Marshal(toolsResult.Tools)
+	fmt.Printf("Available tools: %+v\n", string(b))
 
 	// Call tool
 	callResult, err := mcpClient.CallTool(
@@ -111,7 +116,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to call tool: %v", err)
 	}
-	fmt.Printf("Tool call result: %+v\n", callResult)
+	b, _ = json.Marshal(callResult)
+	fmt.Printf("Tool call result: %+v\n", string(b))
 }
 ```
 
