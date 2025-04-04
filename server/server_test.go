@@ -53,8 +53,15 @@ func TestServerHandle(t *testing.T) {
 	testTool := &protocol.Tool{
 		Name:        "test_tool",
 		Description: "test_tool",
-		InputSchema: map[string]interface{}{
-			"a": "int",
+		InputSchema: protocol.InputSchema{
+			Type: protocol.Object,
+			Properties: map[string]interface{}{
+				"timezone": map[string]string{
+					"type":        "string",
+					"description": "current time timezone",
+				},
+			},
+			Required: []string{"timezone"},
 		},
 	}
 	testToolCallContent := protocol.TextContent{
@@ -299,8 +306,15 @@ func TestServerNotify(t *testing.T) {
 	testTool := &protocol.Tool{
 		Name:        "test_tool",
 		Description: "test_tool",
-		InputSchema: map[string]interface{}{
-			"a": "int",
+		InputSchema: protocol.InputSchema{
+			Type: protocol.Object,
+			Properties: map[string]interface{}{
+				"timezone": map[string]string{
+					"type":        "string",
+					"description": "current time timezone",
+				},
+			},
+			Required: []string{"timezone"},
 		},
 	}
 	testToolCallContent := protocol.TextContent{

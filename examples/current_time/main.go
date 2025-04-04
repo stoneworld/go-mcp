@@ -35,15 +35,15 @@ func main() {
 	tool := &protocol.Tool{
 		Name:        "current time",
 		Description: "Get current time with timezone, Asia/Shanghai is default",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
+		InputSchema: protocol.InputSchema{
+			Type: protocol.Object,
+			Properties: map[string]interface{}{
 				"timezone": map[string]string{
 					"type":        "string",
 					"description": "current time timezone",
 				},
 			},
-			"required": []string{"timezone"},
+			Required: []string{"timezone"},
 		},
 	}
 

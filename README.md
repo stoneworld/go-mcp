@@ -141,8 +141,10 @@ Here's a basic server implementation example showing how to create an MCP server
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/server"
@@ -151,7 +153,7 @@ import (
 
 func main() {
 	// Create transport server (using SSE in this example)
-	transportServer, err := transport.NewSSEServerTransport("")
+	transportServer, err := transport.NewSSEServerTransport("localhost:8080")
 	if err != nil {
 		log.Fatalf("Failed to create transport server: %v", err)
 	}
@@ -170,19 +172,41 @@ func main() {
 
 	// Register tool handler
 	mcpServer.RegisterTool(&protocol.Tool{
-		Name:        "example_tool",
-		Description: "example_tool",
-		InputSchema: make(map[string]interface{}),
+		Name:        "current time",
+		Description: "Get current time with timezone, Asia/Shanghai is default",
+		InputSchema: protocol.InputSchema{
+			Type: protocol.Object,
+			Properties: map[string]interface{}{
+				"timezone": map[string]string{
+					"type":        "string",
+					"description": "current time timezone",
+				},
+			},
+			Required: []string{"timezone"},
+		},
 	}, func(req *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-		fmt.Printf("Tool called with arguments: %+v\n", req.Arguments)
-		return protocol.NewCallToolResult([]protocol.Content{protocol.TextContent{
-			Annotated: protocol.Annotated{},
-			Type:      "text",
-			Text:      "Test",
-		}}, true), nil
+		timezone, ok := req.Arguments["timezone"].(string)
+		if !ok {
+			return nil, errors.New("timezone must be a string")
+		}
+
+		loc, err := time.LoadLocation(timezone)
+		if err != nil {
+			return nil, fmt.Errorf("parse timezone with error: %v", err)
+		}
+		text := fmt.Sprintf(`current time is %s`, time.Now().In(loc))
+
+		return &protocol.CallToolResult{
+			Content: []protocol.Content{
+				protocol.TextContent{
+					Type: "text",
+					Text: text,
+				},
+			},
+		}, nil
 	})
 
-	if err = mcpServer.Start(); err != nil {
+	if err = mcpServer.Run(); err != nil {
 		log.Fatalf("Failed to start MCP server: %v", err)
 		return
 	}

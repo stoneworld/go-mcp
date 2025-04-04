@@ -137,8 +137,10 @@ func main() {
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/server"
@@ -146,8 +148,8 @@ import (
 )
 
 func main() {
-	// 创建传输服务器（本例中使用 SSE）
-	transportServer, err := transport.NewSSEServerTransport("")
+	// 创建传输服务器（本例使用 SSE）
+	transportServer, err := transport.NewSSEServerTransport("localhost:8080")
 	if err != nil {
 		log.Fatalf("创建传输服务器失败: %v", err)
 	}
@@ -166,19 +168,41 @@ func main() {
 
 	// 注册工具处理器
 	mcpServer.RegisterTool(&protocol.Tool{
-		Name:        "example_tool",
-		Description: "example_tool",
-		InputSchema: make(map[string]interface{}),
+		Name:        "current time",
+		Description: "Get current time with timezone, Asia/Shanghai is default",
+		InputSchema: protocol.InputSchema{
+			Type: protocol.Object,
+			Properties: map[string]interface{}{
+				"timezone": map[string]string{
+					"type":        "string",
+					"description": "current time timezone",
+				},
+			},
+			Required: []string{"timezone"},
+		},
 	}, func(req *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-		fmt.Printf("工具被调用，参数: %+v\n", req.Arguments)
-		return protocol.NewCallToolResult([]protocol.Content{protocol.TextContent{
-			Annotated: protocol.Annotated{},
-			Type:      "text",
-			Text:      "测试",
-		}}, true), nil
+		timezone, ok := req.Arguments["timezone"].(string)
+		if !ok {
+			return nil, errors.New("timezone must be a string")
+		}
+
+		loc, err := time.LoadLocation(timezone)
+		if err != nil {
+			return nil, fmt.Errorf("parse timezone with error: %v", err)
+		}
+		text := fmt.Sprintf(`current time is %s`, time.Now().In(loc))
+
+		return &protocol.CallToolResult{
+			Content: []protocol.Content{
+				protocol.TextContent{
+					Type: "text",
+					Text: text,
+				},
+			},
+		}, nil
 	})
 
-	if err = mcpServer.Start(); err != nil {
+	if err = mcpServer.Run(); err != nil {
 		log.Fatalf("启动 MCP 服务器失败: %v", err)
 		return
 	}

@@ -121,8 +121,15 @@ func TestClientCall(t *testing.T) {
 			expectedResponse: protocol.NewListToolsResult([]*protocol.Tool{{
 				Name:        "test_tool",
 				Description: "test_tool",
-				InputSchema: map[string]interface{}{
-					"a": "int",
+				InputSchema: protocol.InputSchema{
+					Type: protocol.Object,
+					Properties: map[string]interface{}{
+						"timezone": map[string]interface{}{
+							"type":        "string",
+							"description": "current time timezone",
+						},
+					},
+					Required: []string{"timezone"},
 				},
 			}}, ""),
 		},
@@ -195,7 +202,7 @@ func TestClientCall(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(response, tt.expectedResponse) {
-				t.Fatalf("response not as expected.\ngot  = %v\nwant = %v", response, tt.expectedResponse)
+				t.Fatalf("response not as expected.\ngot  = %+v\nwant = %+v", response, tt.expectedResponse)
 			}
 		})
 	}

@@ -18,9 +18,25 @@ type ListToolsResult struct {
 
 // Tool represents a tool definition that the client can call
 type Tool struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description,omitempty"`
-	InputSchema map[string]interface{} `json:"inputSchema"`
+	// Name is the unique identifier of the tool
+	Name string `json:"name"`
+
+	// Description is a human-readable description of the tool
+	Description string `json:"description,omitempty"`
+
+	// InputSchema defines the expected parameters for the tool using JSON Schema
+	InputSchema InputSchema `json:"inputSchema"`
+}
+
+type InputSchemaType string
+
+const Object InputSchemaType = "object"
+
+// InputSchema represents a JSON Schema object defining the expected parameters for a tool
+type InputSchema struct {
+	Type       InputSchemaType        `json:"type"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+	Required   []string               `json:"required,omitempty"`
 }
 
 // CallToolRequest represents a request to call a specific tool
