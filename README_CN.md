@@ -68,57 +68,49 @@ go get github.com/ThinkInAIXYZ/go-mcp
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
+	"context"
+	"fmt"
+	"log"
 
-    "github.com/ThinkInAIXYZ/go-mcp/client"
-    "github.com/ThinkInAIXYZ/go-mcp/protocol"
-    "github.com/ThinkInAIXYZ/go-mcp/transport"
+	"github.com/ThinkInAIXYZ/go-mcp/client"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
+	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
 func main() {
-	// 创建传输客户端（本例中使用 SSE）
-	transportClient, err := transport.NewSSEClientTransport(context.Background(), "http://127.0.0.1:8080/sse")
+	// Create transport client (using SSE in this example)
+	transportClient, err := transport.NewSSEClientTransport("http://127.0.0.1:8080/sse")
 	if err != nil {
-		log.Fatalf("创建传输客户端失败: %v", err)
+		log.Fatalf("Failed to create transport client: %v", err)
 	}
 
-	// 使用传输创建 MCP 客户端
-	mcpClient, err := client.NewClient(transportClient,
-		// 可选：设置自定义通知处理器
-		client.WithToolsListChangedNotifyHandler(func(ctx context.Context, notification *protocol.ToolListChangedNotification) error {
-			fmt.Printf("工具列表已更新: %+v\n", notification)
-			return nil
-		}),
-	)
+	// Create MCP client using transport
+	mcpClient, err := client.NewClient(transportClient, client.WithClientInfo(protocol.Implementation{
+		Name:    "示例 MCP 客户端",
+		Version: "1.0.0",
+	}))
 	if err != nil {
-		log.Fatalf("创建 MCP 客户端失败: %v", err)
+		log.Fatalf("Failed to create MCP client: %v", err)
 	}
 	defer mcpClient.Close()
 
-	// 获取服务器能力
-	capabilities := mcpClient.GetServerCapabilities()
-	fmt.Printf("服务器能力: %+v\n", capabilities)
-
-	// 列出可用工具
+	// List available tools
 	toolsResult, err := mcpClient.ListTools(context.Background())
 	if err != nil {
-		log.Fatalf("列出工具失败: %v", err)
+		log.Fatalf("Failed to list tools: %v", err)
 	}
+	fmt.Printf("Available tools: %+v\n", toolsResult.Tools)
 
-	fmt.Printf("可用工具: %+v\n", toolsResult.Tools)
-
-	// 调用工具
-	callResult, err := mcpClient.CallTool(context.Background(), protocol.NewCallToolRequest("example_tool", map[string]interface{}{
-		"param1": "value1",
-		"param2": 42,
-	}))
+	// Call tool
+	callResult, err := mcpClient.CallTool(
+		context.Background(),
+		protocol.NewCallToolRequest("current time", map[string]interface{}{
+			"timezone": "UTC",
+		}))
 	if err != nil {
-		log.Fatalf("调用工具失败: %v", err)
+		log.Fatalf("Failed to call tool: %v", err)
 	}
-
-	fmt.Printf("工具调用结果: %+v\n", callResult)
+	fmt.Printf("Tool call result: %+v\n", callResult)
 }
 ```
 

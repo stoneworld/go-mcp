@@ -69,7 +69,7 @@ func NewStdioClientTransport(command string, args []string, opts ...StdioClientT
 	return t, nil
 }
 
-func (t *stdioClientTransport) Start(_ context.Context) error {
+func (t *stdioClientTransport) Start() error {
 	if err := t.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start command: %w", err)
 	}

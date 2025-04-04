@@ -72,14 +72,14 @@ func NewSSEClientTransport(serverURL string, opts ...SSEClientTransportOption) (
 	return x, nil
 }
 
-func (t *sseClientTransport) Start(ctx context.Context) error {
+func (t *sseClientTransport) Start() error {
 	var (
 		err  error
 		req  *http.Request
 		resp *http.Response
 	)
 
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, t.serverURL, nil)
+	req, err = http.NewRequest(http.MethodGet, t.serverURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

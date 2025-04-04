@@ -64,7 +64,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 		}
 	}()
 
-	if err := client.Start(context.Background()); err != nil {
+	if err := client.Start(); err != nil {
 		t.Fatalf("client.Run() failed: %v", err)
 	}
 
