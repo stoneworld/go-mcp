@@ -228,7 +228,7 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 		return nil, fmt.Errorf("callServer: %w", err)
 	}
 
-	respChan := make(chan *protocol.JSONRPCResponse, 1)
+	respChan := make(chan *protocol.JSONRPCResponse)
 
 	defer client.reqID2respChan.Remove(requestID)
 
