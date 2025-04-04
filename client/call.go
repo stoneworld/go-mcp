@@ -228,13 +228,15 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 		return nil, fmt.Errorf("callServer: %w", err)
 	}
 
-	respChan := make(chan *protocol.JSONRPCResponse)
+	respChan := make(chan *protocol.JSONRPCResponse, 1)
+
+	// 使用defer确保在函数退出时移除请求ID
+	defer client.reqID2respChan.Remove(requestID)
 
 	client.reqID2respChan.Set(requestID, respChan)
 
 	select {
 	case <-ctx.Done():
-		client.reqID2respChan.Remove(requestID)
 		return nil, ctx.Err()
 	case response := <-respChan:
 		if err := response.Error; err != nil {
