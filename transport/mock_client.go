@@ -29,7 +29,7 @@ func NewMockClientTransport(in io.Reader, out io.Writer) *MockClientTransport {
 	}
 }
 
-func (t *MockClientTransport) Start(_ context.Context) error {
+func (t *MockClientTransport) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 

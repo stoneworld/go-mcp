@@ -127,7 +127,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), client.initTimeout)
 	defer cancel()
 
-	if err := client.transport.Start(ctx); err != nil {
+	if err := client.transport.Start(); err != nil {
 		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
 	}
 
