@@ -16,7 +16,10 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
-var mode string
+var (
+	mode string
+	addr = "127.0.0.1:8080"
+)
 
 func main() {
 	// new mcp server with stdio or sse transport
@@ -102,7 +105,6 @@ func getTransport() (t transport.ServerTransport) {
 		log.Println("start current time mcp server with stdio transport")
 		t = transport.NewStdioServerTransport()
 	} else {
-		addr := "localhost:8080"
 		log.Printf("start current time mcp server with sse transport, listen %s", addr)
 		t, _ = transport.NewSSEServerTransport(addr)
 	}
