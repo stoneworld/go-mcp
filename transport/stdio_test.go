@@ -3,9 +3,11 @@ package transport
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"testing"
 )
 
@@ -39,7 +41,7 @@ func TestStdioTransport(t *testing.T) {
 		client *stdioClientTransport
 	)
 
-	mockServerTrPath := filepath.Join(os.TempDir(), "mockstdio_server_tr")
+	mockServerTrPath := filepath.Join(os.TempDir(), "mock_server_tr_"+strconv.Itoa(rand.Int()))
 	if err := compileMockStdioServerTr(mockServerTrPath); err != nil {
 		t.Fatalf("Failed to compile mock server: %v", err)
 	}

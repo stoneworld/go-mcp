@@ -99,7 +99,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to list tools: %v", err)
 	}
-	fmt.Printf("Available tools: %+v\n", toolsResult.Tools)
+	b, _ := json.Marshal(toolsResult.Tools)
+	fmt.Printf("Available tools: %+v\n", string(b))
 
 	// Call tool
 	callResult, err := mcpClient.CallTool(
@@ -110,7 +111,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to call tool: %v", err)
 	}
-	fmt.Printf("Tool call result: %+v\n", callResult)
+	b, _ = json.Marshal(callResult)
+	fmt.Printf("Tool call result: %+v\n", string(b))
 }
 ```
 
