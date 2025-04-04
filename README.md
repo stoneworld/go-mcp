@@ -83,7 +83,7 @@ import (
 
 func main() {
 	// Create transport client (using SSE in this example)
-	transportClient, err := transport.NewSSEClientTransport(context.Background(), "http://localhost:8080/sse")
+	transportClient, err := transport.NewSSEClientTransport(context.Background(), "http://127.0.0.1:8080/sse")
 	if err != nil {
 		log.Fatalf("Failed to create transport client: %v", err)
 	}
@@ -153,7 +153,7 @@ import (
 
 func main() {
 	// Create transport server (using SSE in this example)
-	transportServer, err := transport.NewSSEServerTransport("localhost:8080")
+	transportServer, err := transport.NewSSEServerTransport("127.0.0.1:8080")
 	if err != nil {
 		log.Fatalf("Failed to create transport server: %v", err)
 	}
