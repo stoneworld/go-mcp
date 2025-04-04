@@ -230,7 +230,6 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 
 	respChan := make(chan *protocol.JSONRPCResponse, 1)
 
-	// 使用defer确保在函数退出时移除请求ID
 	defer client.reqID2respChan.Remove(requestID)
 
 	client.reqID2respChan.Set(requestID, respChan)
