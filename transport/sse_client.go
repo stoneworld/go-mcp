@@ -50,8 +50,8 @@ type sseClientTransport struct {
 	client         *http.Client
 }
 
-func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
-	ctx, cancel := context.WithCancel(parent)
+func NewSSEClientTransport(serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
+	ctx, cancel := context.WithCancel(context.Background())
 
 	x := &sseClientTransport{
 		ctx:             ctx,
@@ -72,14 +72,14 @@ func NewSSEClientTransport(parent context.Context, serverURL string, opts ...SSE
 	return x, nil
 }
 
-func (t *sseClientTransport) Start() error {
+func (t *sseClientTransport) Start(ctx context.Context) error {
 	var (
 		err  error
 		req  *http.Request
 		resp *http.Response
 	)
 
-	req, err = http.NewRequest(http.MethodGet, t.serverURL, nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, t.serverURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

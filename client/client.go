@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/bytedance/sonic"
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -45,6 +46,12 @@ func WithClientInfo(info protocol.Implementation) Option {
 	}
 }
 
+func WithInitTimeout(timeout time.Duration) Option {
+	return func(s *Client) {
+		s.initTimeout = timeout
+	}
+}
+
 func WithLogger(logger pkg.Logger) Option {
 	return func(s *Client) {
 		s.logger = logger
@@ -72,6 +79,8 @@ type Client struct {
 	serverInfo         *protocol.Implementation
 	serverInstructions string
 
+	initTimeout time.Duration
+
 	logger pkg.Logger
 }
 
@@ -82,6 +91,7 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 		ready:              *pkg.NewBoolAtomic(),
 		clientInfo:         &protocol.Implementation{},
 		clientCapabilities: &protocol.ClientCapabilities{},
+		initTimeout:        time.Second * 30,
 		logger:             pkg.DefaultLogger,
 	}
 	t.SetReceiver(transport.ClientReceiverF(client.receive))
@@ -114,11 +124,14 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 		}
 	}
 
-	if err := client.transport.Start(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), client.initTimeout)
+	defer cancel()
+
+	if err := client.transport.Start(ctx); err != nil {
 		return nil, fmt.Errorf("init mcp client transpor start fail: %w", err)
 	}
 
-	if _, err := client.initialization(context.Background(), protocol.NewInitializeRequest(*client.clientInfo, *client.clientCapabilities)); err != nil {
+	if _, err := client.initialization(ctx, protocol.NewInitializeRequest(*client.clientInfo, *client.clientCapabilities)); err != nil {
 		return nil, err
 	}
 

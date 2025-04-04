@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -30,7 +29,7 @@ func TestSSE(t *testing.T) {
 		t.Fatalf("NewSSEServerTransport failed: %v", err)
 	}
 
-	if client, err = NewSSEClientTransport(context.Background(), clientURL); err != nil {
+	if client, err = NewSSEClientTransport(clientURL); err != nil {
 		t.Fatalf("NewSSEClientTransport failed: %v", err)
 	}
 
@@ -80,7 +79,7 @@ func TestSSEHandler(t *testing.T) {
 		// Server started normally
 	}
 
-	if client, err = NewSSEClientTransport(context.Background(), serverURL); err != nil {
+	if client, err = NewSSEClientTransport(serverURL); err != nil {
 		t.Fatalf("NewSSEClientTransport failed: %v", err)
 	}
 

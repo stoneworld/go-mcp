@@ -1,14 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-
-	<-sigChan
+	if _, err := os.Stdin.Read(make([]byte, 1)); err != nil {
+		fmt.Println(err)
+		return
+	}
 }

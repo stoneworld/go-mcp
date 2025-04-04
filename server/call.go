@@ -87,10 +87,10 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 //
 // 	respChan := make(chan *protocol.JSONRPCResponse)
 // 	session.reqID2respChan.Set(requestID, respChan)
+//  defer session.reqID2respChan.Remove(requestID)
 //
 // 	select {
 // 	case <-ctx.Done():
-// 		session.reqID2respChan.Remove(requestID)
 // 		return nil, ctx.Err()
 // 	case response := <-respChan:
 // 		if err := response.Error; err != nil {
