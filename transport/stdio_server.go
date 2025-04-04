@@ -69,20 +69,8 @@ func (t *stdioServerTransport) SetReceiver(receiver ServerReceiver) {
 }
 
 func (t *stdioServerTransport) Shutdown(userCtx context.Context, serverCtx context.Context) error {
-	t.cancel()
-
-	if err := t.reader.Close(); err != nil {
-		return err
-	}
-
-	<-t.receiveShutDone
-
-	select {
-	case <-serverCtx.Done():
-		return nil
-	case <-userCtx.Done():
-		return userCtx.Err()
-	}
+	// After calling `close` on `os.Stdin` in Go, it does not support interrupting an ongoing read operation; therefore, `stdioServerTransport` does not support `Shutdown`.
+	return fmt.Errorf("stdioServerTransport not support shutdown, please listen Run()")
 }
 
 func (t *stdioServerTransport) receive(ctx context.Context) {
