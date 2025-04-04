@@ -230,9 +230,8 @@ func (client *Client) callServer(ctx context.Context, method protocol.Method, pa
 
 	respChan := make(chan *protocol.JSONRPCResponse, 1)
 
-	defer client.reqID2respChan.Remove(requestID)
-
 	client.reqID2respChan.Set(requestID, respChan)
+	defer client.reqID2respChan.Remove(requestID)
 
 	select {
 	case <-ctx.Done():
