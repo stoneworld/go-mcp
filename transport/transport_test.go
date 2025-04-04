@@ -49,6 +49,10 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 	}
 
 	defer func() {
+		if _, ok := server.(*stdioServerTransport); ok { // stdioServerTransport not support shutdown
+			return
+		}
+
 		userCtx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 		defer cancel()
 
