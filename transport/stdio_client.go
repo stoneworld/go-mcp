@@ -31,7 +31,7 @@ const mcpMessageDelimiter = '\n'
 type stdioClientTransport struct {
 	cmd      *exec.Cmd
 	receiver ClientReceiver
-	reader   io.ReadCloser
+	reader   io.Reader
 	writer   io.WriteCloser
 
 	logger pkg.Logger
@@ -69,18 +69,18 @@ func NewStdioClientTransport(command string, args []string, opts ...StdioClientT
 	return t, nil
 }
 
-func (t *stdioClientTransport) Start() error {
+func (t *stdioClientTransport) Start(_ context.Context) error {
 	if err := t.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start command: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	innerCtx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
 
 	go func() {
 		defer pkg.Recover()
 
-		t.receive(ctx)
+		t.receive(innerCtx)
 		close(t.receiveShutDone)
 	}()
 
@@ -102,11 +102,8 @@ func (t *stdioClientTransport) Close() error {
 	if err := t.writer.Close(); err != nil {
 		return fmt.Errorf("failed to close writer: %w", err)
 	}
-	if err := t.reader.Close(); err != nil {
-		return fmt.Errorf("failed to close writer: %w", err)
-	}
 
-	if err := t.cmd.Process.Kill(); err != nil {
+	if err := t.cmd.Wait(); err != nil {
 		return err
 	}
 

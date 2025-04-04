@@ -20,7 +20,7 @@ func (msg Message) String() string {
 
 type ClientTransport interface {
 	// Start initiates the transport connection
-	Start() error
+	Start(ctx context.Context) error
 
 	// Send transmits a message
 	Send(ctx context.Context, msg Message) error

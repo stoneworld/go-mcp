@@ -26,7 +26,7 @@ func main() {
 	srv, err := server.NewServer(
 		getTransport(),
 		server.WithServerInfo(protocol.Implementation{
-			Name:    "current-time-v2-client",
+			Name:    "current-time-v2-server",
 			Version: "1.0.0",
 		}),
 	)

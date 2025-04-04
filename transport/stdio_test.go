@@ -9,6 +9,29 @@ import (
 	"testing"
 )
 
+type mock struct {
+	reader *io.PipeReader
+	writer *io.PipeWriter
+	closer io.Closer
+}
+
+func (m *mock) Write(p []byte) (n int, err error) {
+	return m.writer.Write(p)
+}
+
+func (m *mock) Close() error {
+	if err := m.writer.Close(); err != nil {
+		return err
+	}
+	if err := m.reader.Close(); err != nil {
+		return err
+	}
+	if err := m.closer.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func TestStdioTransport(t *testing.T) {
 	var (
 		err    error
@@ -43,7 +66,11 @@ func TestStdioTransport(t *testing.T) {
 	server.reader = reader2
 	server.writer = writer1
 	client.reader = reader1
-	client.writer = writer2
+	client.writer = &mock{
+		reader: reader1,
+		writer: writer2,
+		closer: client.writer,
+	}
 
 	testTransport(t, client, server)
 }
