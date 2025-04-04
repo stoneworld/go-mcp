@@ -79,7 +79,7 @@ import (
 
 func main() {
 	// 创建传输客户端（本例中使用 SSE）
-	transportClient, err := transport.NewSSEClientTransport(context.Background(), "http://localhost:8080/sse")
+	transportClient, err := transport.NewSSEClientTransport(context.Background(), "http://127.0.0.1:8080/sse")
 	if err != nil {
 		log.Fatalf("创建传输客户端失败: %v", err)
 	}
@@ -149,7 +149,7 @@ import (
 
 func main() {
 	// 创建传输服务器（本例使用 SSE）
-	transportServer, err := transport.NewSSEServerTransport("localhost:8080")
+	transportServer, err := transport.NewSSEServerTransport("127.0.0.1:8080")
 	if err != nil {
 		log.Fatalf("创建传输服务器失败: %v", err)
 	}
