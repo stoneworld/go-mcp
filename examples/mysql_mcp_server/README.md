@@ -1,43 +1,43 @@
-# MySQL MCP Sever 例子
+# MySQL MCP Server Example
 
-这是一个基于Go-MCP框架实现的MySQL工具服务器，提供了通过MCP协议与MySQL数据库交互的能力。
+This is a MySQL tool server implemented based on the Go-MCP framework, providing the ability to interact with MySQL databases through the MCP protocol.
 
-## 功能
+## Features
 
-服务器提供以下工具：
+The server provides the following tools:
 
-1. `mysql_query` - 执行MySQL查询（只读SELECT语句）
-2. `mysql_execute` - 执行MySQL更新操作（非查询语句如INSERT/UPDATE/DELETE）
+1. `mysql_query` - Execute MySQL queries (read-only SELECT statements)
+2. `mysql_execute` - Execute MySQL update operations (non-query statements like INSERT/UPDATE/DELETE)
 
-## 安装与运行
+## Installation and Running
 
-### 安装步骤
+### Installation Steps
 
-使用 `go install` 命令安装到 `$GOPATH/bin` 目录：
+Use the `go install` command to install to the `$GOPATH/bin` directory:
 
 ```bash
-# 从GitHub克隆仓库
+# Clone the repository from GitHub
 git clone https://github.com/ThinkInAIXYZ/go-mcp.git
 cd go-mcp/examples/mysql_mcp_server
 
-# 安装MySQL MCP服务器
+# Install MySQL MCP server
 go install
 ```
 
-安装完成后，可以直接运行：
+After installation, you can run it directly:
 
 ```bash
-# 使用默认配置
+# Use default configuration
 mysql_mcp_server
 
-# 指定MySQL连接
-mysql_mcp_server -dsn "用户名:密码@tcp(主机:端口)/数据库名"
+# Specify MySQL connection
+mysql_mcp_server -dsn "username:password@tcp(host:port)/database_name"
 ```
 
-## 在Deepchat中配置与使用
-### 配置步骤
-1. 进入设置->MCP设置->添加服务器
-2. 填入如下配置
+## Configuration and Usage in Deepchat
+### Configuration Steps
+1. Go to Settings->MCP Settings->Add Server
+2. Enter the following configuration
 ```json
 {
     "mcpServers": {
@@ -52,12 +52,12 @@ mysql_mcp_server -dsn "用户名:密码@tcp(主机:端口)/数据库名"
 }
 ```
 
-## 在Cursor中配置与使用
+## Configuration and Usage in Cursor
 
-### 配置步骤
+### Configuration Steps
 
-1. 编辑Cursor的MCP配置文件（通常位于`~/.cursor/mcp.json`）
-2. 添加如下配置：
+1. Edit Cursor's MCP configuration file (usually located at `~/.cursor/mcp.json`)
+2. Add the following configuration:
 
 ```json
 "go_mysql_mcp": {
@@ -69,14 +69,14 @@ mysql_mcp_server -dsn "用户名:密码@tcp(主机:端口)/数据库名"
 }
 ```
 
-### 在Cursor中使用
+### Using in Cursor
 
-直接在Cursor对话中使用：
+Use directly in Cursor dialog:
 
 ```
 /mysql_query SELECT * FROM users LIMIT 10
 ```
 
 ```
-/mysql_execute INSERT INTO users (name, email) VALUES ('张三', 'zhangsan@example.com')
+/mysql_execute INSERT INTO users (name, email) VALUES ('John Doe', 'johndoe@example.com')
 ```
