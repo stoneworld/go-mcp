@@ -1,12 +1,12 @@
-// MySQL MCP Server - 提供MySQL数据库访问工具
+// MySQL MCP Server - MySQL database access tools
 //
-// 使用方法:
+// Usage:
 //
-//	mysql_mcp_server -dsn "用户名:密码@tcp(主机:端口)/数据库名"
+//	mysql_mcp_server -dsn "username:password@tcp(host:port)/database_name"
 //
-// 支持的工具:
-//   - mysql_query: 执行MySQL查询（只读，SELECT语句）
-//   - mysql_execute: 执行MySQL更新操作（非查询语句）
+// Supported tools:
+//   - mysql_query: Execute MySQL queries (read-only, SELECT statements)
+//   - mysql_execute: Execute MySQL update operations (non-query statements)
 package main
 
 import (
@@ -23,24 +23,24 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// dsn 定义MySQL数据库连接字符串
-// 格式: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
-// 默认值: root:password@tcp(127.0.0.1:3306)/test
-var dsn = flag.String("dsn", "root:password@tcp(127.0.0.1:3306)/test", "MySQL连接字符串")
+// dsn defines MySQL database connection string
+// Format: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
+// Default value: root:password@tcp(127.0.0.1:3306)/test
+var dsn = flag.String("dsn", "root:password@tcp(127.0.0.1:3306)/test", "MySQL connection string")
 
-// 数据库连接
+// Database connection
 var db *sql.DB
 
 func main() {
 	flag.Parse()
 
-	// 初始化数据库
+	// Initialize database
 	if err := initDB(); err != nil {
-		log.Fatalf("数据库连接失败: %v", err)
+		log.Fatalf("Database connection failed: %v", err)
 	}
 	defer db.Close()
 
-	// 创建MCP服务器
+	// Create MCP server
 	srv, err := server.NewServer(
 		transport.NewStdioServerTransport(),
 		server.WithServerInfo(protocol.Implementation{
@@ -49,49 +49,49 @@ func main() {
 		}),
 	)
 	if err != nil {
-		log.Fatalf("服务器创建失败: %v", err)
+		log.Fatalf("Server creation failed: %v", err)
 	}
 
-	// 注册查询工具
+	// Register query tool
 	srv.RegisterTool(&protocol.Tool{
 		Name:        "mysql_query",
-		Description: "执行MySQL查询（只读，SELECT语句）",
+		Description: "Execute MySQL queries (read-only, SELECT statements)",
 		InputSchema: protocol.InputSchema{
 			Type: protocol.Object,
 			Properties: map[string]interface{}{
 				"sql": map[string]string{
 					"type":        "string",
-					"description": "要执行的SQL查询语句",
+					"description": "SQL query statement to execute",
 				},
 			},
 			Required: []string{"sql"},
 		},
 	}, handleQuery)
 
-	// 注册执行工具
+	// Register execute tool
 	srv.RegisterTool(&protocol.Tool{
 		Name:        "mysql_execute",
-		Description: "执行MySQL更新操作（INSERT/UPDATE/DELETE等非查询语句）",
+		Description: "Execute MySQL update operations (INSERT/UPDATE/DELETE and other non-query statements)",
 		InputSchema: protocol.InputSchema{
 			Type: protocol.Object,
 			Properties: map[string]interface{}{
 				"sql": map[string]string{
 					"type":        "string",
-					"description": "要执行的SQL语句",
+					"description": "SQL statement to execute",
 				},
 			},
 			Required: []string{"sql"},
 		},
 	}, handleExecute)
 
-	// 启动服务器
-	log.Println("使用stdio传输模式启动MySQL MCP服务器")
+	// Start server
+	log.Println("Starting MySQL MCP Server with stdio transport mode")
 	if err = srv.Run(); err != nil {
-		log.Fatalf("服务运行错误: %v", err)
+		log.Fatalf("Service runtime error: %v", err)
 	}
 }
 
-// 初始化数据库连接
+// Initialize database connection
 func initDB() error {
 	var err error
 	db, err = sql.Open("mysql", *dsn)
@@ -101,32 +101,32 @@ func initDB() error {
 
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(60) // 1分钟
+	db.SetConnMaxLifetime(60) // 1 minute
 
 	return db.Ping()
 }
 
-// 处理Mysql查询请求
+// Handle MySQL query requests
 func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 	sql, ok := request.Arguments["sql"].(string)
 	if !ok {
-		return nil, errors.New("sql必须是字符串")
+		return nil, errors.New("sql must be a string")
 	}
 
-	// 执行查询
+	// Execute query
 	rows, err := db.Query(sql)
 	if err != nil {
-		return nil, fmt.Errorf("查询执行错误: %v", err)
+		return nil, fmt.Errorf("query execution error: %v", err)
 	}
 	defer rows.Close()
 
-	// 获取列名
+	// Get column names
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, fmt.Errorf("获取列名失败: %v", err)
+		return nil, fmt.Errorf("failed to get column names: %v", err)
 	}
 
-	// 处理结果
+	// Process results
 	var results []map[string]interface{}
 	values := make([]interface{}, len(columns))
 	scanArgs := make([]interface{}, len(columns))
@@ -136,7 +136,7 @@ func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, e
 
 	for rows.Next() {
 		if err = rows.Scan(scanArgs...); err != nil {
-			return nil, fmt.Errorf("读取行数据失败: %v", err)
+			return nil, fmt.Errorf("failed to read row data: %v", err)
 		}
 
 		row := make(map[string]interface{})
@@ -152,13 +152,13 @@ func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, e
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("遍历结果错误: %v", err)
+		return nil, fmt.Errorf("error iterating through results: %v", err)
 	}
 
-	// 转换为JSON
+	// Convert to JSON
 	jsonData, err := json.Marshal(results)
 	if err != nil {
-		return nil, fmt.Errorf("JSON序列化失败: %v", err)
+		return nil, fmt.Errorf("JSON serialization failed: %v", err)
 	}
 
 	return &protocol.CallToolResult{
@@ -171,20 +171,20 @@ func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, e
 	}, nil
 }
 
-// 处理Mysql执行请求
+// Handle MySQL execute requests
 func handleExecute(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 	sql, ok := request.Arguments["sql"].(string)
 	if !ok {
-		return nil, errors.New("sql必须是字符串")
+		return nil, errors.New("sql must be a string")
 	}
 
-	// 执行SQL
+	// Execute SQL
 	result, err := db.Exec(sql)
 	if err != nil {
-		return nil, fmt.Errorf("执行SQL错误: %v", err)
+		return nil, fmt.Errorf("SQL execution error: %v", err)
 	}
 
-	// 获取结果
+	// Get results
 	lastInsertID, _ := result.LastInsertId()
 	rowsAffected, _ := result.RowsAffected()
 
@@ -195,7 +195,7 @@ func handleExecute(request *protocol.CallToolRequest) (*protocol.CallToolResult,
 
 	jsonData, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("JSON序列化失败: %v", err)
+		return nil, fmt.Errorf("JSON serialization failed: %v", err)
 	}
 
 	return &protocol.CallToolResult{
