@@ -136,7 +136,7 @@ Here's a basic server implementation example showing how to create an MCP server
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -145,6 +145,10 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/server"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
+
+type currentTimeReq struct {
+	Timezone string `json:"timezone" description:"current time timezone"`
+}
 
 func main() {
 	// Create transport server (using SSE in this example)
@@ -165,27 +169,20 @@ func main() {
 		log.Fatalf("Failed to create MCP server: %v", err)
 	}
 
+	tool, err := protocol.NewTool("current time", "Get current time with timezone, Asia/Shanghai is default", currentTimeReq{})
+	if err != nil {
+		log.Fatalf("Failed to create tool: %v", err)
+		return
+	}
+
 	// Register tool handler
-	mcpServer.RegisterTool(&protocol.Tool{
-		Name:        "current time",
-		Description: "Get current time with timezone, Asia/Shanghai is default",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"timezone": map[string]string{
-					"type":        "string",
-					"description": "current time timezone",
-				},
-			},
-			Required: []string{"timezone"},
-		},
-	}, func(req *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-		timezone, ok := req.Arguments["timezone"].(string)
-		if !ok {
-			return nil, errors.New("timezone must be a string")
+	mcpServer.RegisterTool(tool, func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+		req := new(currentTimeReq)
+		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+			return nil, err
 		}
 
-		loc, err := time.LoadLocation(timezone)
+		loc, err := time.LoadLocation(req.Timezone)
 		if err != nil {
 			return nil, fmt.Errorf("parse timezone with error: %v", err)
 		}

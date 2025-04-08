@@ -12,15 +12,15 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/server"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // dsn defines MySQL database connection string
@@ -30,6 +30,14 @@ var dsn = flag.String("dsn", "root:password@tcp(127.0.0.1:3306)/test", "MySQL co
 
 // Database connection
 var db *sql.DB
+
+type mysqlQueryReq struct {
+	SQL string `json:"sql" description:"SQL query statement to execute"`
+}
+
+type mysqlExecuteReq struct {
+	SQL string `json:"sql" description:"SQL statement to execute"`
+}
 
 func main() {
 	flag.Parse()
@@ -52,37 +60,27 @@ func main() {
 		log.Fatalf("Server creation failed: %v", err)
 	}
 
+	queryTool, err := protocol.NewTool(
+		"mysql_query",
+		"Execute MySQL queries (read-only, SELECT statements)",
+		mysqlQueryReq{})
+	if err != nil {
+		log.Fatalf("Failed to create query tool: %v", err)
+		return
+	}
 	// Register query tool
-	srv.RegisterTool(&protocol.Tool{
-		Name:        "mysql_query",
-		Description: "Execute MySQL queries (read-only, SELECT statements)",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"sql": map[string]string{
-					"type":        "string",
-					"description": "SQL query statement to execute",
-				},
-			},
-			Required: []string{"sql"},
-		},
-	}, handleQuery)
+	srv.RegisterTool(queryTool, handleQuery)
 
+	executeTool, err := protocol.NewTool(
+		"mysql_execute",
+		"Execute MySQL update operations (INSERT/UPDATE/DELETE and other non-query statements)",
+		mysqlExecuteReq{})
+	if err != nil {
+		log.Fatalf("Failed to create query tool: %v", err)
+		return
+	}
 	// Register execute tool
-	srv.RegisterTool(&protocol.Tool{
-		Name:        "mysql_execute",
-		Description: "Execute MySQL update operations (INSERT/UPDATE/DELETE and other non-query statements)",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"sql": map[string]string{
-					"type":        "string",
-					"description": "SQL statement to execute",
-				},
-			},
-			Required: []string{"sql"},
-		},
-	}, handleExecute)
+	srv.RegisterTool(executeTool, handleExecute)
 
 	// Start server
 	log.Println("Starting MySQL MCP Server with stdio transport mode")
@@ -108,13 +106,13 @@ func initDB() error {
 
 // Handle MySQL query requests
 func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	sql, ok := request.Arguments["sql"].(string)
-	if !ok {
-		return nil, errors.New("sql must be a string")
+	req := new(mysqlQueryReq)
+	if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		return nil, err
 	}
 
 	// Execute query
-	rows, err := db.Query(sql)
+	rows, err := db.Query(req.SQL)
 	if err != nil {
 		return nil, fmt.Errorf("query execution error: %v", err)
 	}
@@ -173,13 +171,13 @@ func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, e
 
 // Handle MySQL execute requests
 func handleExecute(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-	sql, ok := request.Arguments["sql"].(string)
-	if !ok {
-		return nil, errors.New("sql must be a string")
+	req := new(mysqlExecuteReq)
+	if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		return nil, err
 	}
 
 	// Execute SQL
-	result, err := db.Exec(sql)
+	result, err := db.Exec(req.SQL)
 	if err != nil {
 		return nil, fmt.Errorf("SQL execution error: %v", err)
 	}

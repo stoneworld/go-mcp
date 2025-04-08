@@ -123,10 +123,10 @@ func TestClientCall(t *testing.T) {
 				Description: "test_tool",
 				InputSchema: protocol.InputSchema{
 					Type: protocol.Object,
-					Properties: map[string]interface{}{
-						"timezone": map[string]interface{}{
-							"type":        "string",
-							"description": "current time timezone",
+					Properties: map[string]*protocol.Property{
+						"timezone": {
+							Type:        "string",
+							Description: "current time timezone",
 						},
 					},
 					Required: []string{"timezone"},

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -21,6 +21,10 @@ var (
 	addr = "127.0.0.1:8080"
 )
 
+type currentTimeReq struct {
+	Timezone string `json:"timezone" description:"current time timezone"`
+}
+
 func main() {
 	// new mcp server with stdio or sse transport
 	srv, err := server.NewServer(
@@ -35,29 +39,20 @@ func main() {
 	}
 
 	// new protocal tool with name, descipriton and properties
-	tool := &protocol.Tool{
-		Name:        "current time",
-		Description: "Get current time with timezone, Asia/Shanghai is default",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"timezone": map[string]string{
-					"type":        "string",
-					"description": "current time timezone",
-				},
-			},
-			Required: []string{"timezone"},
-		},
+	tool, err := protocol.NewTool("current time", "Get current time with timezone, Asia/Shanghai is default", currentTimeReq{})
+	if err != nil {
+		log.Fatalf("Failed to create tool: %v", err)
+		return
 	}
 
 	// new tool handler and return result
 	handler := func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-		timezone, ok := request.Arguments["timezone"].(string)
-		if !ok {
-			return nil, errors.New("timezone must be a string")
+		req := new(currentTimeReq)
+		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+			return nil, err
 		}
 
-		loc, err := time.LoadLocation(timezone)
+		loc, err := time.LoadLocation(req.Timezone)
 		if err != nil {
 			return nil, fmt.Errorf("parse timezone with error: %v", err)
 		}
