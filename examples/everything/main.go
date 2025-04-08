@@ -76,28 +76,21 @@ func main() {
 	// srv.RegisterPrompt()
 	// srv.RegisterResourceTemplate()
 
-	if mode == "stdio" { // stdio 不支持 Shutdown
-		if err = srv.Run(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-	} else {
-		errCh := make(chan error)
-		go func() {
-			errCh <- srv.Run()
-		}()
+	errCh := make(chan error)
+	go func() {
+		errCh <- srv.Run()
+	}()
 
-		if err = signalWaiter(errCh); err != nil {
-			log.Fatalf("signal waiter: %v", err)
-			return
-		}
+	if err = signalWaiter(errCh); err != nil {
+		log.Fatalf("signal waiter: %v", err)
+		return
+	}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Fatalf("Shutdown error: %v", err)
-		}
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Shutdown error: %v", err)
 	}
 }
 

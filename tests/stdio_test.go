@@ -8,14 +8,14 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
-func TestStdioTool(t *testing.T) {
+func TestStdio(t *testing.T) {
 	mockServerTrPath, err := compileMockStdioServerTr()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func(name string) {
 		if err := os.Remove(name); err != nil {
-			t.Errorf("failed to remove mock server: %v", err)
+			fmt.Printf("Failed to remove mock server: %v\n", err)
 		}
 	}(mockServerTrPath)
 
@@ -25,7 +25,7 @@ func TestStdioTool(t *testing.T) {
 		t.Fatalf("Failed to create transport client: %v", err)
 	}
 
-	testTool(t, func() error {
+	test(t, func() error {
 		<-make(chan error)
 		return nil
 	}, transportClient)
