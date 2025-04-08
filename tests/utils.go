@@ -16,7 +16,7 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
-func testTool(t *testing.T, runServer func() error, transportClient transport.ClientTransport) {
+func test(t *testing.T, runServer func() error, transportClient transport.ClientTransport) {
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- runServer()

@@ -11,7 +11,7 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
-func TestSSETool(t *testing.T) {
+func TestSSE(t *testing.T) {
 	port, err := getAvailablePort()
 	if err != nil {
 		t.Fatalf("Failed to get available port: %v", err)
@@ -22,7 +22,7 @@ func TestSSETool(t *testing.T) {
 		t.Fatalf("Failed to create transport client: %v", err)
 	}
 
-	testTool(t, func() error { return runSSEServer(port) }, transportClient)
+	test(t, func() error { return runSSEServer(port) }, transportClient)
 }
 
 // getAvailablePort returns a port that is available for use
