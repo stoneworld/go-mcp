@@ -220,7 +220,7 @@ The Go-MCP SDK adopts a clear layered architecture design, ensuring code modular
 
 Go-MCP's architecture can be abstracted into three main layers:
 
-![img.png](docs/images/img.png)
+![img.png](docs/images/wechat_qrcode.png)
 
 1. **Transport Layer**: Handles underlying communication, supporting different transport protocols
 2. **Protocol Layer**: Implements all MCP protocol functionality and data structures
@@ -379,6 +379,8 @@ This project is licensed under the [MIT License](LICENSE). The MIT License is a 
 For questions, suggestions, or issues, please contact us through:
 
 - **GitHub Issues**: Create an issue on the [project repository](https://github.com/ThinkInAIXYZ/go-mcp/issues)
+- **WeChat**: Scan the QR code below to join our GO-MCP user group.
+![img.png](docs/images/wechat_qrcode.png)
 
 We welcome any form of feedback and contribution and are committed to building a friendly, inclusive community.
 
