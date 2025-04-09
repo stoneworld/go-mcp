@@ -220,7 +220,7 @@ The Go-MCP SDK adopts a clear layered architecture design, ensuring code modular
 
 Go-MCP's architecture can be abstracted into three main layers:
 
-![img.png](docs/images/wechat_qrcode.png)
+![img.png](docs/images/img.png)
 
 1. **Transport Layer**: Handles underlying communication, supporting different transport protocols
 2. **Protocol Layer**: Implements all MCP protocol functionality and data structures

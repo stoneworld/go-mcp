@@ -216,7 +216,7 @@ Go-MCP SDK 采用了清晰的分层架构设计，确保了代码的模块化、
 
 Go-MCP 的架构可以抽象为三个主要层次：
 
-![img.png](docs/images/wechat_qrcode.png)
+![img.png](docs/images/img.png)
 
 1. **传输层（Transport Layer）**：负责底层通信，支持不同的传输协议
 2. **协议层（Protocol Layer）**：实现 MCP 协议的所有功能和数据结构
