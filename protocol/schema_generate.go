@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 )
 
 type DataType string
@@ -30,6 +32,12 @@ type Property struct {
 	Required   []string             `json:"required,omitempty"`
 }
 
+var schemaCache = pkg.SyncMap[*InputSchema]{}
+
+func GenerateSchemaFromReqStruct(v any) (*InputSchema, error) {
+	return generateSchemaFromReqStruct(v)
+}
+
 func generateSchemaFromReqStruct(v any) (*InputSchema, error) {
 	t := reflect.TypeOf(v)
 	for t.Kind() != reflect.Struct {
@@ -37,6 +45,11 @@ func generateSchemaFromReqStruct(v any) (*InputSchema, error) {
 			return nil, fmt.Errorf("invalid type %v", t)
 		}
 		t = t.Elem()
+	}
+
+	typeUID := getTypeUUID(t)
+	if schema, ok := schemaCache.Load(typeUID); ok {
+		return schema, nil
 	}
 
 	schema := &InputSchema{Type: Object}
@@ -48,7 +61,13 @@ func generateSchemaFromReqStruct(v any) (*InputSchema, error) {
 
 	schema.Properties = property.Properties
 	schema.Required = property.Required
+
+	schemaCache.Store(typeUID, schema)
 	return schema, nil
+}
+
+func getTypeUUID(t reflect.Type) string {
+	return t.PkgPath() + "/" + t.Name()
 }
 
 func reflectSchemaByObject(t reflect.Type) (*Property, error) {
@@ -64,10 +83,14 @@ func reflectSchemaByObject(t reflect.Type) (*Property, error) {
 		}
 
 		jsonTag := field.Tag.Get("json")
+		if jsonTag == "-" {
+			continue
+		}
 		var required = true
 		if jsonTag == "" {
 			jsonTag = field.Name
-		} else if strings.HasSuffix(jsonTag, ",omitempty") {
+		}
+		if strings.HasSuffix(jsonTag, ",omitempty") {
 			jsonTag = strings.TrimSuffix(jsonTag, ",omitempty")
 			required = false
 		}
