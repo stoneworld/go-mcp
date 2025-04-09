@@ -375,6 +375,8 @@ Go-MCP 的设计遵循以下核心原则：
 如有问题、建议或问题，请通过以下方式联系我们：
 
 - **GitHub Issues**：在 [项目仓库](https://github.com/ThinkInAIXYZ/go-mcp/issues) 上创建一个 issue
+- **微信**: 扫描下面的二维码加入我们的 GO-MCP 用户群
+  ![img.png](docs/images/wechat_qrcode.png)
 
 我们欢迎任何形式的反馈和贡献，并致力于构建一个友好、包容的社区。
 
