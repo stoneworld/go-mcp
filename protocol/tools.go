@@ -26,6 +26,30 @@ type Tool struct {
 
 	// InputSchema defines the expected parameters for the tool using JSON Schema
 	InputSchema InputSchema `json:"inputSchema"`
+
+	RawInputSchema json.RawMessage `json:"-"`
+}
+
+func (t *Tool) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{}, 3)
+
+	m["name"] = t.Name
+	if t.Description != "" {
+		m["description"] = t.Description
+	}
+
+	// Determine which schema to use
+	if t.RawInputSchema != nil {
+		if t.InputSchema.Type != "" {
+			return nil, fmt.Errorf("inputSchema field conflict")
+		}
+		m["inputSchema"] = t.RawInputSchema
+	} else {
+		// Use the structured InputSchema
+		m["inputSchema"] = t.InputSchema
+	}
+
+	return json.Marshal(m)
 }
 
 type InputSchemaType string
@@ -34,15 +58,40 @@ const Object InputSchemaType = "object"
 
 // InputSchema represents a JSON Schema object defining the expected parameters for a tool
 type InputSchema struct {
-	Type       InputSchemaType        `json:"type"`
-	Properties map[string]interface{} `json:"properties,omitempty"`
-	Required   []string               `json:"required,omitempty"`
+	Type       InputSchemaType      `json:"type"`
+	Properties map[string]*Property `json:"properties,omitempty"`
+	Required   []string             `json:"required,omitempty"`
 }
 
 // CallToolRequest represents a request to call a specific tool
 type CallToolRequest struct {
-	Name      string                 `json:"name"`
-	Arguments map[string]interface{} `json:"arguments,omitempty"`
+	Name         string                 `json:"name"`
+	Arguments    map[string]interface{} `json:"arguments,omitempty"`
+	RawArguments json.RawMessage        `json:"-"`
+}
+
+func (r *CallToolRequest) UnmarshalJSON(data []byte) error {
+	type alias CallToolRequest
+	temp := &struct {
+		Arguments json.RawMessage `json:"arguments,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(r),
+	}
+
+	if err := pkg.JsonUnmarshal(data, temp); err != nil {
+		return err
+	}
+
+	r.RawArguments = temp.Arguments
+
+	if len(r.RawArguments) != 0 {
+		if err := pkg.JsonUnmarshal(r.RawArguments, &r.Arguments); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // CallToolResult represents the response to a tool call
@@ -96,6 +145,28 @@ func (r *CallToolResult) UnmarshalJSON(data []byte) error {
 // ToolListChangedNotification represents a notification that the tool list has changed
 type ToolListChangedNotification struct {
 	Meta map[string]interface{} `json:"_meta,omitempty"`
+}
+
+// NewTool create a tool
+func NewTool(name string, description string, inputReqStruct interface{}) (*Tool, error) {
+	schema, err := generateSchemaFromReqStruct(inputReqStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Tool{
+		Name:        name,
+		Description: description,
+		InputSchema: *schema,
+	}, nil
+}
+
+func NewToolWithRawSchema(name, description string, schema json.RawMessage) *Tool {
+	return &Tool{
+		Name:           name,
+		Description:    description,
+		RawInputSchema: schema,
+	}
 }
 
 // NewListToolsRequest creates a new list tools request

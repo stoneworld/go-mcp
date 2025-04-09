@@ -69,6 +69,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -131,7 +132,7 @@ func main() {
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -141,11 +142,15 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
+type currentTimeReq struct {
+	Timezone string `json:"timezone" description:"current time timezone"`
+}
+
 func main() {
 	// 创建传输服务器（本例使用 SSE）
 	transportServer, err := transport.NewSSEServerTransport("127.0.0.1:8080")
 	if err != nil {
-		log.Fatalf("创建传输服务器失败: %v", err)
+		log.Fatalf("Failed to create transport server: %v", err)
 	}
 
 	// 使用传输创建 MCP 服务器
@@ -157,30 +162,23 @@ func main() {
 		}),
 	)
 	if err != nil {
-		log.Fatalf("创建 MCP 服务器失败: %v", err)
+		log.Fatalf("Failed to create MCP server: %v", err)
+	}
+
+	tool, err := protocol.NewTool("current time", "Get current time with timezone, Asia/Shanghai is default", currentTimeReq{})
+	if err != nil {
+		log.Fatalf("Failed to create tool: %v", err)
+		return
 	}
 
 	// 注册工具处理器
-	mcpServer.RegisterTool(&protocol.Tool{
-		Name:        "current time",
-		Description: "Get current time with timezone, Asia/Shanghai is default",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"timezone": map[string]string{
-					"type":        "string",
-					"description": "current time timezone",
-				},
-			},
-			Required: []string{"timezone"},
-		},
-	}, func(req *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
-		timezone, ok := req.Arguments["timezone"].(string)
-		if !ok {
-			return nil, errors.New("timezone must be a string")
+	mcpServer.RegisterTool(tool, func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
+		req := new(currentTimeReq)
+		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+			return nil, err
 		}
 
-		loc, err := time.LoadLocation(timezone)
+		loc, err := time.LoadLocation(req.Timezone)
 		if err != nil {
 			return nil, fmt.Errorf("parse timezone with error: %v", err)
 		}
@@ -197,7 +195,7 @@ func main() {
 	})
 
 	if err = mcpServer.Run(); err != nil {
-		log.Fatalf("启动 MCP 服务器失败: %v", err)
+		log.Fatalf("Failed to start MCP server: %v", err)
 		return
 	}
 }

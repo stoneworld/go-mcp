@@ -15,6 +15,10 @@ import (
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
+type currentTimeReq struct {
+	Timezone string `json:"timezone" description:"current time timezone"`
+}
+
 func TestServerHandle(t *testing.T) {
 	reader1, writer1 := io.Pipe()
 	reader2, writer2 := io.Pipe()
@@ -50,20 +54,12 @@ func TestServerHandle(t *testing.T) {
 	}
 
 	// add tool
-	testTool := &protocol.Tool{
-		Name:        "test_tool",
-		Description: "test_tool",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"timezone": map[string]string{
-					"type":        "string",
-					"description": "current time timezone",
-				},
-			},
-			Required: []string{"timezone"},
-		},
+	testTool, err := protocol.NewTool("test_tool", "test_tool", currentTimeReq{})
+	if err != nil {
+		t.Fatalf("NewTool: %+v", err)
+		return
 	}
+
 	testToolCallContent := protocol.TextContent{
 		Type: "text",
 		Text: "pong",
@@ -303,20 +299,12 @@ func TestServerNotify(t *testing.T) {
 	}
 
 	// add tool
-	testTool := &protocol.Tool{
-		Name:        "test_tool",
-		Description: "test_tool",
-		InputSchema: protocol.InputSchema{
-			Type: protocol.Object,
-			Properties: map[string]interface{}{
-				"timezone": map[string]string{
-					"type":        "string",
-					"description": "current time timezone",
-				},
-			},
-			Required: []string{"timezone"},
-		},
+	testTool, err := protocol.NewTool("test_tool", "test_tool", currentTimeReq{})
+	if err != nil {
+		t.Fatalf("NewTool: %+v", err)
+		return
 	}
+
 	testToolCallContent := protocol.TextContent{
 		Type: "text",
 		Text: "pong",
