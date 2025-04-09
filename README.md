@@ -379,6 +379,7 @@ This project is licensed under the [MIT License](LICENSE). The MIT License is a 
 For questions, suggestions, or issues, please contact us through:
 
 - **GitHub Issues**: Create an issue on the [project repository](https://github.com/ThinkInAIXYZ/go-mcp/issues)
+- **Lark**: Click the [link](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=cb8p624e-7fdc-4929-8319-309259d12474) to join the GO-MCP user group.
 
 We welcome any form of feedback and contribution and are committed to building a friendly, inclusive community.
 
