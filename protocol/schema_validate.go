@@ -21,7 +21,7 @@ func VerifyAndUnmarshal(content json.RawMessage, v any) error {
 	typeUID := getTypeUUID(t)
 	schema, ok := schemaCache.Load(typeUID)
 	if !ok {
-		return fmt.Errorf("schema not exist in schemaCache: plz use func `pkg.JsonUnmarshal` instead")
+		return fmt.Errorf("schema has not been generated，unable to verify: plz use func `pkg.JsonUnmarshal` instead")
 	}
 
 	return VerifySchemaAndUnmarshal(Property{
@@ -109,13 +109,4 @@ func validateArray(schema Property, data any) bool {
 		}
 	}
 	return true
-}
-
-func contains[S ~[]E, E comparable](s S, v E) bool {
-	for i := range s {
-		if v == s[i] {
-			return true
-		}
-	}
-	return false
 }
