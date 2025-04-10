@@ -95,7 +95,7 @@ func (t *stdioServerTransport) receive(ctx context.Context) {
 		default:
 			if err := t.receiver.Receive(ctx, stdioSessionID, s.Bytes()); err != nil {
 				t.logger.Errorf("receiver failed: %v", err)
-				return
+				continue
 			}
 		}
 	}
