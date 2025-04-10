@@ -340,6 +340,10 @@ Go-MCP 的设计遵循以下核心原则：
 
 通过这种精心设计的架构，Go-MCP 为开发者提供了一个强大而灵活的工具，使他们能够轻松地将 MCP 协议集成到自己的应用中，无论是简单的命令行工具还是复杂的分布式系统。
 
+## Star 数量
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ThinkInAIXYZ/go-mcp&type=Date)](https://www.star-history.com/#ThinkInAIXYZ/go-mcp&Date)
+
 ## 🤝 贡献
 
 我们欢迎对 Go-MCP 项目的贡献！无论是报告问题、提出功能建议，还是提交代码改进，您的参与都将帮助我们使 SDK 变得更好。
