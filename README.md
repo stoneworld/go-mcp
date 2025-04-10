@@ -344,6 +344,11 @@ Go-MCP follows these core design principles:
 
 Through this carefully designed architecture, Go-MCP provides developers with a powerful and flexible tool, enabling them to easily integrate the MCP protocol into their applications, whether simple command-line tools or complex distributed systems.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ThinkInAIXYZ/go-mcp&type=Date)](https://www.star-history.com/#ThinkInAIXYZ/go-mcp&Date)
+
+
 ## 🤝 Contributing
 
 We welcome contributions to the Go-MCP project! Whether reporting issues, suggesting features, or submitting code improvements, your participation will help us make the SDK better.
