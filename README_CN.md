@@ -174,7 +174,7 @@ func main() {
 	// 注册工具处理器
 	mcpServer.RegisterTool(tool, func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		req := new(currentTimeReq)
-		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 			return nil, err
 		}
 
