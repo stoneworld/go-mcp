@@ -178,7 +178,7 @@ func main() {
 	// Register tool handler
 	mcpServer.RegisterTool(tool, func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		req := new(currentTimeReq)
-		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 			return nil, err
 		}
 
@@ -343,6 +343,11 @@ Go-MCP follows these core design principles:
 5. **Reliability**: Comprehensive error handling and recovery mechanisms ensure system stability in various scenarios
 
 Through this carefully designed architecture, Go-MCP provides developers with a powerful and flexible tool, enabling them to easily integrate the MCP protocol into their applications, whether simple command-line tools or complex distributed systems.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ThinkInAIXYZ/go-mcp&type=Date)](https://www.star-history.com/#ThinkInAIXYZ/go-mcp&Date)
+
 
 ## 🤝 Contributing
 

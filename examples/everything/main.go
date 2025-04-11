@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -42,7 +41,7 @@ func main() {
 	// new tool handler and return result
 	handler := func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		req := new(currentTimeReq)
-		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 			return nil, err
 		}
 

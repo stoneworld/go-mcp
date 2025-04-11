@@ -174,7 +174,7 @@ func main() {
 	// 注册工具处理器
 	mcpServer.RegisterTool(tool, func(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 		req := new(currentTimeReq)
-		if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+		if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 			return nil, err
 		}
 
@@ -339,6 +339,10 @@ Go-MCP 的设计遵循以下核心原则：
 5. **可靠性**：全面的错误处理和恢复机制，确保系统在各种情况下的稳定性
 
 通过这种精心设计的架构，Go-MCP 为开发者提供了一个强大而灵活的工具，使他们能够轻松地将 MCP 协议集成到自己的应用中，无论是简单的命令行工具还是复杂的分布式系统。
+
+## Star 数量
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ThinkInAIXYZ/go-mcp&type=Date)](https://www.star-history.com/#ThinkInAIXYZ/go-mcp&Date)
 
 ## 🤝 贡献
 

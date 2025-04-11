@@ -107,7 +107,7 @@ func initDB() error {
 // Handle MySQL query requests
 func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 	req := new(mysqlQueryReq)
-	if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+	if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func handleQuery(request *protocol.CallToolRequest) (*protocol.CallToolResult, e
 // Handle MySQL execute requests
 func handleExecute(request *protocol.CallToolRequest) (*protocol.CallToolResult, error) {
 	req := new(mysqlExecuteReq)
-	if err := json.Unmarshal(request.RawArguments, &req); err != nil {
+	if err := protocol.VerifyAndUnmarshal(request.RawArguments, &req); err != nil {
 		return nil, err
 	}
 
