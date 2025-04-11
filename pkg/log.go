@@ -21,6 +21,10 @@ var DefaultLogger Logger = &defaultLogger{
 	logLevel: LogLevelInfo,
 }
 
+var DebugLogger Logger = &defaultLogger{
+	logLevel: LogLevelDebug,
+}
+
 type defaultLogger struct {
 	logLevel LogLevel
 }
