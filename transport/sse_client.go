@@ -201,6 +201,8 @@ func (t *sseClientTransport) Send(ctx context.Context, msg Message) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+
 	if resp, err = t.client.Do(req); err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
