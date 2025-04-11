@@ -60,7 +60,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 		cancel()
 
 		if err := server.Shutdown(userCtx, serverCtx); err != nil {
-			t.Errorf("server.Shutdown() failed: %v", err)
+			t.Fatalf("server.Shutdown() failed: %v", err)
 		}
 	}()
 
@@ -70,7 +70,7 @@ func testTransport(t *testing.T, client ClientTransport, server ServerTransport)
 
 	defer func() {
 		if err := client.Close(); err != nil {
-			t.Errorf("client.Close() failed: %v", err)
+			t.Fatalf("client.Close() failed: %v", err)
 		}
 	}()
 

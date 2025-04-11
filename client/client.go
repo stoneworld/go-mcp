@@ -135,6 +135,19 @@ func NewClient(t transport.ClientTransport, opts ...Option) (*Client, error) {
 		return nil, err
 	}
 
+	go func() {
+		defer pkg.Recover()
+
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			if _, err := client.Ping(ctx, protocol.NewPingRequest()); err != nil {
+				client.logger.Warnf("mcp client ping server fail: %v", err)
+			}
+		}
+	}()
+
 	return client, nil
 }
 

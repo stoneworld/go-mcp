@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 
@@ -61,7 +62,7 @@ type Server struct {
 }
 
 type session struct {
-	// requestID atomic.Int64
+	requestID int64
 
 	reqID2respChan cmap.ConcurrentMap[string, chan *protocol.JSONRPCResponse]
 
@@ -105,11 +106,41 @@ func NewServer(t transport.ServerTransport, opts ...Option) (*Server, error) {
 
 	return server, nil
 }
+
 func (server *Server) Run() error {
-	if err := server.transport.Run(); err != nil {
-		return fmt.Errorf("init mcp server transpor start fail: %w", err)
+	errCh := make(chan error, 1)
+	go func() {
+		defer pkg.Recover()
+
+		errCh <- server.transport.Run()
+	}()
+
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case err := <-errCh:
+			if err != nil {
+				return fmt.Errorf("init mcp server transpor run fail: %w", err)
+			}
+			return nil
+		case <-ticker.C:
+			server.sessionID2session.Range(func(key string, value *session) bool {
+				if server.inShutdown.Load().(bool) {
+					return false
+				}
+
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+
+				if _, err := server.Ping(setSessionIDToCtx(ctx, key), protocol.NewPingRequest()); err != nil {
+					server.logger.Warnf("sessionID=%s ping failed: %v", key, err)
+				}
+				return true
+			})
+		}
 	}
-	return nil
 }
 
 type toolEntry struct {

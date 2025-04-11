@@ -166,13 +166,13 @@ func (t *sseServerTransport) Send(ctx context.Context, sessionID string, msg Mes
 	default:
 	}
 
-	conn, ok := t.sessionStore.Load(sessionID)
+	ch, ok := t.sessionStore.Load(sessionID)
 	if !ok {
 		return pkg.ErrLackSession
 	}
 
 	select {
-	case conn <- msg:
+	case ch <- msg:
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -210,14 +210,25 @@ func (t *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 
 	uri := fmt.Sprintf("%s?sessionID=%s", t.messageEndpointFullURL, sessionID)
 	// Send the initial endpoint event
-	_, _ = fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
+	_, err := fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
+	if err != nil {
+		t.logger.Errorf("send endpoint message fail")
+		return
+	}
 	flusher.Flush()
 
-	for msg := range sessionChan {
+	for {
 		select {
 		case <-ctx.Done():
+			t.logger.Debugf("sse connect request canceled: %+v, sessionID=%s", ctx.Err(), sessionID)
 			return
-		default:
+		case msg, ok := <-sessionChan:
+			t.logger.Debugf("Sending message: %s", string(msg))
+
+			if msg == nil && !ok { // There are no new messages and the chan has been closed, indicating that the request may need to be terminated.
+				return
+			}
+
 			_, err := fmt.Fprintf(w, "event: message\ndata: %s\n\n", msg)
 			if err != nil {
 				t.logger.Errorf("Failed to write message: %v", err)
@@ -294,7 +305,6 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 			close(ch)
 			return true
 		})
-
 	}
 
 	if t.httpSvr == nil {
