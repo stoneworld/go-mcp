@@ -40,7 +40,7 @@ func test(t *testing.T, runServer func() error, transportClient transport.Client
 	}
 	defer func() {
 		if err := mcpClient.Close(); err != nil {
-			t.Errorf("Failed to close MCP client: %v", err)
+			t.Fatalf("Failed to close MCP client: %v", err)
 			return
 		}
 	}()

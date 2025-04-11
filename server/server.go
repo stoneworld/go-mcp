@@ -134,7 +134,7 @@ func (server *Server) Run() error {
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 
-				if _, err := server.Ping(setSessionIDToCtx(ctx, key), &protocol.PingRequest{}); err != nil {
+				if _, err := server.Ping(setSessionIDToCtx(ctx, key), protocol.NewPingRequest()); err != nil {
 					server.logger.Warnf("sessionID=%s ping failed: %v", key, err)
 				}
 				return true
