@@ -81,7 +81,7 @@ func (t *MockServerTransport) receive(ctx context.Context) {
 		default:
 			if err := t.receiver.Receive(ctx, mockSessionID, s.Bytes()); err != nil {
 				t.logger.Errorf("receiver failed: %v", err)
-				return
+				continue
 			}
 		}
 	}

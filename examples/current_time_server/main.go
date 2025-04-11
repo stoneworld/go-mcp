@@ -89,7 +89,7 @@ func main() {
 func getTransport() (t transport.ServerTransport) {
 	var (
 		mode string
-		addr = "127.0.0.1:8081"
+		addr = "127.0.0.1:8080"
 	)
 
 	flag.StringVar(&mode, "transport", "stdio", "The transport to use, should be \"stdio\" or \"sse\"")

@@ -2,11 +2,32 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/ThinkInAIXYZ/go-mcp/pkg"
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
+
+func (server *Server) Ping(ctx context.Context, request *protocol.PingRequest) (*protocol.PingResult, error) {
+	sessionID, err := getSessionIDFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := server.callClient(ctx, sessionID, protocol.Ping, request)
+	if err != nil {
+		return nil, err
+	}
+
+	var result protocol.PingResult
+	if err := pkg.JsonUnmarshal(response, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return &result, nil
+}
 
 func (server *Server) sendNotification4ToolListChanges(ctx context.Context) error {
 	if server.capabilities.Tools == nil || !server.capabilities.Tools.ListChanged {
@@ -73,29 +94,29 @@ func (server *Server) SendNotification4ResourcesUpdated(ctx context.Context, not
 }
 
 // Responsible for request and response assembly
-// func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
-// 	session, ok := server.sessionID2session.Load(sessionID)
-// 	if !ok {
-// 		return nil, pkg.ErrLackSession
-// 	}
-//
-// 	requestID := strconv.FormatInt(session.requestID.Add(1), 10)
-//
-// 	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
-// 		return nil, err
-// 	}
-//
-// 	respChan := make(chan *protocol.JSONRPCResponse)
-// 	session.reqID2respChan.Set(requestID, respChan)
-//  defer session.reqID2respChan.Remove(requestID)
-//
-// 	select {
-// 	case <-ctx.Done():
-// 		return nil, ctx.Err()
-// 	case response := <-respChan:
-// 		if err := response.Error; err != nil {
-// 			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
-// 		}
-// 		return response.RawResult, nil
-// 	}
-// }
+func (server *Server) callClient(ctx context.Context, sessionID string, method protocol.Method, params protocol.ServerRequest) (json.RawMessage, error) {
+	session, ok := server.sessionID2session.Load(sessionID)
+	if !ok {
+		return nil, pkg.ErrLackSession
+	}
+
+	requestID := strconv.FormatInt(atomic.AddInt64(&session.requestID, 1), 10)
+	if err := server.sendMsgWithRequest(ctx, sessionID, requestID, method, params); err != nil {
+		return nil, err
+	}
+
+	respChan := make(chan *protocol.JSONRPCResponse, 1)
+
+	session.reqID2respChan.Set(requestID, respChan)
+	defer session.reqID2respChan.Remove(requestID)
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case response := <-respChan:
+		if err := response.Error; err != nil {
+			return nil, pkg.NewResponseError(err.Code, err.Message, err.Data)
+		}
+		return response.RawResult, nil
+	}
+}
