@@ -107,7 +107,7 @@ func (t *sseClientTransport) Start() error {
 
 			<-t.ctx.Done()
 
-			if err = resp.Body.Close(); err != nil {
+			if err := resp.Body.Close(); err != nil {
 				t.logger.Errorf("failed to close SSE stream body: %w", err)
 				return
 			}
