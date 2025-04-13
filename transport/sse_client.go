@@ -38,7 +38,7 @@ type sseClientTransport struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	serverURL string
+	serverURL *url.URL
 
 	endpointChan    chan struct{}
 	messageEndpoint *url.URL
@@ -51,12 +51,17 @@ type sseClientTransport struct {
 }
 
 func NewSSEClientTransport(serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
+	parsedURL, err := url.Parse(serverURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse server URL: %w", err)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	x := &sseClientTransport{
 		ctx:             ctx,
 		cancel:          cancel,
-		serverURL:       serverURL,
+		serverURL:       parsedURL,
 		endpointChan:    make(chan struct{}, 1),
 		messageEndpoint: nil,
 		receiver:        nil,
@@ -77,7 +82,7 @@ func (t *sseClientTransport) Start() error {
 	go func() {
 		defer pkg.Recover()
 
-		req, err := http.NewRequest(http.MethodGet, t.serverURL, nil)
+		req, err := http.NewRequest(http.MethodGet, t.serverURL.String(), nil)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to create request: %w", err)
 			return
@@ -169,7 +174,7 @@ func (t *sseClientTransport) readSSE(reader io.ReadCloser) {
 func (t *sseClientTransport) handleSSEEvent(event, data string) {
 	switch event {
 	case "endpoint":
-		endpoint, err := url.Parse(data)
+		endpoint, err := t.serverURL.Parse(data)
 		if err != nil {
 			t.logger.Errorf("Error parsing endpoint URL: %v", err)
 			return
