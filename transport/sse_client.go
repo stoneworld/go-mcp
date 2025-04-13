@@ -48,6 +48,8 @@ type sseClientTransport struct {
 	logger         pkg.Logger
 	receiveTimeout time.Duration
 	client         *http.Client
+
+	sseConnectClose chan struct{}
 }
 
 func NewSSEClientTransport(serverURL string, opts ...SSEClientTransportOption) (ClientTransport, error) {
@@ -63,6 +65,7 @@ func NewSSEClientTransport(serverURL string, opts ...SSEClientTransportOption) (
 		logger:          pkg.DefaultLogger,
 		receiveTimeout:  time.Second * 30,
 		client:          http.DefaultClient,
+		sseConnectClose: make(chan struct{}),
 	}
 
 	for _, opt := range opts {
@@ -87,19 +90,32 @@ func (t *sseClientTransport) Start() error {
 		req.Header.Set("Cache-Control", "no-cache")
 		req.Header.Set("Connection", "keep-alive")
 
-		resp, err := t.client.Do(req)
+		resp, err := t.client.Do(req) //nolint:bodyclose
 		if err != nil {
 			errChan <- fmt.Errorf("failed to connect to SSE stream: %w", err)
 			return
 		}
-		defer resp.Body.Close() // Move the defer inside the goroutine
+		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			errChan <- fmt.Errorf("unexpected status code: %d, status: %s", resp.StatusCode, resp.Status)
 			return
 		}
 
+		go func() {
+			defer pkg.Recover()
+
+			<-t.ctx.Done()
+
+			if err = resp.Body.Close(); err != nil {
+				t.logger.Errorf("failed to close SSE stream body: %w", err)
+				return
+			}
+		}()
+
 		t.readSSE(resp.Body)
+
+		close(t.sseConnectClose)
 	}()
 
 	// Wait for the endpoint to be received
@@ -221,6 +237,8 @@ func (t *sseClientTransport) SetReceiver(receiver ClientReceiver) {
 
 func (t *sseClientTransport) Close() error {
 	t.cancel()
+
+	<-t.sseConnectClose
 
 	return nil
 }
