@@ -30,6 +30,7 @@ type Property struct {
 	// Properties describes the properties of an object, if the schema type is Object.
 	Properties map[string]*Property `json:"properties,omitempty"`
 	Required   []string             `json:"required,omitempty"`
+	Enum       []string             `json:"enum,omitempty"`
 }
 
 var schemaCache = pkg.SyncMap[*InputSchema]{}
@@ -74,6 +75,7 @@ func reflectSchemaByObject(t reflect.Type) (*Property, error) {
 	var (
 		properties     = make(map[string]*Property)
 		requiredFields = make([]string, 0)
+		enumValues     = make([]string, 0)
 	)
 
 	for i := 0; i < t.NumField(); i++ {
@@ -114,12 +116,39 @@ func reflectSchemaByObject(t reflect.Type) (*Property, error) {
 		if required {
 			requiredFields = append(requiredFields, jsonTag)
 		}
+
+		if v := field.Tag.Get("enum"); v != "" {
+			enumValues = strings.Split(v, ",")
+			for i := range enumValues {
+				enumValues[i] = strings.TrimSpace(enumValues[i])
+			}
+
+			// Check if enum values are consistent with the field type
+			for _, value := range enumValues {
+				switch field.Type.Kind() {
+				case reflect.String:
+					// No additional processing required for string type
+				case reflect.Int, reflect.Int64:
+					if _, err := strconv.Atoi(value); err != nil {
+						return nil, fmt.Errorf("enum value %q is not compatible with type %v", value, field.Type)
+					}
+				case reflect.Float64:
+					if _, err := strconv.ParseFloat(value, 64); err != nil {
+						return nil, fmt.Errorf("enum value %q is not compatible with type %v", value, field.Type)
+					}
+				default:
+					return nil, fmt.Errorf("unsupported type %v for enum validation", field.Type)
+				}
+			}
+			item.Enum = enumValues
+		}
 	}
 
 	property := &Property{
 		Type:       ObjectT,
 		Properties: properties,
 		Required:   requiredFields,
+		Enum:       enumValues,
 	}
 	return property, nil
 }
