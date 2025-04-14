@@ -1,10 +1,8 @@
-package protocol_test
+package protocol
 
 import (
 	"reflect"
 	"testing"
-
-	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
 func TestGenerateSchemaFromReqStruct(t *testing.T) {
@@ -41,7 +39,7 @@ func TestGenerateSchemaFromReqStruct(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *protocol.InputSchema
+		want    *InputSchema
 		wantErr bool
 	}{
 		{
@@ -57,30 +55,30 @@ func TestGenerateSchemaFromReqStruct(t *testing.T) {
 			args: args{
 				v: testData{},
 			},
-			want: &protocol.InputSchema{
-				Type: protocol.Object,
-				Properties: map[string]*protocol.Property{
+			want: &InputSchema{
+				Type: Object,
+				Properties: map[string]*Property{
 					"string": {
-						Type:        protocol.String,
+						Type:        String,
 						Description: "string",
 					},
 					"number": {
-						Type: protocol.Number,
+						Type: Number,
 					},
 					"string4enum": {
-						Type: protocol.String,
+						Type: String,
 						Enum: []string{"a", "b", "c"},
 					},
 					"integer4enum": {
-						Type: protocol.Integer,
+						Type: Integer,
 						Enum: []string{"1", "2", "3"},
 					},
 					"number4enum": {
-						Type: protocol.Number,
+						Type: Number,
 						Enum: []string{"1.1", "2.2", "3.3"},
 					},
 					"number4enum2": {
-						Type: protocol.Integer,
+						Type: Integer,
 						Enum: []string{"1", "2", "3"},
 					},
 				},
@@ -92,30 +90,30 @@ func TestGenerateSchemaFromReqStruct(t *testing.T) {
 			args: args{
 				v: &testData{},
 			},
-			want: &protocol.InputSchema{
-				Type: protocol.Object,
-				Properties: map[string]*protocol.Property{
+			want: &InputSchema{
+				Type: Object,
+				Properties: map[string]*Property{
 					"string": {
-						Type:        protocol.String,
+						Type:        String,
 						Description: "string",
 					},
 					"number": {
-						Type: protocol.Number,
+						Type: Number,
 					},
 					"string4enum": {
-						Type: protocol.String,
+						Type: String,
 						Enum: []string{"a", "b", "c"},
 					},
 					"integer4enum": {
-						Type: protocol.Integer,
+						Type: Integer,
 						Enum: []string{"1", "2", "3"},
 					},
 					"number4enum": {
-						Type: protocol.Number,
+						Type: Number,
 						Enum: []string{"1.1", "2.2", "3.3"},
 					},
 					"number4enum2": {
-						Type: protocol.Integer,
+						Type: Integer,
 						Enum: []string{"1", "2", "3"},
 					},
 				},
@@ -157,7 +155,7 @@ func TestGenerateSchemaFromReqStruct(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := protocol.GenerateSchemaFromReqStruct(tt.args.v)
+			got, err := generateSchemaFromReqStruct(tt.args.v)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateSchemaFromReqStruct() error = %v, wantErr %v", err, tt.wantErr)
 				return

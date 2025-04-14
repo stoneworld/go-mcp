@@ -1,16 +1,14 @@
-package protocol_test
+package protocol
 
 import (
 	"encoding/json"
 	"testing"
-
-	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 )
 
 func Test_Validate(t *testing.T) {
 	type args struct {
 		data   any
-		schema protocol.Property
+		schema Property
 	}
 	tests := []struct {
 		name string
@@ -18,83 +16,83 @@ func Test_Validate(t *testing.T) {
 		want bool
 	}{
 		// string integer number boolean
-		{"", args{data: "ABC", schema: protocol.Property{Type: protocol.String}}, true},
-		{"", args{data: 123, schema: protocol.Property{Type: protocol.String}}, false},
-		{"", args{data: "a", schema: protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}}}, true},
-		{"", args{data: "d", schema: protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}}}, false},
-		{"", args{data: 123, schema: protocol.Property{Type: protocol.Integer}}, true},
-		{"", args{data: 123.4, schema: protocol.Property{Type: protocol.Integer}}, false},
-		{"", args{data: 1, schema: protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}}}, true},
-		{"", args{data: 4, schema: protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}}}, false},
-		{"", args{data: "ABC", schema: protocol.Property{Type: protocol.Number}}, false},
-		{"", args{data: 123, schema: protocol.Property{Type: protocol.Number}}, true},
-		{"", args{data: 1.1, schema: protocol.Property{Type: protocol.Number, Enum: []string{"1.1", "2.2", "3.3"}}}, true},
-		{"", args{data: 4.4, schema: protocol.Property{Type: protocol.Number, Enum: []string{"1.1", "2.2", "3.3"}}}, false},
-		{"", args{data: 1, schema: protocol.Property{Type: protocol.Number, Enum: []string{"1", "2", "3"}}}, true},
-		{"", args{data: 4, schema: protocol.Property{Type: protocol.Number, Enum: []string{"1", "2", "3"}}}, false},
-		{"", args{data: false, schema: protocol.Property{Type: protocol.Boolean}}, true},
-		{"", args{data: 123, schema: protocol.Property{Type: protocol.Boolean}}, false},
-		{"", args{data: nil, schema: protocol.Property{Type: protocol.Null}}, true},
-		{"", args{data: 0, schema: protocol.Property{Type: protocol.Null}}, false},
+		{"", args{data: "ABC", schema: Property{Type: String}}, true},
+		{"", args{data: 123, schema: Property{Type: String}}, false},
+		{"", args{data: "a", schema: Property{Type: String, Enum: []string{"a", "b", "c"}}}, true},
+		{"", args{data: "d", schema: Property{Type: String, Enum: []string{"a", "b", "c"}}}, false},
+		{"", args{data: 123, schema: Property{Type: Integer}}, true},
+		{"", args{data: 123.4, schema: Property{Type: Integer}}, false},
+		{"", args{data: 1, schema: Property{Type: Integer, Enum: []string{"1", "2", "3"}}}, true},
+		{"", args{data: 4, schema: Property{Type: Integer, Enum: []string{"1", "2", "3"}}}, false},
+		{"", args{data: "ABC", schema: Property{Type: Number}}, false},
+		{"", args{data: 123, schema: Property{Type: Number}}, true},
+		{"", args{data: 1.1, schema: Property{Type: Number, Enum: []string{"1.1", "2.2", "3.3"}}}, true},
+		{"", args{data: 4.4, schema: Property{Type: Number, Enum: []string{"1.1", "2.2", "3.3"}}}, false},
+		{"", args{data: 1, schema: Property{Type: Number, Enum: []string{"1", "2", "3"}}}, true},
+		{"", args{data: 4, schema: Property{Type: Number, Enum: []string{"1", "2", "3"}}}, false},
+		{"", args{data: false, schema: Property{Type: Boolean}}, true},
+		{"", args{data: 123, schema: Property{Type: Boolean}}, false},
+		{"", args{data: nil, schema: Property{Type: Null}}, true},
+		{"", args{data: 0, schema: Property{Type: Null}}, false},
 		// array
 		{"", args{
-			data: []any{"a", "b", "c"}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String},
+			data: []any{"a", "b", "c"}, schema: Property{
+				Type: Array, Items: &Property{Type: String},
 			},
 		}, true},
 		{"", args{
-			data: []any{1, 2, 3}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String},
+			data: []any{1, 2, 3}, schema: Property{
+				Type: Array, Items: &Property{Type: String},
 			},
 		}, false},
 		{"", args{
-			data: []any{"a"}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}},
+			data: []any{"a"}, schema: Property{
+				Type: Array, Items: &Property{Type: String, Enum: []string{"a", "b", "c"}},
 			},
 		}, true},
 		{"", args{
-			data: []any{"a", "b", "c"}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}},
+			data: []any{"a", "b", "c"}, schema: Property{
+				Type: Array, Items: &Property{Type: String, Enum: []string{"a", "b", "c"}},
 			},
 		}, true},
 		{"", args{
-			data: []any{"d"}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}},
+			data: []any{"d"}, schema: Property{
+				Type: Array, Items: &Property{Type: String, Enum: []string{"a", "b", "c"}},
 			},
 		}, false},
 		{"", args{
-			data: []any{"a", "b", "c", "d"}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.String, Enum: []string{"a", "b", "c"}},
+			data: []any{"a", "b", "c", "d"}, schema: Property{
+				Type: Array, Items: &Property{Type: String, Enum: []string{"a", "b", "c"}},
 			},
 		}, false},
 		{"", args{
-			data: []any{1, 2, 3}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer},
+			data: []any{1, 2, 3}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer},
 			},
 		}, true},
 		{"", args{
-			data: []any{1, 2, 3.4}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer},
+			data: []any{1, 2, 3.4}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer},
 			},
 		}, false},
 		{"", args{
-			data: []any{1}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
+			data: []any{1}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer, Enum: []string{"1", "2", "3"}},
 			},
 		}, true},
 		{"", args{
-			data: []any{1, 2, 3}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
+			data: []any{1, 2, 3}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer, Enum: []string{"1", "2", "3"}},
 			},
 		}, true},
 		{"", args{
-			data: []any{1, 2, 3, 4}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
+			data: []any{1, 2, 3, 4}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer, Enum: []string{"1", "2", "3"}},
 			},
 		}, false},
 		{"", args{
-			data: []any{4}, schema: protocol.Property{
-				Type: protocol.Array, Items: &protocol.Property{Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
+			data: []any{4}, schema: Property{
+				Type: Array, Items: &Property{Type: Integer, Enum: []string{"1", "2", "3"}},
 			},
 		}, false},
 		// object
@@ -104,13 +102,13 @@ func Test_Validate(t *testing.T) {
 			"number":  123.4,
 			"boolean": false,
 			"array":   []any{1, 2, 3},
-		}, schema: protocol.Property{
-			Type: protocol.ObjectT, Properties: map[string]*protocol.Property{
-				"string":  {Type: protocol.String},
-				"integer": {Type: protocol.Integer},
-				"number":  {Type: protocol.Number},
-				"boolean": {Type: protocol.Boolean},
-				"array":   {Type: protocol.Array, Items: &protocol.Property{Type: protocol.Number}},
+		}, schema: Property{
+			Type: ObjectT, Properties: map[string]*Property{
+				"string":  {Type: String},
+				"integer": {Type: Integer},
+				"number":  {Type: Number},
+				"boolean": {Type: Boolean},
+				"array":   {Type: Array, Items: &Property{Type: Number}},
 			},
 			Required: []string{"string"},
 		}}, true},
@@ -119,13 +117,13 @@ func Test_Validate(t *testing.T) {
 			"number":  123.4,
 			"boolean": false,
 			"array":   []any{1, 2, 3},
-		}, schema: protocol.Property{
-			Type: protocol.ObjectT, Properties: map[string]*protocol.Property{
-				"string":  {Type: protocol.String},
-				"integer": {Type: protocol.Integer},
-				"number":  {Type: protocol.Number},
-				"boolean": {Type: protocol.Boolean},
-				"array":   {Type: protocol.Array, Items: &protocol.Property{Type: protocol.Number}},
+		}, schema: Property{
+			Type: ObjectT, Properties: map[string]*Property{
+				"string":  {Type: String},
+				"integer": {Type: Integer},
+				"number":  {Type: Number},
+				"boolean": {Type: Boolean},
+				"array":   {Type: Array, Items: &Property{Type: Number}},
 			},
 			Required: []string{"string"},
 		}}, false},
@@ -135,13 +133,13 @@ func Test_Validate(t *testing.T) {
 			"number":     1.1,
 			"number4Int": 1,
 			"array":      []any{1, 2, 3},
-		}, schema: protocol.Property{
-			Type: protocol.ObjectT, Properties: map[string]*protocol.Property{
-				"string":     {Type: protocol.String, Enum: []string{"a", "b", "c"}},
-				"integer":    {Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
-				"number":     {Type: protocol.Number, Enum: []string{"1.1", "2.2", "3.3"}},
-				"number4Int": {Type: protocol.Number, Enum: []string{"1", "2", "3"}},
-				"array":      {Type: protocol.Array, Items: &protocol.Property{Type: protocol.Number}, Enum: []string{"1", "2", "3"}},
+		}, schema: Property{
+			Type: ObjectT, Properties: map[string]*Property{
+				"string":     {Type: String, Enum: []string{"a", "b", "c"}},
+				"integer":    {Type: Integer, Enum: []string{"1", "2", "3"}},
+				"number":     {Type: Number, Enum: []string{"1.1", "2.2", "3.3"}},
+				"number4Int": {Type: Number, Enum: []string{"1", "2", "3"}},
+				"array":      {Type: Array, Items: &Property{Type: Number}, Enum: []string{"1", "2", "3"}},
 			},
 			Required: []string{"string"},
 		}}, true},
@@ -151,21 +149,21 @@ func Test_Validate(t *testing.T) {
 			"number":     4.4,
 			"number4Int": 4,
 			"array":      []any{4},
-		}, schema: protocol.Property{
-			Type: protocol.ObjectT, Properties: map[string]*protocol.Property{
-				"string":     {Type: protocol.String, Enum: []string{"a", "b", "c"}},
-				"integer":    {Type: protocol.Integer, Enum: []string{"1", "2", "3"}},
-				"number":     {Type: protocol.Number, Enum: []string{"1.1", "2.2", "3.3"}},
-				"number4Int": {Type: protocol.Number, Enum: []string{"1", "2", "3"}},
-				"array":      {Type: protocol.Array, Items: &protocol.Property{Type: protocol.Number}, Enum: []string{"1", "2", "3"}},
+		}, schema: Property{
+			Type: ObjectT, Properties: map[string]*Property{
+				"string":     {Type: String, Enum: []string{"a", "b", "c"}},
+				"integer":    {Type: Integer, Enum: []string{"1", "2", "3"}},
+				"number":     {Type: Number, Enum: []string{"1.1", "2.2", "3.3"}},
+				"number4Int": {Type: Number, Enum: []string{"1", "2", "3"}},
+				"array":      {Type: Array, Items: &Property{Type: Number}, Enum: []string{"1", "2", "3"}},
 			},
 			Required: []string{"string"},
 		}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := protocol.Validate(tt.args.schema, tt.args.data); got != tt.want {
-				t.Errorf("Validate() = %v, want %v", got, tt.want)
+			if got := validate(tt.args.schema, tt.args.data); got != tt.want {
+				t.Errorf("validate() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -173,7 +171,7 @@ func Test_Validate(t *testing.T) {
 
 func TestUnmarshal(t *testing.T) {
 	type args struct {
-		schema  protocol.Property
+		schema  Property
 		content []byte
 		v       any
 	}
@@ -183,11 +181,11 @@ func TestUnmarshal(t *testing.T) {
 		wantErr bool
 	}{
 		{"", args{
-			schema: protocol.Property{
-				Type: protocol.ObjectT,
-				Properties: map[string]*protocol.Property{
-					"string": {Type: protocol.String},
-					"number": {Type: protocol.Number},
+			schema: Property{
+				Type: ObjectT,
+				Properties: map[string]*Property{
+					"string": {Type: String},
+					"number": {Type: Number},
 				},
 			},
 			content: []byte(`{"string":"abc","number":123.4}`),
@@ -197,11 +195,11 @@ func TestUnmarshal(t *testing.T) {
 			}{},
 		}, false},
 		{"", args{
-			schema: protocol.Property{
-				Type: protocol.ObjectT,
-				Properties: map[string]*protocol.Property{
-					"string": {Type: protocol.String},
-					"number": {Type: protocol.Number},
+			schema: Property{
+				Type: ObjectT,
+				Properties: map[string]*Property{
+					"string": {Type: String},
+					"number": {Type: Number},
 				},
 				Required: []string{"string", "number"},
 			},
@@ -212,11 +210,11 @@ func TestUnmarshal(t *testing.T) {
 			}{},
 		}, true},
 		{"validate integer", args{
-			schema: protocol.Property{
-				Type: protocol.ObjectT,
-				Properties: map[string]*protocol.Property{
-					"string":  {Type: protocol.String},
-					"integer": {Type: protocol.Integer},
+			schema: Property{
+				Type: ObjectT,
+				Properties: map[string]*Property{
+					"string":  {Type: String},
+					"integer": {Type: Integer},
 				},
 				Required: []string{"string", "integer"},
 			},
@@ -227,11 +225,11 @@ func TestUnmarshal(t *testing.T) {
 			}{},
 		}, false},
 		{"validate integer failed", args{
-			schema: protocol.Property{
-				Type: protocol.ObjectT,
-				Properties: map[string]*protocol.Property{
-					"string":  {Type: protocol.String},
-					"integer": {Type: protocol.Integer},
+			schema: Property{
+				Type: ObjectT,
+				Properties: map[string]*Property{
+					"string":  {Type: String},
+					"integer": {Type: Integer},
 				},
 				Required: []string{"string", "integer"},
 			},
@@ -244,7 +242,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := protocol.VerifySchemaAndUnmarshal(tt.args.schema, tt.args.content, tt.args.v)
+			err := verifySchemaAndUnmarshal(tt.args.schema, tt.args.content, tt.args.v)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Unmarshal() error = %v, wantErr %v", err, tt.wantErr)
 			} else if err == nil {
@@ -346,13 +344,13 @@ func TestVerifyAndUnmarshal(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	_, err := protocol.GenerateSchemaFromReqStruct(testData{})
+	_, err := generateSchemaFromReqStruct(testData{})
 	if err != nil {
 		panic(err)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := protocol.VerifyAndUnmarshal(tt.args.content, tt.args.v); (err != nil) != tt.wantErr {
+			if err := VerifyAndUnmarshal(tt.args.content, tt.args.v); (err != nil) != tt.wantErr {
 				t.Errorf("VerifyAndUnmarshal() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("VerifyAndUnmarshal() v = %+v\n", tt.args.v)

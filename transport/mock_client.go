@@ -11,7 +11,7 @@ import (
 
 type MockClientTransport struct {
 	receiver ClientReceiver
-	in       io.Reader
+	in       io.ReadCloser
 	out      io.Writer
 
 	logger pkg.Logger
@@ -20,7 +20,7 @@ type MockClientTransport struct {
 	receiveShutDone chan struct{}
 }
 
-func NewMockClientTransport(in io.Reader, out io.Writer) *MockClientTransport {
+func NewMockClientTransport(in io.ReadCloser, out io.Writer) *MockClientTransport {
 	return &MockClientTransport{
 		in:              in,
 		out:             out,
@@ -37,6 +37,8 @@ func (t *MockClientTransport) Start() error {
 		defer pkg.Recover()
 
 		t.receive(ctx)
+
+		close(t.receiveShutDone)
 	}()
 
 	return nil
@@ -55,6 +57,12 @@ func (t *MockClientTransport) SetReceiver(receiver ClientReceiver) {
 
 func (t *MockClientTransport) Close() error {
 	t.cancel()
+
+	if err := t.in.Close(); err != nil {
+		return fmt.Errorf("failed to close writer: %w", err)
+	}
+
+	<-t.receiveShutDone
 
 	return nil
 }

@@ -21,12 +21,14 @@ func TestClientCall(t *testing.T) {
 	reader2, writer2 := io.Pipe()
 
 	var (
-		in io.ReadWriter = struct {
+		in io.ReadWriteCloser = struct {
 			io.Reader
 			io.Writer
+			io.Closer
 		}{
 			Reader: reader1,
 			Writer: writer1,
+			Closer: reader1,
 		}
 
 		out io.ReadWriter = struct {
@@ -215,7 +217,7 @@ func TestClientCall(t *testing.T) {
 	}
 }
 
-func testClientInit(t *testing.T, in io.ReadWriter, out io.ReadWriter, outScan *bufio.Scanner) *Client {
+func testClientInit(t *testing.T, in io.ReadWriteCloser, out io.ReadWriter, outScan *bufio.Scanner) *Client {
 	req := protocol.InitializeRequest{
 		ClientInfo: protocol.Implementation{
 			Name:    "test_client",

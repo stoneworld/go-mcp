@@ -35,10 +35,6 @@ type Property struct {
 
 var schemaCache = pkg.SyncMap[*InputSchema]{}
 
-func GenerateSchemaFromReqStruct(v any) (*InputSchema, error) {
-	return generateSchemaFromReqStruct(v)
-}
-
 func generateSchemaFromReqStruct(v any) (*InputSchema, error) {
 	t := reflect.TypeOf(v)
 	for t.Kind() != reflect.Struct {

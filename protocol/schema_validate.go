@@ -25,26 +25,26 @@ func VerifyAndUnmarshal(content json.RawMessage, v any) error {
 		return fmt.Errorf("schema has not been generated，unable to verify: plz use func `pkg.JSONUnmarshal` instead")
 	}
 
-	return VerifySchemaAndUnmarshal(Property{
+	return verifySchemaAndUnmarshal(Property{
 		Type:       ObjectT,
 		Properties: schema.Properties,
 		Required:   schema.Required,
 	}, content, v)
 }
 
-func VerifySchemaAndUnmarshal(schema Property, content []byte, v any) error {
+func verifySchemaAndUnmarshal(schema Property, content []byte, v any) error {
 	var data any
 	err := pkg.JSONUnmarshal(content, &data)
 	if err != nil {
 		return err
 	}
-	if !Validate(schema, data) {
+	if !validate(schema, data) {
 		return errors.New("data validation failed against the provided schema")
 	}
 	return pkg.JSONUnmarshal(content, &v)
 }
 
-func Validate(schema Property, data any) bool {
+func validate(schema Property, data any) bool {
 	switch schema.Type {
 	case ObjectT:
 		return validateObject(schema, data)
@@ -130,7 +130,7 @@ func validateObject(schema Property, data any) bool {
 	}
 	for key, valueSchema := range schema.Properties {
 		value, exists := dataMap[key]
-		if exists && !Validate(*valueSchema, value) {
+		if exists && !validate(*valueSchema, value) {
 			return false
 		}
 	}
@@ -143,7 +143,7 @@ func validateArray(schema Property, data any) bool {
 		return false
 	}
 	for _, item := range dataArray {
-		if !Validate(*schema.Items, item) {
+		if !validate(*schema.Items, item) {
 			return false
 		}
 	}
