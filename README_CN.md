@@ -118,7 +118,7 @@ func main() {
 	}
 
 	// 注册时间查询工具
-	tool, err := protocol.NewTool("current time", "获取指定时区的当前时间", TimeRequest{})
+	tool, err := protocol.NewTool("current_time", "获取指定时区的当前时间", TimeRequest{})
 	if err != nil {
 		log.Fatalf("创建工具失败: %v", err)
 		return
