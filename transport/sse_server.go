@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -58,7 +60,7 @@ type sseServerTransport struct {
 
 	httpSvr *http.Server
 
-	messageEndpointFullURL string // Auto-generated
+	messageEndpointURL string // Auto-generated
 
 	// TODO: Need to periodically clean up invalid sessions
 	sessionStore pkg.SyncMap[chan []byte]
@@ -103,16 +105,21 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 		logger:      pkg.DefaultLogger,
 		ssePath:     "/sse",
 		messagePath: "/message",
-		urlPrefix:   "http://" + addr,
+		urlPrefix:   "",
 	}
 	for _, opt := range opts {
 		opt(t)
 	}
-	messageEndpointFullURL, err := completeMessagePath(t.urlPrefix, t.messagePath)
-	if err != nil {
-		return nil, fmt.Errorf("NewSSEServerTransport failed: completeMessagePath %v", err)
+
+	t.messageEndpointURL = t.messagePath
+	// Set default values for ssePath and messagePath
+	if t.urlPrefix != "" {
+		messageEndpointFullURL, err := completeMessagePath(t.urlPrefix, t.messagePath)
+		if err != nil {
+			return nil, fmt.Errorf("NewSSEServerTransport failed: completeMessagePath %v", err)
+		}
+		t.messageEndpointURL = messageEndpointFullURL
 	}
-	t.messageEndpointFullURL = messageEndpointFullURL
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(t.ssePath, t.handleSSE)
@@ -129,16 +136,27 @@ func NewSSEServerTransport(addr string, opts ...SSEServerTransportOption) (Serve
 
 // NewSSEServerTransportAndHandler returns transport without starting the HTTP server,
 // and returns a Handler for users to start their own HTTP server externally
-func NewSSEServerTransportAndHandler(messageEndpointFullURL string,
+// eg:
+// 1. relative path
+// transport, handler, _ :=  NewSSEServerTransportAndHandler("/sse/message")
+// http.Handle("/sse", handler.HandleSSE())
+// http.Handle("/sse/message", handler.HandleMessage())
+// http.ListenAndServe(":8080", nil)
+// 2. full url
+// transport, handler, _ :=  NewSSEServerTransportAndHandler("https://thinkingai.xyz/api/v1/sse/message")
+// http.Handle("/sse", handler.HandleSSE())
+// http.Handle("/sse/message", handler.HandleMessage())
+// http.ListenAndServe(":8080", nil)
+func NewSSEServerTransportAndHandler(messageEndpointURL string,
 	opts ...SSEServerTransportAndHandlerOption,
 ) (ServerTransport, *SSEHandler, error) { //nolint:whitespace
 	ctx, cancel := context.WithCancel(context.Background())
 
 	t := &sseServerTransport{
-		ctx:                    ctx,
-		cancel:                 cancel,
-		messageEndpointFullURL: messageEndpointFullURL,
-		logger:                 pkg.DefaultLogger,
+		ctx:                ctx,
+		cancel:             cancel,
+		messageEndpointURL: messageEndpointURL,
+		logger:             pkg.DefaultLogger,
 	}
 	for _, opt := range opts {
 		opt(t)
@@ -211,7 +229,7 @@ func (t *sseServerTransport) handleSSE(w http.ResponseWriter, r *http.Request) {
 	t.sessionStore.Store(sessionID, sessionChan)
 	defer t.sessionStore.Delete(sessionID)
 
-	uri := fmt.Sprintf("%s?sessionID=%s", t.messageEndpointFullURL, sessionID)
+	uri := fmt.Sprintf("%s?sessionID=%s", t.messageEndpointURL, sessionID)
 	// Send the initial endpoint event
 	_, err := fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", uri)
 	if err != nil {
@@ -325,9 +343,32 @@ func (t *sseServerTransport) Shutdown(userCtx context.Context, serverCtx context
 }
 
 func completeMessagePath(urlPrefix string, messagePath string) (string, error) {
-	parse, err := url.Parse(urlPrefix + messagePath)
+	prefixURL, err := url.Parse(urlPrefix)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("[completeMessagePath] failed to parse URL prefix: %w", err)
 	}
-	return parse.String(), nil
+	joinPath(prefixURL, messagePath)
+	return prefixURL.String(), nil
+}
+
+// joinPath provided path elements joined to
+// any existing path and the resulting path cleaned of any ./ or ../ elements.
+// Any sequences of multiple / characters will be reduced to a single /.
+func joinPath(u *url.URL, elem ...string) {
+	elem = append([]string{u.EscapedPath()}, elem...)
+	var p string
+	if !strings.HasPrefix(elem[0], "/") {
+		// Return a relative path if u is relative,
+		// but ensure that it contains no ../ elements.
+		elem[0] = "/" + elem[0]
+		p = path.Join(elem...)[1:]
+	} else {
+		p = path.Join(elem...)
+	}
+	// path.Join will remove any trailing slashes.
+	// Preserve at least one.
+	if strings.HasSuffix(elem[len(elem)-1], "/") && !strings.HasSuffix(p, "/") {
+		p += "/"
+	}
+	u.Path = p
 }
