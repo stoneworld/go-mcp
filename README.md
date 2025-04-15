@@ -117,7 +117,7 @@ func main() {
 	}
 
 	// Register time query tool
-	tool, err := protocol.NewTool("current time", "Get current time for specified timezone", TimeRequest{})
+	tool, err := protocol.NewTool("current_time", "Get current time for specified timezone", TimeRequest{})
 	if err != nil {
 		log.Fatalf("Failed to create tool: %v", err)
 		return
