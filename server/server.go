@@ -241,7 +241,7 @@ func (server *Server) RegisterResourceTemplate(resource *protocol.ResourceTempla
 	if !server.sessionID2session.IsEmpty() {
 		if err := server.sendNotification4ResourceListChanges(context.Background()); err != nil {
 			server.logger.Warnf("send notification resource list changes fail: %v", err)
-			return nil
+			return
 		}
 	}
 	return nil
